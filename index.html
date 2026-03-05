@@ -1,0 +1,2644 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚀 Knowledge Voyage — Udemy Business Course Curator</title>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   CSS VARIABLES & RESET
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --bg-deep: #06060f;
+  --bg-space: #0a0a1a;
+  --bg-nebula: #0f0f24;
+  --bg-card: rgba(18, 18, 40, 0.7);
+  --bg-card-solid: #121228;
+  --bg-hover: rgba(30, 30, 60, 0.8);
+  --bg-glass: rgba(20, 20, 45, 0.5);
+  --text-bright: #f0f0ff;
+  --text-primary: #d0d0e8;
+  --text-secondary: #8888aa;
+  --text-muted: #555570;
+  --accent: #7c6cf0;
+  --accent-light: #a78bfa;
+  --accent-glow: rgba(124, 108, 240, 0.35);
+  --accent-gradient: linear-gradient(135deg, #7c6cf0, #a78bfa, #c084fc);
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #60a5fa;
+  --cat-dev: #3b82f6;
+  --cat-it: #6366f1;
+  --cat-biz: #8b5cf6;
+  --cat-mkt: #f59e0b;
+  --cat-design: #ec4899;
+  --cat-finance: #10b981;
+  --cat-personal: #f97316;
+  --cat-office: #06b6d4;
+  --cat-default: #7c6cf0;
+  --border: rgba(100, 100, 160, 0.2);
+  --border-accent: rgba(124, 108, 240, 0.3);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-glow: 0 0 20px var(--accent-glow);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --font: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.65;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STAR FIELD BACKGROUND (Pure CSS)
+   ═══════════════════════════════════════════════════════════ */
+body::before, body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+body::before {
+  background:
+    radial-gradient(ellipse at 15% 30%, rgba(124,108,240,0.07) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 20%, rgba(99,102,241,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(139,92,246,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(96,165,250,0.03) 0%, transparent 40%);
+}
+body::after {
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 65%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 15%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 45%, rgba(255,255,255,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 80%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 20% 85%, rgba(167,139,250,0.6) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 45% 40%, rgba(167,139,250,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 5% 50%, rgba(255,255,255,0.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 90%, rgba(255,255,255,0.25) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 30%, rgba(255,255,255,0.45) 0%, transparent 100%),
+    radial-gradient(1px 1px at 95% 55%, rgba(255,255,255,0.3) 0%, transparent 100%);
+  animation: twinkle 8s ease-in-out infinite alternate;
+}
+@keyframes twinkle { 0% { opacity: 0.6; } 100% { opacity: 1; } }
+
+/* All content above stars */
+#gate-page, #app-container, #toast-container, #scroll-to-top, #side-panel-overlay, .app-footer { position: relative; z-index: 1; }
+
+/* ═══════════════════════════════════════════════════════════
+   GATE PAGE — Step 1: Subdomain, Step 2: Job Family
+   ═══════════════════════════════════════════════════════════ */
+#gate-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  text-align: center;
+}
+.gate-step { display: none; width: 100%; max-width: 600px; }
+.gate-step.active { display: flex; flex-direction: column; align-items: center; animation: fadeSlideUp 0.6s ease; }
+@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+.gate-rocket {
+  font-size: 3.5rem;
+  animation: rocketFloat 3s ease-in-out infinite;
+  margin-bottom: 1rem;
+}
+@keyframes rocketFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+
+.gate-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.3rem;
+}
+.gate-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+.gate-star-count {
+  color: var(--accent-light);
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+  opacity: 0.8;
+}
+
+.gate-input-group {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+.gate-input-group label {
+  display: block;
+  text-align: left;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-bright);
+}
+.gate-input-group .hint {
+  text-align: left;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+.gate-input {
+  width: 100%;
+  padding: 0.85rem 1.2rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-bright);
+  font-size: 1rem;
+  transition: var(--transition);
+}
+.gate-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow);
+}
+.gate-input::placeholder { color: var(--text-muted); }
+
+.gate-preview {
+  text-align: left;
+  font-size: 0.82rem;
+  color: var(--success);
+  margin-top: 0.3rem;
+  min-height: 1.2em;
+  transition: var(--transition);
+}
+
+.btn-warp {
+  width: 100%;
+  padding: 0.95rem;
+  background: var(--accent-gradient);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+.btn-warp:hover { transform: translateY(-2px); box-shadow: var(--shadow-glow); }
+.btn-warp:active { transform: scale(0.98); }
+.btn-warp:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-warp::after {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);
+  animation: shimmer 3s infinite;
+}
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+.gate-history {
+  margin-top: 1.5rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+.gate-history a {
+  color: var(--accent-light);
+  text-decoration: none;
+  cursor: pointer;
+}
+.gate-history a:hover { text-decoration: underline; }
+
+/* Step 2: Job Family Selection */
+.gate-job-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.7rem;
+  width: 100%;
+  margin: 1rem 0;
+}
+.gate-job-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1rem 0.5rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+}
+.gate-job-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-glow);
+}
+.gate-job-card.selected {
+  border-color: var(--accent);
+  background: rgba(124, 108, 240, 0.15);
+  box-shadow: var(--shadow-glow);
+}
+.gate-job-card .emoji { font-size: 1.8rem; }
+.gate-job-card .label { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
+
+.btn-skip {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.7rem 1.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: var(--transition);
+  margin-top: 0.5rem;
+}
+.btn-skip:hover { border-color: var(--accent); color: var(--text-primary); }
+
+/* Warp Transition */
+.warp-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 9999;
+  background: var(--bg-deep);
+  justify-content: center;
+  align-items: center;
+}
+.warp-overlay.active { display: flex; animation: warpIn 1s ease-in-out forwards; }
+@keyframes warpIn {
+  0% { background: var(--bg-deep); }
+  40% { background: radial-gradient(circle at center, rgba(124,108,240,0.3) 0%, var(--bg-deep) 70%); }
+  70% { background: radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, var(--bg-deep) 50%); }
+  100% { background: radial-gradient(circle at center, rgba(255,255,255,0) 0%, var(--bg-deep) 0%); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   APP CONTAINER
+   ═══════════════════════════════════════════════════════════ */
+#app-container {
+  display: none;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 1.5rem 2rem;
+  animation: fadeSlideUp 0.6s ease;
+}
+
+/* Header */
+.app-header {
+  text-align: center;
+  padding: 1.5rem 0 0.5rem;
+}
+.app-header h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.app-header .welcome {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+}
+.app-header .welcome strong { color: var(--accent-light); }
+
+/* Dashboard Summary Cards */
+.dash-cards {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+.dash-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1.2rem;
+  text-align: center;
+  min-width: 110px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.dash-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+.dash-card .icon { font-size: 1.3rem; }
+.dash-card .value {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  display: block;
+  margin: 0.2rem 0;
+}
+.dash-card .label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  margin: 0.8rem 0;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 0.6rem 1.4rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 25px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: var(--transition);
+}
+.tab-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+.tab-btn.active {
+  background: var(--accent-gradient);
+  color: white;
+  border-color: transparent;
+  box-shadow: var(--shadow-glow);
+}
+
+/* Tab Panels */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeSlideUp 0.4s ease; }
+
+/* ═══════════════════════════════════════════════════════════
+   GALAXY SCANNER (Search + Filters)
+   ═══════════════════════════════════════════════════════════ */
+.scanner-section { margin-bottom: 1rem; }
+.scanner-bar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+  margin-bottom: 0.6rem;
+}
+.scanner-input-wrap {
+  flex: 1;
+  position: relative;
+}
+.scanner-input {
+  width: 100%;
+  padding: 0.85rem 1.2rem 0.85rem 2.8rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-bright);
+  font-size: 1rem;
+  transition: var(--transition);
+}
+.scanner-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow);
+  transform: scale(1.005);
+}
+.scanner-input::placeholder { color: var(--text-muted); }
+.scanner-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+
+.btn-ai-scan {
+  padding: 0 1.5rem;
+  background: var(--accent-gradient);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.btn-ai-scan:hover { box-shadow: var(--shadow-glow); transform: translateY(-1px); }
+.btn-ai-scan:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.scanner-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+.scan-mode-toggle {
+  display: flex;
+  gap: 0.3rem;
+}
+.scan-mode-btn {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--border);
+  background: var(--bg-glass);
+  color: var(--text-secondary);
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: var(--transition);
+}
+.scan-mode-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.scan-results-count {
+  color: var(--text-muted);
+}
+.scan-results-count strong { color: var(--accent-light); }
+
+/* Active Filter Tags */
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  background: rgba(124, 108, 240, 0.15);
+  border: 1px solid var(--border-accent);
+  border-radius: 15px;
+  font-size: 0.75rem;
+  color: var(--accent-light);
+}
+.filter-chip-x {
+  cursor: pointer;
+  font-weight: bold;
+  opacity: 0.7;
+  background: none;
+  border: none;
+  color: var(--accent-light);
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0;
+}
+.filter-chip-x:hover { opacity: 1; }
+
+/* Filters Panel */
+.filters-toggle-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  user-select: none;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+.filters-toggle-bar:hover { border-color: var(--accent); }
+.filters-toggle-bar .arrow { transition: transform 0.3s; }
+.filters-toggle-bar.open .arrow { transform: rotate(180deg); }
+
+.filters-grid {
+  display: none;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.6rem;
+  padding: 1rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  margin-bottom: 0.5rem;
+}
+.filters-grid.open { display: grid; }
+
+.f-group { display: flex; flex-direction: column; gap: 0.25rem; }
+.f-group label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+.f-group select, .f-group input {
+  padding: 0.5rem 0.7rem;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  transition: var(--transition);
+}
+.f-group select:focus, .f-group input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+/* Multi-select */
+.ms-wrap { position: relative; }
+.ms-btn {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ms-btn:hover { border-color: var(--accent); }
+.ms-panel {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0; right: 0;
+  z-index: 100;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-xs);
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  margin-top: 3px;
+}
+.ms-panel.open { display: block; }
+.ms-item {
+  padding: 0.35rem 0.7rem;
+  transition: background 0.15s;
+}
+.ms-item:hover { background: var(--bg-hover); }
+.ms-item label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  font-weight: 400;
+}
+.ms-item input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+
+.f-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.f-actions button {
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  background: var(--bg-card-solid);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: var(--transition);
+}
+.f-actions button:hover { border-color: var(--accent); }
+
+/* AI Expand Panel */
+.ai-panel {
+  display: none;
+  background: rgba(124, 108, 240, 0.06);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  margin-bottom: 0.8rem;
+  animation: fadeSlideUp 0.4s ease;
+}
+.ai-panel.open { display: block; }
+.ai-panel h4 { color: var(--accent-light); margin-bottom: 0.8rem; font-size: 0.95rem; }
+.ai-kw-group { margin-bottom: 0.7rem; }
+.ai-kw-group .group-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+.ai-kw-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.ai-kw-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.65rem;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+  color: var(--text-primary);
+}
+.ai-kw-tag.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.ai-kw-tag:hover:not(.selected) { border-color: var(--accent-light); }
+.ai-panel-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+}
+.ai-panel-actions button {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  background: var(--bg-card-solid);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: var(--transition);
+}
+.ai-panel-actions .btn-apply-ai {
+  background: var(--accent-gradient);
+  border: none;
+  color: white;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VIEW MODE TOGGLE & TABLE / CARD / COMPACT
+   ═══════════════════════════════════════════════════════════ */
+.list-section { margin-top: 0.5rem; }
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.list-header h2 { font-size: 1.1rem; color: var(--text-bright); }
+.view-toggle {
+  display: flex;
+  gap: 0.3rem;
+}
+.view-btn {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border);
+  background: var(--bg-glass);
+  color: var(--text-secondary);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: var(--transition);
+}
+.view-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+/* Table View */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+thead {
+  background: var(--bg-nebula);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+th {
+  padding: 0.65rem 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  border-bottom: 2px solid var(--accent);
+  font-size: 0.78rem;
+}
+td {
+  padding: 0.55rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+tr { transition: background 0.15s; position: relative; }
+tr:hover { background: var(--bg-hover); }
+/* Category color bar on hover */
+tr::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--row-cat-color, var(--accent));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+tr:hover::before { opacity: 1; }
+
+.course-link {
+  color: var(--accent-light);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.course-link:hover { color: var(--accent); text-decoration: underline; }
+
+.cat-badge {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  background: var(--bg-card-solid);
+}
+.badge-new {
+  display: inline-block;
+  padding: 0.08rem 0.35rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--warning);
+}
+.star-score { font-size: 0.75rem; }
+
+.detail-btn {
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: var(--transition);
+}
+.detail-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+
+/* Checkbox column */
+th.col-check, td.col-check { width: 35px; text-align: center; }
+td.col-check input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+
+/* Card View */
+.card-grid {
+  display: none;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.8rem;
+}
+.card-grid.active { display: grid; }
+.course-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  transition: var(--transition);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  animation: fadeSlideUp 0.4s ease backwards;
+}
+.course-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-glow);
+}
+.course-card .card-cat-stripe {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--card-cat-color, var(--accent));
+}
+.course-card h4 { font-size: 0.92rem; margin: 0.5rem 0 0.3rem; color: var(--text-bright); }
+.course-card .card-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+.course-card .card-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.6rem; }
+.course-card .card-cta {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  background: var(--accent-gradient);
+  color: white;
+  border-radius: var(--radius-xs);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: var(--transition);
+}
+.course-card .card-cta:hover { box-shadow: var(--shadow-glow); }
+
+/* Compact View */
+.compact-list { display: none; }
+.compact-list.active { display: block; }
+.compact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.compact-item:hover { background: var(--bg-hover); }
+.compact-item .compact-title { flex: 1; font-size: 0.85rem; }
+.compact-item .compact-title a { color: var(--accent-light); text-decoration: none; }
+.compact-item .compact-title a:hover { text-decoration: underline; }
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+.empty-state h3 { color: var(--text-secondary); margin-bottom: 0.5rem; }
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem 0;
+  flex-wrap: wrap;
+}
+.pagination button {
+  padding: 0.35rem 0.7rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: var(--transition);
+}
+.pagination button:hover { border-color: var(--accent); }
+.pagination button.active { background: var(--accent); color: white; border-color: var(--accent); }
+.pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Floating Action Bar */
+.fab {
+  display: none;
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-card-solid);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 0.7rem 1.5rem;
+  box-shadow: var(--shadow), var(--shadow-glow);
+  z-index: 500;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+  animation: fadeSlideUp 0.3s ease;
+}
+.fab.visible { display: flex; }
+.fab button {
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  background: var(--bg-card-solid);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: var(--transition);
+}
+.fab button:hover { border-color: var(--accent); }
+.fab .btn-fab-csv {
+  background: var(--accent-gradient);
+  border: none;
+  color: white;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MISSION CENTER (Job Curation)
+   ═══════════════════════════════════════════════════════════ */
+.mission-search {
+  margin-bottom: 0.8rem;
+}
+.mission-search input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-bright);
+  font-size: 0.9rem;
+}
+.mission-search input:focus { outline: none; border-color: var(--accent); }
+
+.galaxy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+.galaxy-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1rem 0.5rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.galaxy-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: var(--shadow-glow); }
+.galaxy-card.active { border-color: var(--accent); background: rgba(124,108,240,0.12); box-shadow: var(--shadow-glow); }
+.galaxy-card .emoji { font-size: 1.6rem; }
+.galaxy-card .label { font-size: 0.8rem; font-weight: 600; }
+
+.level-bar {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.level-bar label {
+  padding: 0.45rem 1rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  transition: var(--transition);
+}
+.level-bar input { display: none; }
+.level-bar input:checked + label {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.orbit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.7rem;
+}
+.orbit-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem;
+  cursor: pointer;
+  transition: var(--transition);
+  animation: fadeSlideUp 0.4s ease backwards;
+}
+.orbit-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: var(--shadow-glow); }
+.orbit-card h4 { font-size: 0.92rem; margin-bottom: 0.5rem; }
+.orbit-card .orbit-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+
+/* ═══════════════════════════════════════════════════════════
+   BRIGHTEST STARS (TOP 6)
+   ═══════════════════════════════════════════════════════════ */
+.stars-section { text-align: center; }
+.stars-section h2 { font-size: 1.2rem; margin-bottom: 0.3rem; }
+.stars-section .subtitle { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; }
+
+.stars-toggle {
+  display: flex;
+  gap: 0.3rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.hero-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition);
+}
+.hero-card::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle at center, var(--accent-glow) 0%, transparent 70%);
+  opacity: 0.3;
+  pointer-events: none;
+}
+.hero-card .rank { font-size: 0.85rem; color: var(--warning); font-weight: 700; }
+.hero-card h3 { font-size: 1.1rem; margin: 0.3rem 0; }
+.hero-card h3 a { color: var(--text-bright); text-decoration: none; }
+.hero-card h3 a:hover { color: var(--accent-light); }
+.hero-card p { color: var(--text-secondary); font-size: 0.85rem; }
+.hero-card .hero-cta {
+  display: inline-block;
+  margin-top: 0.8rem;
+  padding: 0.5rem 1.2rem;
+  background: var(--accent-gradient);
+  color: white;
+  border-radius: var(--radius-xs);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: var(--transition);
+}
+.hero-card .hero-cta:hover { box-shadow: var(--shadow-glow); }
+
+.stars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.7rem;
+}
+.star-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  text-align: left;
+  transition: var(--transition);
+}
+.star-card:hover { border-color: var(--accent); box-shadow: var(--shadow-glow); }
+.star-card .rank { font-size: 0.78rem; color: var(--warning); }
+.star-card h4 { font-size: 0.88rem; margin: 0.2rem 0; }
+.star-card h4 a { color: var(--accent-light); text-decoration: none; }
+.star-card h4 a:hover { text-decoration: underline; }
+.star-card p { font-size: 0.78rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ═══════════════════════════════════════════════════════════
+   SIDE PANEL (Course Detail)
+   ═══════════════════════════════════════════════════════════ */
+#side-panel-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+}
+#side-panel-overlay.open { display: block; }
+#side-panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: 420px;
+  max-width: 90vw;
+  height: 100vh;
+  background: var(--bg-nebula);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1001;
+  padding: 1.5rem;
+}
+#side-panel.open { transform: translateX(0); }
+.sp-close {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.sp-close:hover { color: var(--text-bright); }
+.sp-title { font-size: 1.15rem; margin-bottom: 1rem; padding-right: 2rem; color: var(--text-bright); }
+.sp-section { margin-bottom: 1rem; }
+.sp-section h4 { color: var(--accent-light); font-size: 0.9rem; margin-bottom: 0.4rem; }
+.sp-section p, .sp-section ul { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; }
+.sp-section ul { padding-left: 1.2rem; }
+.sp-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+.sp-meta-tag {
+  padding: 0.2rem 0.6rem;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.sp-cta {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--accent-gradient);
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: var(--transition);
+  margin-bottom: 0.5rem;
+}
+.sp-cta:hover { box-shadow: var(--shadow-glow); }
+.sp-similar-btn {
+  display: block;
+  width: 100%;
+  padding: 0.6rem;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: var(--transition);
+}
+.sp-similar-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+
+.ai-loading { color: var(--text-muted); font-style: italic; font-size: 0.85rem; }
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST, SCROLL-TOP, SPINNER, FOOTER
+   ═══════════════════════════════════════════════════════════ */
+#toast-container {
+  position: fixed;
+  top: 1rem; right: 1rem;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.toast {
+  padding: 0.7rem 1.1rem;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--success);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-size: 0.83rem;
+  box-shadow: var(--shadow);
+  transform: translateX(120%);
+  transition: transform 0.3s ease;
+}
+.toast.show { transform: translateX(0); }
+.toast.error { border-color: var(--danger); }
+.toast.warning { border-color: var(--warning); }
+
+#scroll-to-top {
+  position: fixed;
+  bottom: 2rem; right: 2rem;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  color: white;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--transition);
+  z-index: 500;
+  box-shadow: var(--shadow);
+}
+#scroll-to-top.visible { opacity: 1; visibility: visible; }
+#scroll-to-top:hover { transform: translateY(-3px); }
+
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.app-footer {
+  text-align: center;
+  padding: 2rem 0 1rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .filters-grid { grid-template-columns: 1fr 1fr; }
+  .galaxy-grid { grid-template-columns: repeat(3, 1fr); }
+  .gate-job-grid { grid-template-columns: repeat(3, 1fr); }
+  .orbit-grid { grid-template-columns: 1fr 1fr; }
+  .stars-grid { grid-template-columns: 1fr 1fr; }
+  .dash-cards { gap: 0.4rem; }
+  .dash-card { min-width: 90px; padding: 0.6rem 0.8rem; }
+  #side-panel { width: 100vw; }
+  .fab { padding: 0.5rem 1rem; gap: 0.5rem; font-size: 0.78rem; }
+}
+@media (max-width: 480px) {
+  .filters-grid { grid-template-columns: 1fr; }
+  .galaxy-grid { grid-template-columns: repeat(2, 1fr); }
+  .gate-job-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     GATE PAGE
+     ═══════════════════════════════════════════════════════════ -->
+<div id="gate-page">
+  <!-- Step 1: Subdomain -->
+  <div class="gate-step active" id="gate-step-1">
+    <div class="gate-rocket">🚀</div>
+    <h1 class="gate-title">Knowledge Voyage</h1>
+    <p class="gate-subtitle">지식의 우주 여행을 시작합니다</p>
+    <p class="gate-star-count">✦ 수만 개의 별이 당신을 기다리고 있습니다</p>
+
+    <div class="gate-input-group">
+      <label>🛸 모선 주소 입력</label>
+      <input type="text" class="gate-input" id="input-subdomain" placeholder="예: woongjin" />
+      <div class="gate-preview" id="subdomain-preview"></div>
+      <p class="hint">학습장 주소가 woongjin.udemy.com이면 "woongjin"만 입력</p>
+    </div>
+
+    <button class="btn-warp" id="btn-step1-next">다음 단계 →</button>
+
+    <div class="gate-history" id="gate-history"></div>
+  </div>
+
+  <!-- Step 2: Job Family -->
+  <div class="gate-step" id="gate-step-2">
+    <h2 class="gate-title" style="font-size:1.6rem;">🧭 항로를 선택하세요</h2>
+    <p class="gate-subtitle">관심 있는 직무를 고르면 맞춤 추천을 받을 수 있어요 (복수 선택 가능)</p>
+
+    <div class="gate-job-grid" id="gate-job-grid"></div>
+
+    <button class="btn-warp" id="btn-launch">🚀 우주 여행 출발!</button>
+    <button class="btn-skip" id="btn-skip">건너뛰기 — 자유 탐험</button>
+  </div>
+</div>
+
+<!-- Warp Transition -->
+<div class="warp-overlay" id="warp-overlay"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN APP
+     ═══════════════════════════════════════════════════════════ -->
+<div id="app-container">
+  <header class="app-header">
+    <h1>🚀 Knowledge Voyage</h1>
+    <p class="welcome" id="welcome-msg">탐험가님, <strong></strong> 우주에 도착했습니다!</p>
+  </header>
+
+  <!-- Dashboard Cards -->
+  <div class="dash-cards" id="dash-cards"></div>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="explore">🧭 우주 탐험</button>
+    <button class="tab-btn" data-tab="mission">🛸 미션 센터</button>
+    <button class="tab-btn" data-tab="stars">🌟 가장 밝은 별</button>
+  </nav>
+
+  <!-- ===== TAB: Explore ===== -->
+  <div class="tab-panel active" id="panel-explore">
+    <div class="scanner-section">
+      <div class="scanner-bar">
+        <div class="scanner-input-wrap">
+          <span class="scanner-icon">🔭</span>
+          <input type="text" class="scanner-input" id="search-input" placeholder="어떤 별을 찾고 계신가요?" />
+        </div>
+        <button class="btn-ai-scan" id="btn-ai-scan">🤖 AI 내비</button>
+      </div>
+      <div class="scanner-meta">
+        <div class="scan-mode-toggle">
+          <button class="scan-mode-btn active" data-mode="ai">🤖 AI 스캔</button>
+          <button class="scan-mode-btn" data-mode="or">광역 스캔 (OR)</button>
+          <button class="scan-mode-btn" data-mode="and">정밀 스캔 (AND)</button>
+        </div>
+        <div class="scan-results-count" id="results-count">발견된 별: <strong>0</strong>개</div>
+      </div>
+    </div>
+
+    <div class="active-filters" id="active-filters"></div>
+
+    <!-- AI Expand Panel -->
+    <div class="ai-panel" id="ai-panel">
+      <h4>🤖 AI 내비게이션 — 항로 계산 완료!</h4>
+      <div id="ai-panel-results"></div>
+      <div class="ai-panel-actions">
+        <button class="btn-apply-ai" id="btn-apply-ai">🚀 선택한 항로로 스캔</button>
+        <button id="btn-ai-select-all">전체 선택</button>
+        <button id="btn-ai-close">닫기</button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-toggle-bar" id="filters-toggle">
+      <span>⚙️ 상세 필터</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="filters-grid" id="filters-grid">
+      <div class="f-group">
+        <label>🌌 은하 (카테고리)</label>
+        <div class="ms-wrap" data-fid="f-category"><button class="ms-btn">모든 은하</button><div class="ms-panel"></div></div>
+      </div>
+      <div class="f-group">
+        <label>📊 등급 (난이도)</label>
+        <div class="ms-wrap" data-fid="f-difficulty"><button class="ms-btn">모든 등급</button><div class="ms-panel"></div></div>
+      </div>
+      <div class="f-group">
+        <label>🌐 언어</label>
+        <div class="ms-wrap" data-fid="f-language"><button class="ms-btn">모든 언어</button><div class="ms-panel"></div></div>
+      </div>
+      <div class="f-group">
+        <label>💬 자막</label>
+        <div class="ms-wrap" data-fid="f-subtitles"><button class="ms-btn">모든 자막</button><div class="ms-panel"></div></div>
+      </div>
+      <div class="f-group">
+        <label>✨ 속성</label>
+        <div class="ms-wrap" data-fid="f-attr"><button class="ms-btn">모든 강의</button><div class="ms-panel"></div></div>
+      </div>
+      <div class="f-group">
+        <label>📝 퀴즈</label>
+        <div class="ms-wrap" data-fid="f-quiz"><button class="ms-btn">모든 방식</button><div class="ms-panel"></div></div>
+      </div>
+      <div class="f-group">
+        <label>📈 정렬</label>
+        <select id="sort-select">
+          <option value="relevance">관련도순</option>
+          <option value="latest">최신순</option>
+          <option value="alpha">가나다순</option>
+        </select>
+      </div>
+      <div class="f-group">
+        <label>👀 표시</label>
+        <select id="rows-select">
+          <option value="15">15개</option>
+          <option value="25">25개</option>
+          <option value="50">50개</option>
+        </select>
+      </div>
+      <div class="f-actions">
+        <button id="btn-csv">📋 미션 보고서 (CSV)</button>
+        <button id="btn-share">🔗 공유 링크</button>
+        <button id="btn-reset">✨ 스캐너 초기화</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: Mission Center ===== -->
+  <div class="tab-panel" id="panel-mission">
+    <div class="mission-search">
+      <input type="search" id="mission-search" placeholder="🔍 직무명 검색 (예: 백엔드, 마케팅)" />
+    </div>
+    <h4 style="color:var(--text-secondary); margin-bottom:0.5rem;">은하 선택</h4>
+    <div class="galaxy-grid" id="galaxy-grid"></div>
+
+    <div class="level-bar">
+      <input type="radio" id="lv-all" name="lv" value="all" checked><label for="lv-all">🌱 전체</label>
+      <input type="radio" id="lv-rookie" name="lv" value="beginner"><label for="lv-rookie">🌱 루키</label>
+      <input type="radio" id="lv-veteran" name="lv" value="intermediate"><label for="lv-veteran">⚡ 베테랑</label>
+      <input type="radio" id="lv-master" name="lv" value="expert"><label for="lv-master">👑 마스터</label>
+    </div>
+
+    <h4 style="color:var(--text-secondary); margin-bottom:0.5rem;">항로 선택</h4>
+    <div class="orbit-grid" id="orbit-grid"></div>
+  </div>
+
+  <!-- ===== TAB: Brightest Stars ===== -->
+  <div class="tab-panel" id="panel-stars">
+    <div class="stars-section">
+      <h2>🌟 가장 밝게 빛나는 별들</h2>
+      <p class="subtitle">최근 업데이트된 강의 중 탐험가들이 주목하는 별입니다</p>
+      <div class="stars-toggle">
+        <button class="scan-mode-btn active" data-stars="subtitle">💬 한글 자막</button>
+        <button class="scan-mode-btn" data-stars="korean">🇰🇷 한국어 강의</button>
+      </div>
+      <div id="stars-content"></div>
+    </div>
+  </div>
+
+  <!-- ===== Course List (shared) ===== -->
+  <div class="list-section" id="list-section">
+    <div class="list-header">
+      <h2>📖 별 카탈로그</h2>
+      <div class="view-toggle">
+        <button class="view-btn active" data-view="table">📋</button>
+        <button class="view-btn" data-view="card">🃏</button>
+        <button class="view-btn" data-view="compact">📄</button>
+      </div>
+    </div>
+
+    <!-- Table View -->
+    <div class="table-wrap" id="view-table">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"><input type="checkbox" id="check-all" /></th>
+            <th>🌌</th>
+            <th>💡 주제</th>
+            <th>📖 강의명</th>
+            <th>ℹ️</th>
+            <th>🌐</th>
+            <th>💬</th>
+            <th>📊</th>
+            <th>👩‍🏫</th>
+            <th>✨</th>
+            <th>📝</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Card View -->
+    <div class="card-grid" id="view-card"></div>
+
+    <!-- Compact View -->
+    <div class="compact-list" id="view-compact"></div>
+
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- Floating Action Bar -->
+<div class="fab" id="fab">
+  <span id="fab-count">🛸 0개 별 선택</span>
+  <button class="btn-fab-csv" id="fab-csv">📋 미션 보고서</button>
+  <button id="fab-link">🔗 링크 복사</button>
+  <button id="fab-clear">✨ 해제</button>
+</div>
+
+<!-- Side Panel (Course Detail) -->
+<div id="side-panel-overlay">
+  <div id="side-panel">
+    <button class="sp-close" id="sp-close">&times;</button>
+    <h2 class="sp-title" id="sp-title"></h2>
+    <div class="sp-meta" id="sp-meta"></div>
+    <div id="sp-body"></div>
+  </div>
+</div>
+
+<!-- Scroll to top -->
+<button id="scroll-to-top">↑</button>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<!-- Footer -->
+<footer class="app-footer">
+  <p>🚀 Knowledge Voyage v2.0 — Udemy Business Course Curator</p>
+  <p>Powered by Udemy Business API + Gemini AI</p>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CURATION DATA (NCS-based Job Families)
+// ═══════════════════════════════════════════════════════════
+const CURATION = {
+  product: { name: "제품", emoji: "🚀", color: "#8b5cf6", roles: [
+    { id:"pm_po", name:"PM / PO", prompt:"PM PO product management 제품 관리 roadmap 로드맵 backlog 백로그 user story agile scrum", keywords:["Product Mgt","Roadmap","Backlog","Agile"], cats:["Business","IT & Software"] },
+    { id:"service_plan", name:"서비스 기획", prompt:"서비스 기획 service planning wireframe 와이어프레임 storyboard UI UX requirements", keywords:["기획서","Wireframe","UI/UX"], cats:["Business","Design"] }
+  ]},
+  development: { name: "IT/개발", emoji: "👨‍💻", color: "#3b82f6", roles: [
+    { id:"backend", name:"백엔드 개발", prompt:"backend 백엔드 server java spring python node.js API REST microservice", keywords:["Spring","Node.js","Java","Python"], cats:["Development"] },
+    { id:"frontend", name:"프론트엔드 개발", prompt:"frontend 프론트엔드 react vue angular typescript javascript CSS HTML", keywords:["React","Vue.js","TypeScript"], cats:["Development"] },
+    { id:"devops", name:"DevOps / SRE", prompt:"devops CI CD kubernetes docker aws terraform infrastructure", keywords:["DevOps","CI/CD","K8s","Docker"], cats:["IT & Software","Development"] },
+    { id:"qa", name:"QA", prompt:"QA quality assurance test automation selenium cypress", keywords:["QA","Test","Selenium"], cats:["IT & Software","Development"] },
+    { id:"infra", name:"인프라 / 클라우드", prompt:"infrastructure aws azure gcp cloud network linux", keywords:["AWS","Azure","GCP","Linux"], cats:["IT & Software"] },
+    { id:"security", name:"정보 보안", prompt:"security cybersecurity firewall isms penetration hacking", keywords:["보안","Cybersecurity","ISMS"], cats:["IT & Software"] }
+  ]},
+  data: { name: "데이터", emoji: "📊", color: "#06b6d4", roles: [
+    { id:"data_eng", name:"데이터 엔지니어", prompt:"data engineer etl pipeline airflow spark kafka", keywords:["ETL","Airflow","Spark"], cats:["IT & Software","Development"] },
+    { id:"data_analyst", name:"데이터 분석가", prompt:"data analyst sql tableau power bi pandas excel analytics", keywords:["SQL","Tableau","Pandas"], cats:["IT & Software","Business"] },
+    { id:"data_sci", name:"데이터 사이언티스트", prompt:"data scientist machine learning deep learning tensorflow pytorch", keywords:["ML","Deep Learning","TensorFlow"], cats:["IT & Software","Development"] }
+  ]},
+  ai: { name: "AI/자동화", emoji: "🤖", color: "#6366f1", roles: [
+    { id:"ai_eng", name:"AI 엔지니어", prompt:"AI artificial intelligence LLM GPT prompt engineering NLP computer vision", keywords:["AI","LLM","Prompt Eng","NLP"], cats:["IT & Software","Development"] },
+    { id:"rpa", name:"RPA / 업무자동화", prompt:"RPA robotic process automation uipath power automate zapier", keywords:["RPA","UiPath","Power Automate"], cats:["IT & Software","Business"] }
+  ]},
+  design: { name: "디자인", emoji: "🎨", color: "#ec4899", roles: [
+    { id:"uiux", name:"UI/UX 디자이너", prompt:"ui ux design figma wireframe prototype design system usability", keywords:["UI/UX","Figma","프로토타이핑"], cats:["Design"] },
+    { id:"visual", name:"브랜드/비주얼", prompt:"brand visual graphic design photoshop illustrator", keywords:["브랜딩","포토샵","일러스트"], cats:["Design"] }
+  ]},
+  marketing: { name: "마케팅", emoji: "📣", color: "#f59e0b", roles: [
+    { id:"perf_mkt", name:"퍼포먼스 마케팅", prompt:"performance marketing google ads facebook ads seo sem analytics ROAS", keywords:["퍼포먼스","GA4","SEO","ROAS"], cats:["Marketing","Business"] },
+    { id:"content_mkt", name:"콘텐츠 마케팅", prompt:"content marketing brand copywriting sns social media", keywords:["콘텐츠","브랜딩","카피라이팅"], cats:["Marketing"] },
+    { id:"growth", name:"그로스 마케팅", prompt:"growth marketing funnel conversion CRO AB test retention", keywords:["Growth","Funnel","CRO"], cats:["Marketing","Business"] }
+  ]},
+  sales: { name: "영업/CS", emoji: "🤝", color: "#10b981", roles: [
+    { id:"b2b", name:"B2B 영업", prompt:"b2b sales negotiation proposal salesforce CRM", keywords:["B2B Sales","협상","CRM"], cats:["Business"] },
+    { id:"cs", name:"Customer Success", prompt:"customer success csm onboarding churn retention", keywords:["CS","온보딩","Churn"], cats:["Business"] }
+  ]},
+  management: { name: "경영지원", emoji: "💼", color: "#8b5cf6", roles: [
+    { id:"hr", name:"인사 (HRM/HRD)", prompt:"hr hrm hrd recruiting evaluation compensation talent management", keywords:["HRM","HRD","채용","평가보상"], cats:["Business"] },
+    { id:"finance", name:"재무/회계", prompt:"finance accounting tax budgeting financial analysis", keywords:["재무","회계","세무"], cats:["Finance & Accounting"] },
+    { id:"strategy", name:"전략/기획", prompt:"strategy planning market research okr business model", keywords:["전략기획","시장조사","OKR"], cats:["Business"] },
+    { id:"ga_legal", name:"총무/법무", prompt:"general affairs purchasing legal contract compliance", keywords:["총무","구매","법무"], cats:["Business"] }
+  ]},
+  leadership: { name: "리더십/공통", emoji: "👑", color: "#f97316", roles: [
+    { id:"leadership", name:"리더십", prompt:"leadership management coaching team delegation", keywords:["리더십","매니지먼트","코칭"], cats:["Business","Personal Development"] },
+    { id:"comm", name:"커뮤니케이션", prompt:"communication presentation negotiation writing business english", keywords:["커뮤니케이션","프레젠테이션","비즈니스영어"], cats:["Business","Personal Development"] },
+    { id:"productivity", name:"생산성", prompt:"productivity time management excel powerpoint project management", keywords:["생산성","Excel","PPT","프로젝트관리"], cats:["Office Productivity","Business"] }
+  ]}
+};
+
+// Basic Korean-English translation map (for non-AI search)
+const KO_EN_MAP = {
+  '마케팅':['marketing'],'개발':['development','programming'],'디자인':['design'],
+  '리더십':['leadership'],'데이터':['data'],'분석':['analysis','analytics'],
+  '관리':['management'],'영업':['sales'],'회계':['accounting'],'재무':['finance'],
+  '인사':['hr','human resources'],'보안':['security','cybersecurity'],
+  '클라우드':['cloud','aws','azure'],'프로젝트':['project'],
+  '커뮤니케이션':['communication'],'프레젠테이션':['presentation'],
+  '엑셀':['excel'],'파이썬':['python'],'자바':['java'],'파워포인트':['powerpoint'],
+  '기획':['planning','strategy'],'협상':['negotiation'],'채용':['recruiting','hiring'],
+  '자동화':['automation'],'생산성':['productivity']
+};
+
+// Category color map
+const CAT_COLORS = {
+  'Development':'#3b82f6','IT & Software':'#6366f1','Business':'#8b5cf6',
+  'Marketing':'#f59e0b','Design':'#ec4899','Finance & Accounting':'#10b981',
+  'Personal Development':'#f97316','Office Productivity':'#06b6d4',
+  'Photography & Video':'#f43f5e','Health & Fitness':'#22c55e',
+  'Music':'#a855f7','Teaching & Academics':'#0ea5e9','Lifestyle':'#14b8a6'
+};
+const getCatColor = (cat) => { if(!cat) return 'var(--accent)'; for(const k in CAT_COLORS) { if(cat.includes(k)) return CAT_COLORS[k]; } return 'var(--accent)'; };
+const CAT_EMOJIS = {'Development':'👨‍💻','IT & Software':'⚙️','Business':'💼','Finance & Accounting':'🧾','Marketing':'📣','Office Productivity':'📊','Personal Development':'🧠','Design':'🎨','Lifestyle':'🧘','Photography & Video':'🎬','Health & Fitness':'💪','Music':'🎧','Teaching & Academics':'📚'};
+const getCatEmoji = (cat) => { if(!cat) return '📁'; for(const k in CAT_EMOJIS) { if(cat.includes(k)) return CAT_EMOJIS[k]; } return '📁'; };
+
+const LANG_MAP = {'en':'English','ko':'한국어','ja':'日本語','zh':'中文','es':'Español','fr':'Français','de':'Deutsch','pt':'Português','ru':'Русский','it':'Italiano','tr':'Türkçe','ar':'العربية'};
+const mapLang = (c) => { if(!c) return 'N/A'; const k=c.toLowerCase().split('_')[0]; return LANG_MAP[k]||c; };
+
+const NEW_MONTHS = 3;
+const isNew = (d) => { if(!d) return false; const u=new Date(d), t=new Date(); t.setMonth(t.getMonth()-NEW_MONTHS); return u>=t; };
+const stripHtml = (h) => { const d=document.createElement('div'); d.innerHTML=h||''; return d.textContent||''; };
+
+// ═══════════════════════════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════════════════════════
+const S = {
+  subdomain: '',
+  selectedFamilies: [],
+  courses: [],
+  filtered: [],
+  page: 1,
+  rows: 15,
+  searchMode: 'ai', // 'ai', 'or', 'and'
+  viewMode: 'table',
+  selectedIds: new Set(),
+  syncedAt: null,
+  currentGalaxy: 'development',
+  starsMode: 'subtitle',
+};
+
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+// ═══════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast ${type==='error'?'error':type==='warning'?'warning':''}`;
+  t.textContent = msg;
+  $('#toast-container').appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// GATE PAGE
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Load saved subdomain
+  const saved = localStorage.getItem('kv_subdomain');
+  if (saved) {
+    $('#input-subdomain').value = saved;
+    $('#gate-history').innerHTML = `💡 이전 모선: <a id="quick-launch">${saved}</a>`;
+    $('#quick-launch')?.addEventListener('click', () => { $('#input-subdomain').value = saved; goStep2(); });
+  }
+
+  // Subdomain preview
+  $('#input-subdomain').addEventListener('input', () => {
+    const v = $('#input-subdomain').value.trim();
+    $('#subdomain-preview').textContent = v ? `✅ ${v}.udemy.com 연결 확인` : '';
+  });
+
+  // Step 1 → Step 2
+  $('#btn-step1-next').addEventListener('click', goStep2);
+  $('#input-subdomain').addEventListener('keyup', e => { if(e.key==='Enter') goStep2(); });
+
+  // Build job family grid
+  const grid = $('#gate-job-grid');
+  Object.entries(CURATION).forEach(([id, data]) => {
+    const card = document.createElement('div');
+    card.className = 'gate-job-card';
+    card.dataset.family = id;
+    card.innerHTML = `<span class="emoji">${data.emoji}</span><span class="label">${data.name}</span>`;
+    card.addEventListener('click', () => card.classList.toggle('selected'));
+    grid.appendChild(card);
+  });
+
+  // Launch
+  $('#btn-launch').addEventListener('click', launch);
+  $('#btn-skip').addEventListener('click', launch);
+
+  // Scroll to top
+  window.addEventListener('scroll', () => { $('#scroll-to-top').classList.toggle('visible', window.scrollY > 300); });
+  $('#scroll-to-top').addEventListener('click', () => window.scrollTo({top:0,behavior:'smooth'}));
+});
+
+function goStep2() {
+  const sub = $('#input-subdomain').value.trim();
+  if (!sub) { toast('모선 주소를 입력해주세요.', 'error'); return; }
+  S.subdomain = sub;
+  localStorage.setItem('kv_subdomain', sub);
+  $('#gate-step-1').classList.remove('active');
+  $('#gate-step-2').classList.add('active');
+}
+
+async function launch() {
+  S.selectedFamilies = [...$$('.gate-job-card.selected')].map(c => c.dataset.family);
+
+  // Warp animation
+  const warp = $('#warp-overlay');
+  warp.classList.add('active');
+
+  // Load data
+  try {
+    const res = await fetch('/api/courses');
+    const data = await res.json();
+
+    if (data.syncing || !data.courses || data.courses.length === 0) {
+      // First sync — wait and retry
+      toast('🌌 첫 동기화 중... 잠시만 기다려주세요.', 'warning');
+      await new Promise(r => setTimeout(r, 5000));
+      const res2 = await fetch('/api/courses');
+      const data2 = await res2.json();
+      if (data2.courses?.length > 0) {
+        S.courses = processCourses(data2.courses);
+        S.syncedAt = data2.syncedAt;
+      } else {
+        toast('동기화가 진행 중입니다. 1-2분 후 새로고침해주세요.', 'warning');
+      }
+    } else {
+      S.courses = processCourses(data.courses);
+      S.syncedAt = data.syncedAt;
+    }
+  } catch (e) {
+    console.error(e);
+    toast('데이터 로드 실패: ' + e.message, 'error');
+  }
+
+  // Transition
+  setTimeout(() => {
+    warp.classList.remove('active');
+    warp.style.display = 'none';
+    $('#gate-page').style.display = 'none';
+    $('#app-container').style.display = 'block';
+
+    initApp();
+    toast(`🌌 탐험가님, ${S.subdomain} 우주에 도착했습니다! ${S.courses.length.toLocaleString()}개의 별이 빛나고 있습니다.`);
+  }, 1000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// DATA PROCESSING
+// ═══════════════════════════════════════════════════════════
+function processCourses(raw) {
+  return raw.map(c => ({
+    ...c,
+    language: mapLang(c.language),
+    subtitles: c.subtitles && c.subtitles !== '없음'
+      ? c.subtitles.split(',').map(s => mapLang(s.trim())).join(', ')
+      : '없음',
+    isNew: isNew(c.lastUpdated),
+    _search: `${c.title} ${c.headline} ${c.description} ${c.objectives} ${c.category} ${c.topic} ${c.instructor}`.toLowerCase(),
+  }));
+}
+
+function getUnique(field, split=false) {
+  const vals = new Set();
+  S.courses.forEach(c => {
+    if (!c[field] || c[field]==='없음' || c[field]==='N/A') return;
+    if (split) c[field].split(',').forEach(v => { const t=v.trim(); if(t) vals.add(t); });
+    else vals.add(c[field]);
+  });
+  const arr = [...vals];
+  const pri = ['한국어','English'];
+  return arr.sort((a,b) => {
+    const ai=pri.indexOf(a), bi=pri.indexOf(b);
+    if(ai!==-1&&bi!==-1) return ai-bi;
+    if(ai!==-1) return -1;
+    if(bi!==-1) return 1;
+    return a.localeCompare(b);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// SCORING
+// ═══════════════════════════════════════════════════════════
+function scoreKeyword(course, kw) {
+  let score = 0;
+  const kwl = kw.toLowerCase();
+  if (course.title && course.title.toLowerCase().includes(kwl)) score += 40;
+  if (course.category && course.category.toLowerCase().includes(kwl)) score += 30;
+  if (course.headline && course.headline.toLowerCase().includes(kwl)) score += 20;
+  if (course.objectives && course.objectives.toLowerCase().includes(kwl)) score += 15;
+  if (course.description && course.description.toLowerCase().includes(kwl)) score += 10;
+  if (course.topic && course.topic.toLowerCase().includes(kwl)) score += 10;
+  if (course.isNew) score += 5;
+  if (course.subtitles && course.subtitles.includes('한국어')) score += 5;
+  return score;
+}
+
+function expandKeywordsLocal(keywords) {
+  const expanded = [...keywords];
+  keywords.forEach(kw => {
+    const mapped = KO_EN_MAP[kw];
+    if (mapped) expanded.push(...mapped);
+  });
+  return [...new Set(expanded)];
+}
+
+// ═══════════════════════════════════════════════════════════
+// APP INIT
+// ═══════════════════════════════════════════════════════════
+function initApp() {
+  // Welcome
+  $('#welcome-msg').innerHTML = S.selectedFamilies.length > 0
+    ? `${S.selectedFamilies.map(f => CURATION[f]?.emoji||'').join('')} 탐험가님, <strong>${S.subdomain}</strong> 우주에 도착했습니다!`
+    : `탐험가님, <strong>${S.subdomain}</strong> 우주에 도착했습니다!`;
+
+  // Dashboard cards
+  renderDashCards();
+
+  // Init filters
+  initMultiSelects();
+
+  // Apply default filters from selected families
+  if (S.selectedFamilies.length > 0) {
+    const defaultCats = new Set();
+    S.selectedFamilies.forEach(f => {
+      CURATION[f]?.roles.forEach(r => r.cats.forEach(c => defaultCats.add(c)));
+    });
+    setMSValues('f-category', [...defaultCats]);
+  }
+
+  // Tab events
+  $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+
+  // Search
+  let debounce;
+  $('#search-input').addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(applyFilters, 300); });
+
+  // Scan mode
+  $$('.scan-mode-btn[data-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.scan-mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      S.searchMode = btn.dataset.mode;
+      applyFilters();
+    });
+  });
+
+  // AI scan button
+  $('#btn-ai-scan').addEventListener('click', handleAIScan);
+
+  // AI panel buttons
+  $('#btn-apply-ai').addEventListener('click', applyAIKeywords);
+  $('#btn-ai-select-all').addEventListener('click', () => $$('#ai-panel-results .ai-kw-tag').forEach(t => t.classList.add('selected')));
+  $('#btn-ai-close').addEventListener('click', () => $('#ai-panel').classList.remove('open'));
+
+  // Filters toggle
+  $('#filters-toggle').addEventListener('click', () => {
+    $('#filters-toggle').classList.toggle('open');
+    $('#filters-grid').classList.toggle('open');
+  });
+
+  // Sort, rows
+  $('#sort-select').addEventListener('change', applyFilters);
+  $('#rows-select').addEventListener('change', () => { S.rows = parseInt($('#rows-select').value); S.page = 1; renderList(); });
+
+  // Buttons
+  $('#btn-csv').addEventListener('click', downloadCSV);
+  $('#btn-share').addEventListener('click', shareLink);
+  $('#btn-reset').addEventListener('click', resetAll);
+
+  // View toggle
+  $$('.view-btn').forEach(btn => btn.addEventListener('click', () => {
+    $$('.view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    S.viewMode = btn.dataset.view;
+    renderList();
+  }));
+
+  // Check all
+  $('#check-all').addEventListener('change', (e) => {
+    const pageIds = getPageData().map(c => c.id);
+    if (e.target.checked) pageIds.forEach(id => S.selectedIds.add(id));
+    else pageIds.forEach(id => S.selectedIds.delete(id));
+    renderList();
+    updateFAB();
+  });
+
+  // FAB buttons
+  $('#fab-csv').addEventListener('click', () => downloadCSV(true));
+  $('#fab-link').addEventListener('click', () => {
+    const links = [...S.selectedIds].map(id => {
+      const c = S.courses.find(x => x.id === id);
+      return c ? buildCourseUrl(c) : '';
+    }).filter(Boolean);
+    navigator.clipboard.writeText(links.join('\n'));
+    toast(`🔗 ${links.length}개 별의 좌표가 복사되었습니다.`);
+  });
+  $('#fab-clear').addEventListener('click', () => { S.selectedIds.clear(); renderList(); updateFAB(); });
+
+  // Side panel
+  $('#side-panel-overlay').addEventListener('click', (e) => { if(e.target === $('#side-panel-overlay')) closeSidePanel(); });
+  $('#sp-close').addEventListener('click', closeSidePanel);
+  document.addEventListener('keydown', e => { if(e.key==='Escape') closeSidePanel(); });
+
+  // Multi-select close on outside click
+  window.addEventListener('click', e => { if(!e.target.closest('.ms-wrap')) $$('.ms-panel').forEach(p => p.classList.remove('open')); });
+
+  // Mission center
+  initMissionCenter();
+
+  // Stars
+  initStars();
+
+  // Check URL params for shared link
+  applyURLParams();
+
+  // First filter
+  applyFilters();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD CARDS
+// ═══════════════════════════════════════════════════════════
+function renderDashCards() {
+  const total = S.courses.length;
+  const korean = S.courses.filter(c => c.language === '한국어').length;
+  const newCount = S.courses.filter(c => c.isNew).length;
+  const cats = new Set(S.courses.map(c => c.category?.split(',')[0]?.trim()).filter(Boolean));
+  const quiz = S.courses.filter(c => c.quiz).length;
+
+  const cards = [
+    { icon:'🌟', value: total, label:'전체 별', action: () => { resetAll(); } },
+    { icon:'🇰🇷', value: korean, label:'한국어 별', action: () => { setMSValues('f-language',['한국어']); applyFilters(); } },
+    { icon:'✨', value: newCount, label:'신규 별', action: () => { setMSValues('f-attr',['NEW']); applyFilters(); } },
+    { icon:'🌌', value: cats.size, label:'은하 수' },
+    { icon:'📝', value: quiz, label:'퀴즈 별', action: () => { setMSValues('f-quiz',['QUIZ']); applyFilters(); } },
+  ];
+
+  const container = $('#dash-cards');
+  container.innerHTML = cards.map((c,i) => `
+    <div class="dash-card" data-idx="${i}">
+      <span class="icon">${c.icon}</span>
+      <span class="value" data-target="${c.value}">0</span>
+      <span class="label">${c.label}</span>
+    </div>
+  `).join('');
+
+  // Count-up animation
+  container.querySelectorAll('.dash-card').forEach((card, i) => {
+    const target = parseInt(card.querySelector('.value').dataset.target);
+    animateCount(card.querySelector('.value'), target, 1200);
+    if (cards[i].action) card.addEventListener('click', cards[i].action);
+    card.style.cursor = cards[i].action ? 'pointer' : 'default';
+  });
+}
+
+function animateCount(el, target, duration) {
+  const start = performance.now();
+  const step = (now) => {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    el.textContent = Math.floor(eased * target).toLocaleString();
+    if (progress < 1) requestAnimationFrame(step);
+    else el.textContent = target.toLocaleString();
+  };
+  requestAnimationFrame(step);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MULTI-SELECT FILTERS
+// ═══════════════════════════════════════════════════════════
+function initMultiSelects() {
+  populateMS('f-category', getUnique('category', true), true);
+  populateMS('f-difficulty', ['Beginner','Intermediate','Expert','All Levels']);
+  populateMS('f-language', getUnique('language'));
+  populateMS('f-subtitles', getUnique('subtitles', true));
+  populateMS('f-attr', [{v:'NEW',l:'✨ NEW'}]);
+  populateMS('f-quiz', [{v:'QUIZ',l:'📝 퀴즈'}]);
+}
+
+function populateMS(fid, items, showEmoji=false) {
+  const wrap = $(`[data-fid="${fid}"]`);
+  if(!wrap) return;
+  const panel = wrap.querySelector('.ms-panel');
+  const btn = wrap.querySelector('.ms-btn');
+
+  panel.innerHTML = items.map(item => {
+    const v = typeof item==='object' ? item.v : item;
+    const l = typeof item==='object' ? item.l : (showEmoji ? `${getCatEmoji(item)} ${item}` : item);
+    return `<div class="ms-item"><label><input type="checkbox" value="${v}"><span>${l}</span></label></div>`;
+  }).join('');
+
+  btn.onclick = e => { e.stopPropagation(); $$('.ms-panel').forEach(p => { if(p!==panel) p.classList.remove('open'); }); panel.classList.toggle('open'); };
+  panel.addEventListener('change', () => { updateMSBtn(fid); applyFilters(); });
+}
+
+function updateMSBtn(fid) {
+  const wrap = $(`[data-fid="${fid}"]`);
+  if(!wrap) return;
+  const btn = wrap.querySelector('.ms-btn');
+  const checked = wrap.querySelectorAll('input:checked');
+  const defaults = {'f-category':'모든 은하','f-difficulty':'모든 등급','f-language':'모든 언어','f-subtitles':'모든 자막','f-attr':'모든 강의','f-quiz':'모든 방식'};
+  if(checked.length===0) btn.textContent = defaults[fid]||'선택';
+  else if(checked.length===1) btn.textContent = checked[0].value;
+  else btn.textContent = `${checked[0].value} 외 ${checked.length-1}개`;
+}
+
+function getMSValues(fid) {
+  const wrap = $(`[data-fid="${fid}"]`);
+  if(!wrap) return [];
+  return [...wrap.querySelectorAll('input:checked')].map(cb => cb.value);
+}
+
+function setMSValues(fid, values) {
+  const wrap = $(`[data-fid="${fid}"]`);
+  if(!wrap) return;
+  wrap.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = values.includes(cb.value); });
+  updateMSBtn(fid);
+}
+
+// ═══════════════════════════════════════════════════════════
+// FILTERING & SCORING
+// ═══════════════════════════════════════════════════════════
+function applyFilters() {
+  const cats = getMSValues('f-category');
+  const diffs = getMSValues('f-difficulty');
+  const langs = getMSValues('f-language');
+  const subs = getMSValues('f-subtitles');
+  const attrs = getMSValues('f-attr');
+  const quizF = getMSValues('f-quiz');
+  const sort = $('#sort-select').value;
+  const searchText = $('#search-input').value.trim();
+
+  let filtered = [...S.courses];
+
+  // Category (OR within)
+  if(cats.length>0) filtered = filtered.filter(c => cats.some(cat => c.category?.includes(cat)));
+  if(diffs.length>0) filtered = filtered.filter(c => diffs.includes(c.difficulty));
+  if(langs.length>0) filtered = filtered.filter(c => langs.includes(c.language));
+  if(subs.length>0) filtered = filtered.filter(c => subs.some(sub => c.subtitles?.includes(sub)));
+  if(attrs.includes('NEW')) filtered = filtered.filter(c => c.isNew);
+  if(quizF.includes('QUIZ')) filtered = filtered.filter(c => c.quiz);
+
+  // Keyword search with scoring
+  if(searchText) {
+    let keywords = searchText.split(/[,\s]+/).map(k => k.trim().toLowerCase()).filter(k => k.length>0);
+
+    // Expand with local translations (for non-AI modes too)
+    keywords = expandKeywordsLocal(keywords);
+
+    if(S.searchMode === 'and') {
+      filtered = filtered.filter(c => keywords.every(kw => c._search.includes(kw)));
+    } else {
+      filtered = filtered.filter(c => keywords.some(kw => c._search.includes(kw)));
+    }
+
+    // Score
+    filtered.forEach(c => {
+      c._score = 0;
+      keywords.forEach(kw => { c._score += scoreKeyword(c, kw); });
+    });
+  } else {
+    filtered.forEach(c => { c._score = 0; });
+  }
+
+  // Sort
+  switch(sort) {
+    case 'relevance': filtered.sort((a,b) => (b._score||0) - (a._score||0)); break;
+    case 'latest': filtered.sort((a,b) => { const da=a.lastUpdated?new Date(a.lastUpdated):new Date(0); const db=b.lastUpdated?new Date(b.lastUpdated):new Date(0); return db-da; }); break;
+    case 'alpha': filtered.sort((a,b) => (a.title||'').localeCompare(b.title||'')); break;
+  }
+
+  S.filtered = filtered;
+  S.page = 1;
+
+  renderActiveFilters();
+  $('#results-count').innerHTML = `발견된 별: <strong>${filtered.length.toLocaleString()}</strong>개`;
+  renderList();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACTIVE FILTER CHIPS
+// ═══════════════════════════════════════════════════════════
+function renderActiveFilters() {
+  const container = $('#active-filters');
+  let html = '';
+  const add = (fid, vals, label) => vals.forEach(v => {
+    html += `<span class="filter-chip">${label}: ${v} <button class="filter-chip-x" data-fid="${fid}" data-val="${v}">×</button></span>`;
+  });
+  add('f-category', getMSValues('f-category'), '은하');
+  add('f-difficulty', getMSValues('f-difficulty'), '등급');
+  add('f-language', getMSValues('f-language'), '언어');
+  add('f-subtitles', getMSValues('f-subtitles'), '자막');
+  add('f-attr', getMSValues('f-attr'), '속성');
+  add('f-quiz', getMSValues('f-quiz'), '방식');
+  const q = $('#search-input').value.trim();
+  if(q) html += `<span class="filter-chip">검색: ${q} (${S.searchMode.toUpperCase()}) <button class="filter-chip-x" data-fid="search" data-val="">×</button></span>`;
+  container.innerHTML = html;
+
+  container.querySelectorAll('.filter-chip-x').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.dataset.fid==='search') { $('#search-input').value=''; }
+      else {
+        const wrap = $(`[data-fid="${btn.dataset.fid}"]`);
+        if(wrap) { const cb = wrap.querySelector(`input[value="${btn.dataset.val}"]`); if(cb) cb.checked=false; updateMSBtn(btn.dataset.fid); }
+      }
+      applyFilters();
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// BUILD COURSE URL
+// ═══════════════════════════════════════════════════════════
+function buildCourseUrl(course) {
+  // URL format: {subdomain}.udemy.com/course/{slug}/
+  if (course.url) {
+    // course.url might be absolute or relative
+    const urlStr = course.url;
+    // Extract path after /course/
+    const match = urlStr.match(/\/course\/(.+)/);
+    if (match) return `https://${S.subdomain}.udemy.com/course/${match[1]}`;
+    // If it's just a slug
+    if (!urlStr.includes('/')) return `https://${S.subdomain}.udemy.com/course/${urlStr}/`;
+    // Fallback: replace subdomain
+    return urlStr.replace(/https?:\/\/[^/]+/, `https://${S.subdomain}.udemy.com`);
+  }
+  return `https://${S.subdomain}.udemy.com/course/${course.id}/`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER LIST (Table / Card / Compact)
+// ═══════════════════════════════════════════════════════════
+function getPageData() {
+  const start = (S.page - 1) * S.rows;
+  return S.filtered.slice(start, start + S.rows);
+}
+
+function renderList() {
+  const data = getPageData();
+
+  // Hide/show views
+  $('#view-table').style.display = S.viewMode==='table' ? '' : 'none';
+  $('#view-card').className = `card-grid ${S.viewMode==='card'?'active':''}`;
+  $('#view-compact').className = `compact-list ${S.viewMode==='compact'?'active':''}`;
+
+  if(data.length === 0) {
+    const empty = `<div class="empty-state"><h3>😅 발견된 별이 없습니다</h3><p>스캐너 설정을 변경해보세요.</p></div>`;
+    $('#table-body').innerHTML = `<tr><td colspan="11">${empty}</td></tr>`;
+    $('#view-card').innerHTML = empty;
+    $('#view-compact').innerHTML = empty;
+    $('#pagination').innerHTML = '';
+    return;
+  }
+
+  // Table
+  $('#table-body').innerHTML = data.map(c => {
+    const url = buildCourseUrl(c);
+    const cat = c.category?.split(',')[0]?.trim() || 'N/A';
+    const color = getCatColor(cat);
+    const checked = S.selectedIds.has(c.id) ? 'checked' : '';
+    const starScore = c._score > 0 ? (c._score >= 80 ? '⭐⭐⭐' : c._score >= 50 ? '⭐⭐' : c._score >= 20 ? '⭐' : '✦') : '';
+
+    return `<tr style="--row-cat-color:${color}">
+      <td class="col-check"><input type="checkbox" data-id="${c.id}" ${checked} /></td>
+      <td><span class="cat-badge" style="border-color:${color}33;color:${color}">${getCatEmoji(cat)} ${cat}</span></td>
+      <td>${c.topic||'-'}</td>
+      <td><a href="${url}" target="_blank" class="course-link">${c.title}</a> ${starScore ? `<span class="star-score">${starScore}</span>` : ''}</td>
+      <td><button class="detail-btn" data-id="${c.id}">📋</button></td>
+      <td>${c.language}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.subtitles}">${c.subtitles}</td>
+      <td>${c.difficulty}</td>
+      <td>${c.instructor?.split(',')[0]?.trim()||'-'}</td>
+      <td>${c.isNew?'<span class="badge-new">✨NEW</span>':''}</td>
+      <td>${c.quiz?'📝':''}</td>
+    </tr>`;
+  }).join('');
+
+  // Card
+  $('#view-card').innerHTML = data.map((c,i) => {
+    const url = buildCourseUrl(c);
+    const cat = c.category?.split(',')[0]?.trim() || 'N/A';
+    const color = getCatColor(cat);
+    return `<div class="course-card" style="animation-delay:${i*40}ms;--card-cat-color:${color}">
+      <div class="card-cat-stripe"></div>
+      <span class="cat-badge" style="border-color:${color}33;color:${color}">${getCatEmoji(cat)} ${cat}</span>
+      <h4>${c.title}</h4>
+      <div class="card-meta">${c.instructor?.split(',')[0]?.trim()||''} · ${c.difficulty} · ${c.language}</div>
+      <div class="card-tags">
+        ${c.isNew?'<span class="badge-new">✨NEW</span>':''}
+        ${c.quiz?'<span class="cat-badge">📝 퀴즈</span>':''}
+      </div>
+      <a href="${url}" target="_blank" class="card-cta">🚀 워프 점프 →</a>
+    </div>`;
+  }).join('');
+
+  // Compact
+  $('#view-compact').innerHTML = data.map(c => {
+    const url = buildCourseUrl(c);
+    const cat = c.category?.split(',')[0]?.trim() || '';
+    return `<div class="compact-item">
+      <input type="checkbox" data-id="${c.id}" ${S.selectedIds.has(c.id)?'checked':''} style="accent-color:var(--accent)" />
+      <span class="cat-badge" style="font-size:0.7rem">${getCatEmoji(cat)}</span>
+      <span class="compact-title"><a href="${url}" target="_blank">${c.title}</a></span>
+      <span style="font-size:0.75rem;color:var(--text-muted)">${c.difficulty}</span>
+      <span style="font-size:0.75rem;color:var(--text-muted)">${c.language}</span>
+    </div>`;
+  }).join('');
+
+  // Checkbox events (event delegation)
+  document.querySelectorAll('#table-body input[type="checkbox"], #view-compact input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if(cb.checked) S.selectedIds.add(cb.dataset.id);
+      else S.selectedIds.delete(cb.dataset.id);
+      updateFAB();
+    });
+  });
+
+  // Detail button events
+  document.querySelectorAll('.detail-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const course = S.courses.find(c => c.id === btn.dataset.id);
+      if(course) openSidePanel(course);
+    });
+  });
+
+  renderPagination();
+  updateFAB();
+}
+
+// ═══════════════════════════════════════════════════════════
+// PAGINATION
+// ═══════════════════════════════════════════════════════════
+function renderPagination() {
+  const container = $('#pagination');
+  const totalPages = Math.ceil(S.filtered.length / S.rows);
+  if(totalPages <= 1) { container.innerHTML = ''; return; }
+
+  let html = `<button ${S.page===1?'disabled':''} data-p="${S.page-1}">◀</button>`;
+  const max = 7;
+  let start = Math.max(1, S.page - Math.floor(max/2));
+  let end = Math.min(totalPages, start + max - 1);
+  if(end-start < max-1) start = Math.max(1, end-max+1);
+
+  if(start>1) { html += `<button data-p="1">1</button>`; if(start>2) html += `<button disabled>…</button>`; }
+  for(let i=start;i<=end;i++) html += `<button class="${i===S.page?'active':''}" data-p="${i}">${i}</button>`;
+  if(end<totalPages) { if(end<totalPages-1) html += `<button disabled>…</button>`; html += `<button data-p="${totalPages}">${totalPages}</button>`; }
+  html += `<button ${S.page===totalPages?'disabled':''} data-p="${S.page+1}">▶</button>`;
+
+  container.innerHTML = html;
+  container.querySelectorAll('button:not([disabled])').forEach(btn => {
+    btn.addEventListener('click', () => { S.page = parseInt(btn.dataset.p); renderList(); $('#list-section').scrollIntoView({behavior:'smooth'}); });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// FLOATING ACTION BAR
+// ═══════════════════════════════════════════════════════════
+function updateFAB() {
+  const fab = $('#fab');
+  if(S.selectedIds.size > 0) {
+    fab.classList.add('visible');
+    $('#fab-count').textContent = `🛸 ${S.selectedIds.size}개 별 선택`;
+  } else {
+    fab.classList.remove('visible');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI SCAN
+// ═══════════════════════════════════════════════════════════
+async function handleAIScan() {
+  const query = $('#search-input').value.trim();
+  if(!query) { toast('검색어를 먼저 입력해주세요.', 'warning'); return; }
+
+  const btn = $('#btn-ai-scan');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> AI 내비 계산 중...';
+
+  try {
+    const res = await fetch('/api/ai-expand', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        query,
+        jobContext: S.selectedFamilies.map(f => CURATION[f]?.name).join(', ')
+      })
+    });
+    const data = await res.json();
+
+    if(data.success && data.data) {
+      renderAIPanel(data.data);
+      toast(`🤖 AI 내비가 새로운 항로를 발견했습니다!`);
+    } else {
+      toast('AI 내비 응답 오류', 'error');
+    }
+  } catch(e) {
+    toast('AI 내비 통신 실패: ' + e.message, 'error');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🤖 AI 내비';
+}
+
+function renderAIPanel(data) {
+  const panel = $('#ai-panel');
+  const results = $('#ai-panel-results');
+
+  const renderGroup = (label, keywords) => {
+    if(!keywords?.length) return '';
+    return `<div class="ai-kw-group"><div class="group-label">${label}</div><div class="ai-kw-tags">
+      ${keywords.map(kw => `<span class="ai-kw-tag selected" data-kw="${kw}">${kw}</span>`).join('')}
+    </div></div>`;
+  };
+
+  results.innerHTML =
+    renderGroup('🌐 영문 항로', data.english_keywords) +
+    renderGroup('🇰🇷 한글 항로', data.korean_keywords) +
+    renderGroup('📂 세부 항로', data.sub_topics) +
+    renderGroup('🔧 도구 항로', data.related_tools) +
+    renderGroup('🔍 추천 검색어', data.recommended_queries);
+
+  panel.classList.add('open');
+
+  results.querySelectorAll('.ai-kw-tag').forEach(tag => {
+    tag.addEventListener('click', () => tag.classList.toggle('selected'));
+  });
+}
+
+function applyAIKeywords() {
+  const selected = [...$$('#ai-panel-results .ai-kw-tag.selected')].map(t => t.dataset.kw);
+  if(selected.length===0) { toast('키워드를 하나 이상 선택해주세요.', 'warning'); return; }
+
+  $('#search-input').value = selected.join(', ');
+  $$('.scan-mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+  $('.scan-mode-btn[data-mode="or"]').classList.add('active');
+  S.searchMode = 'or';
+
+  $('#ai-panel').classList.remove('open');
+  applyFilters();
+  toast(`🤖 ${selected.length}개 항로로 스캔합니다.`);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SIDE PANEL (Course Detail)
+// ═══════════════════════════════════════════════════════════
+function openSidePanel(course) {
+  const url = buildCourseUrl(course);
+  $('#sp-title').textContent = course.title;
+
+  const cat = course.category?.split(',')[0]?.trim() || 'N/A';
+  $('#sp-meta').innerHTML = `
+    <span class="sp-meta-tag">🌌 ${cat}</span>
+    <span class="sp-meta-tag">📊 ${course.difficulty}</span>
+    <span class="sp-meta-tag">🌐 ${course.language}</span>
+    <span class="sp-meta-tag">💬 ${course.subtitles}</span>
+    ${course.numLectures ? `<span class="sp-meta-tag">📚 ${course.numLectures}강</span>` : ''}
+    ${course.contentLength ? `<span class="sp-meta-tag">⏱️ ${Math.round(course.contentLength/60)}시간</span>` : ''}
+    ${course.isNew ? '<span class="sp-meta-tag">✨ NEW</span>' : ''}
+    ${course.quiz ? '<span class="sp-meta-tag">📝 퀴즈</span>' : ''}
+    ${course._score > 0 ? `<span class="sp-meta-tag">⭐ 관련도: ${course._score}점</span>` : ''}
+  `;
+
+  let bodyHtml = '';
+  if(course.headline) bodyHtml += `<div class="sp-section"><h4>📝 소개</h4><p>${course.headline}</p></div>`;
+  if(course.objectives) bodyHtml += `<div class="sp-section"><h4>🎯 학습 목표</h4><ul>${course.objectives.split('|').map(o => `<li>${o.trim()}</li>`).join('')}</ul></div>`;
+  if(course.instructor) bodyHtml += `<div class="sp-section"><h4>👩‍🏫 강사</h4><p>${course.instructor}</p></div>`;
+
+  bodyHtml += `<div class="sp-section"><h4>🤖 AI 분석</h4><div id="sp-ai" class="ai-loading"><span class="spinner"></span> AI가 분석 중입니다...</div></div>`;
+  bodyHtml += `<a href="${url}" target="_blank" class="sp-cta">🚀 학습장으로 워프 →</a>`;
+  bodyHtml += `<button class="sp-similar-btn" id="sp-similar" data-id="${course.id}">🔍 비슷한 별 찾기</button>`;
+
+  $('#sp-body').innerHTML = bodyHtml;
+
+  $('#side-panel-overlay').classList.add('open');
+  $('#side-panel').classList.add('open');
+
+  // Similar button
+  $('#sp-similar').addEventListener('click', () => {
+    const keywords = [course.title.split(/[\s:—-]+/).slice(0,3).join(' '), cat].filter(Boolean);
+    $('#search-input').value = keywords.join(', ');
+    closeSidePanel();
+    switchTab('explore');
+    applyFilters();
+    toast(`🔍 "${course.title.substring(0,30)}..."와 비슷한 별을 스캔합니다.`);
+  });
+
+  // AI summary (async)
+  fetch('/api/ai-summarize', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ title: course.title, headline: course.headline, description: course.description?.substring(0,2000), objectives: course.objectives })
+  }).then(r => r.json()).then(data => {
+    const ai = $('#sp-ai');
+    if(data.success && data.data) {
+      const d = data.data;
+      ai.innerHTML = `
+        ${d.summary ? `<p>${d.summary}</p>` : ''}
+        ${d.recommendedFor?.length ? `<p><strong>추천 대상:</strong> ${d.recommendedFor.join(', ')}</p>` : ''}
+        ${d.keyTopics?.length ? `<p><strong>주요 토픽:</strong> ${d.keyTopics.join(', ')}</p>` : ''}
+        ${d.practicalValue ? `<p><strong>실무 활용:</strong> ${d.practicalValue}</p>` : ''}
+      `;
+      ai.classList.remove('ai-loading');
+    } else {
+      ai.innerHTML = '<p style="color:var(--text-muted)">AI 분석을 불러올 수 없습니다.</p>';
+      ai.classList.remove('ai-loading');
+    }
+  }).catch(() => {
+    const ai = $('#sp-ai');
+    if(ai) { ai.innerHTML = '<p style="color:var(--text-muted)">AI 분석 실패</p>'; ai.classList.remove('ai-loading'); }
+  });
+}
+
+function closeSidePanel() {
+  $('#side-panel').classList.remove('open');
+  setTimeout(() => $('#side-panel-overlay').classList.remove('open'), 350);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MISSION CENTER
+// ═══════════════════════════════════════════════════════════
+function initMissionCenter() {
+  // Galaxy grid
+  const grid = $('#galaxy-grid');
+  grid.innerHTML = Object.entries(CURATION).map(([id, data]) =>
+    `<div class="galaxy-card ${id===S.currentGalaxy?'active':''}" data-galaxy="${id}">
+      <span class="emoji">${data.emoji}</span>
+      <span class="label">${data.name}</span>
+    </div>`
+  ).join('');
+
+  grid.querySelectorAll('.galaxy-card').forEach(card => {
+    card.addEventListener('click', () => {
+      S.currentGalaxy = card.dataset.galaxy;
+      grid.querySelectorAll('.galaxy-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      renderOrbits(card.dataset.galaxy);
+    });
+  });
+
+  renderOrbits(S.currentGalaxy);
+
+  // Search
+  let debounce;
+  $('#mission-search').addEventListener('input', () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(handleMissionSearch, 300);
+  });
+}
+
+function renderOrbits(galaxyId, roles=null) {
+  const grid = $('#orbit-grid');
+  const toRender = roles || (CURATION[galaxyId]?.roles || []);
+
+  grid.innerHTML = toRender.map((role, i) =>
+    `<div class="orbit-card" data-role="${role.id}" style="animation-delay:${i*50}ms">
+      <h4>🛰️ ${role.name}</h4>
+      <div class="orbit-tags">${role.keywords.map(k => `<span class="cat-badge">${k}</span>`).join('')}</div>
+    </div>`
+  ).join('');
+
+  grid.querySelectorAll('.orbit-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const roleId = card.dataset.role;
+      let role;
+      for(const fam of Object.values(CURATION)) { role = fam.roles.find(r => r.id===roleId); if(role) break; }
+      if(role) applyMissionRole(role);
+    });
+  });
+}
+
+function handleMissionSearch() {
+  const term = $('#mission-search').value.toLowerCase().trim();
+  if(!term) { renderOrbits(S.currentGalaxy); return; }
+  const matched = [];
+  for(const fam of Object.values(CURATION)) {
+    fam.roles.forEach(role => {
+      if(`${role.name} ${role.keywords.join(' ')} ${role.prompt}`.toLowerCase().includes(term)) matched.push(role);
+    });
+  }
+  renderOrbits(null, matched);
+}
+
+function applyMissionRole(role) {
+  resetAll(false);
+  $('#search-input').value = role.prompt;
+  if(role.cats?.length) setMSValues('f-category', role.cats);
+
+  const level = document.querySelector('input[name="lv"]:checked')?.value;
+  let diffs = [];
+  if(level==='beginner') diffs = ['Beginner','All Levels'];
+  else if(level==='intermediate') diffs = ['Intermediate'];
+  else if(level==='expert') diffs = ['Expert'];
+  if(diffs.length) setMSValues('f-difficulty', diffs);
+
+  switchTab('explore');
+  S.searchMode = 'or';
+  $$('.scan-mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+  $('.scan-mode-btn[data-mode="or"]').classList.add('active');
+  applyFilters();
+  toast(`🛰️ ${role.name} 항로로 스캔을 시작합니다.`);
+}
+
+// ═══════════════════════════════════════════════════════════
+// BRIGHTEST STARS (TOP 6)
+// ═══════════════════════════════════════════════════════════
+function initStars() {
+  $$('.scan-mode-btn[data-stars]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.scan-mode-btn[data-stars]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      S.starsMode = btn.dataset.stars;
+      renderStars();
+    });
+  });
+  renderStars();
+}
+
+function renderStars() {
+  const courses = S.starsMode === 'subtitle'
+    ? S.courses.filter(c => c.subtitles?.includes('한국어'))
+    : S.courses.filter(c => c.language === '한국어');
+
+  const sorted = courses.sort((a,b) => {
+    const da = a.lastUpdated ? new Date(a.lastUpdated) : new Date(0);
+    const db = b.lastUpdated ? new Date(b.lastUpdated) : new Date(0);
+    return db - da;
+  }).slice(0, 6);
+
+  const container = $('#stars-content');
+  if(sorted.length === 0) { container.innerHTML = '<p style="color:var(--text-muted);padding:2rem;">해당 조건의 별이 없습니다.</p>'; return; }
+
+  const hero = sorted[0];
+  const heroUrl = buildCourseUrl(hero);
+  const rest = sorted.slice(1);
+
+  container.innerHTML = `
+    <div class="hero-card">
+      <span class="rank">🏆 가장 밝은 별 #1</span>
+      <h3><a href="${heroUrl}" target="_blank">${hero.title}</a></h3>
+      <p>${hero.headline || '이 별을 탐험해보세요!'}</p>
+      <a href="${heroUrl}" target="_blank" class="hero-cta">🚀 워프 점프 →</a>
+    </div>
+    <div class="stars-grid">
+      ${rest.map((c, i) => {
+        const url = buildCourseUrl(c);
+        return `<div class="star-card">
+          <span class="rank">⭐ #${i+2}</span>
+          <h4><a href="${url}" target="_blank">${c.title}</a></h4>
+          <p>${c.headline || ''}</p>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════════
+function switchTab(tabId) {
+  $$('.tab-panel').forEach(p => p.classList.remove('active'));
+  $$('.tab-btn').forEach(b => b.classList.remove('active'));
+  $(`#panel-${tabId}`).classList.add('active');
+  $(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+  // Show/hide list section
+  $('#list-section').style.display = tabId === 'stars' ? 'none' : '';
+}
+
+// ═══════════════════════════════════════════════════════════
+// CSV DOWNLOAD
+// ═══════════════════════════════════════════════════════════
+function downloadCSV(selectedOnly = false) {
+  const data = selectedOnly
+    ? S.courses.filter(c => S.selectedIds.has(c.id))
+    : S.filtered;
+
+  if(data.length === 0) { toast('다운로드할 별이 없습니다.', 'warning'); return; }
+
+  const headers = ['강의ID','강의명','카테고리','주제','난이도','언어','자막','강사','소개','학습목표','퀴즈','NEW','최종업데이트','강의링크'];
+  const rows = data.map(c => {
+    const url = buildCourseUrl(c);
+    return [
+      c.id,
+      `"${(c.title||'').replace(/"/g,'""')}"`,
+      `"${c.category||''}"`,
+      `"${c.topic||''}"`,
+      c.difficulty,
+      c.language,
+      `"${c.subtitles||''}"`,
+      `"${(c.instructor||'').replace(/"/g,'""')}"`,
+      `"${(c.headline||'').replace(/"/g,'""')}"`,
+      `"${(c.objectives||'').replace(/"/g,'""')}"`,
+      c.quiz?'Yes':'No',
+      c.isNew?'Yes':'No',
+      c.lastUpdated||'',
+      url
+    ].join(',');
+  });
+
+  const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Mission_Report_${S.subdomain}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast(`📋 미션 보고서: ${data.length}개 별의 좌표가 기록되었습니다.`);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SHARE LINK
+// ═══════════════════════════════════════════════════════════
+function shareLink() {
+  const params = new URLSearchParams();
+  params.set('sub', S.subdomain);
+  const q = $('#search-input').value.trim();
+  if(q) params.set('q', q);
+  params.set('mode', S.searchMode);
+  const cats = getMSValues('f-category');
+  if(cats.length) params.set('cat', cats.join(','));
+  const diffs = getMSValues('f-difficulty');
+  if(diffs.length) params.set('diff', diffs.join(','));
+  const langs = getMSValues('f-language');
+  if(langs.length) params.set('lang', langs.join(','));
+  const subs = getMSValues('f-subtitles');
+  if(subs.length) params.set('subs', subs.join(','));
+
+  const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+  navigator.clipboard.writeText(url).then(() => {
+    toast('🔗 공유 링크가 복사되었습니다! 슬랙이나 이메일에 붙여넣기하세요.');
+  }).catch(() => {
+    prompt('아래 링크를 복사하세요:', url);
+  });
+}
+
+function applyURLParams() {
+  const params = new URLSearchParams(window.location.search);
+  if(params.has('q')) $('#search-input').value = params.get('q');
+  if(params.has('mode')) {
+    S.searchMode = params.get('mode');
+    $$('.scan-mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+    $(`.scan-mode-btn[data-mode="${S.searchMode}"]`)?.classList.add('active');
+  }
+  if(params.has('cat')) setMSValues('f-category', params.get('cat').split(','));
+  if(params.has('diff')) setMSValues('f-difficulty', params.get('diff').split(','));
+  if(params.has('lang')) setMSValues('f-language', params.get('lang').split(','));
+  if(params.has('subs')) setMSValues('f-subtitles', params.get('subs').split(','));
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESET
+// ═══════════════════════════════════════════════════════════
+function resetAll(notify=true) {
+  $('#search-input').value = '';
+  ['f-category','f-difficulty','f-language','f-subtitles','f-attr','f-quiz'].forEach(fid => {
+    const wrap = $(`[data-fid="${fid}"]`);
+    if(wrap) { wrap.querySelectorAll('input:checked').forEach(cb => cb.checked=false); updateMSBtn(fid); }
+  });
+  $('#sort-select').value = 'relevance';
+  S.searchMode = 'ai';
+  $$('.scan-mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+  $('.scan-mode-btn[data-mode="ai"]').classList.add('active');
+  $('#ai-panel').classList.remove('open');
+  S.selectedIds.clear();
+  updateFAB();
+  if(notify) { applyFilters(); toast('✨ 스캐너를 초기화했습니다. 전체 은하가 보입니다.'); }
+}
+
+</script>
+</body>
+</html>
