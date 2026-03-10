@@ -2351,17 +2351,40 @@ function openSidePanel(course) {
     toast(`🔍 "${course.title.substring(0,30)}..."와 비슷한 별을 스캔합니다.`);
   });
 
-  // AI summary (async) — 나중에 구현
-  setTimeout(() => {
-    const ai = $('#sp-ai');
-    if(ai) ai.innerHTML = '<p style="color:var(--text-muted)">AI 요약 기능은 곧 업데이트됩니다.</p>';
-  }, 1000);
-}
-
-function closeSidePanel() {
-  $('#side-panel').classList.remove('open');
-  setTimeout(() => $('#side-panel-overlay').classList.remove('open'), 350);
-}
+// AI summary (async)
+fetch('/api/ai-summarize', {
+  method: 'POST',
+  headers: {'Content-Type':'application/json'},
+  body: JSON.stringify({ 
+    title: course.title, 
+    headline: course.headline, 
+    description: course.description?.substring(0,2000), 
+    objectives: course.objectives 
+  })
+}).then(r => r.json()).then(data => {
+  const ai = $('#sp-ai');
+  if (!ai) return;
+  
+  if (data.success && data.data) {
+    const d = data.data;
+    ai.innerHTML = `
+      ${d.summary ? `<p>${d.summary}</p>` : ''}
+      ${d.recommendedFor?.length ? `<p><strong>추천 대상:</strong> ${d.recommendedFor.join(', ')}</p>` : ''}
+      ${d.keyTopics?.length ? `<p><strong>주요 토픽:</strong> ${d.keyTopics.join(', ')}</p>` : ''}
+      ${d.practicalValue ? `<p><strong>실무 활용:</strong> ${d.practicalValue}</p>` : ''}
+    `;
+    ai.classList.remove('ai-loading');
+  } else {
+    ai.innerHTML = '<p style="color:var(--text-muted)">AI 분석을 불러올 수 없습니다.</p>';
+    ai.classList.remove('ai-loading');
+  }
+}).catch(() => {
+  const ai = $('#sp-ai');
+  if(ai) { 
+    ai.innerHTML = '<p style="color:var(--text-muted)">AI 분석 실패</p>'; 
+    ai.classList.remove('ai-loading'); 
+  }
+});
 
 // ═══════════════════════════════════════════════════════════
 // MISSION CENTER — 완전체 복구
