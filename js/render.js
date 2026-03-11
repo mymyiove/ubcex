@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// render.js — 강사명 추가 + 수강생 표시 개선 + 대시보드 3개
+// render.js — 강사명 컬럼 + 수강생 ▲ 표기 + 헤더 클릭 정렬
 // ═══════════════════════════════════════════════════════════
 
 let currentSortColumn = null;
@@ -67,25 +67,27 @@ function renderList() {
 
   const scoreTooltip = '추천도 산출: 제목 +40~50점, 카테고리 +30점, 주제 +20~25점, 소개 +15점, 학습목표 +10점, 설명 +5점(광역), 신규 +3점, 한국어자막 +3점, 고평점 +5점';
 
-  // ★ 테이블 뷰 — 강사명 추가
+  // ★ 테이블 뷰 — 강사명 컬럼 + 수강생 ▲ 표기
   $('#table-body').innerHTML = data.map(c => {
     const cat = c.category?.split(',')[0]?.trim() || '-';
     const color = getCatColor(cat);
     const checked = S.selectedIds.has(c.id) ? 'checked' : '';
     const rating = c.rating > 0 ? c.rating.toFixed(1) : '-';
     
-    // ★ 수강생 표시 개선
+    // ★ 수강생 ▲ 표기 — 모든 숫자에 적용
     let enrollments = '-';
     if (c.enrollments > 0) {
-      if (c.enrollments < 10) enrollments = `${c.enrollments}▼`;
-      else if (c.enrollments >= 10000) enrollments = `${Math.round(c.enrollments/1000)}K`;
-      else enrollments = c.enrollments.toLocaleString();
+      if (c.enrollments < 10) enrollments = `${c.enrollments}▲`;
+      else if (c.enrollments >= 10000) enrollments = `${Math.round(c.enrollments/1000)}K▲`;
+      else enrollments = `${c.enrollments.toLocaleString()}▲`;
     }
     
     const durationText = formatDuration(c.contentLength);
     const diffKR = {'Beginner':'초급','BEGINNER':'초급','Intermediate':'중급','INTERMEDIATE':'중급','Expert':'고급','EXPERT':'고급','All Levels':'전체','ALL_LEVELS':'전체'}[c.difficulty] || c.difficulty;
     const koSub = hasKoreanSub(c);
-    const instructor = c.instructor ? (c.instructor.length > 15 ? c.instructor.substring(0,15)+'...' : c.instructor) : '-';
+    
+    // ★ 강사명 처리
+    const instructor = c.instructor ? (c.instructor.length > 20 ? c.instructor.substring(0,20)+'...' : c.instructor) : '-';
 
     let scoreDisplay = '';
     if (c._score > 0) {
@@ -99,7 +101,7 @@ function renderList() {
       <td title="${cat}"><span class="cat-badge" style="border-color:${color}33;color:${color}">${getCatEmoji(cat)}</span></td>
       <td class="td-title"><a href="#" class="course-link" data-id="${c.id}" title="${c.title}">${c.title}</a></td>
       <td>${rating}</td>
-      <td title="${c.enrollments?.toLocaleString() || 0}명">${enrollments}</td>
+      <td title="추정 수강신청 수: ${c.enrollments?.toLocaleString() || 0}명 (정확한 숫자가 아닙니다)">${enrollments}</td>
       <td>${c.language}</td>
       <td>${koSub ? '🇰🇷' : '-'}</td>
       <td>${diffKR}</td>
@@ -115,6 +117,7 @@ function renderList() {
     const cat = c.category?.split(',')[0]?.trim() || '-';
     const color = getCatColor(cat);
     const koSub = hasKoreanSub(c);
+    const enrollText = c.enrollments > 0 ? (c.enrollments >= 10000 ? `${Math.round(c.enrollments/1000)}K▲` : `${c.enrollments}▲`) : '-';
 
     return `<div class="course-card" style="animation-delay:${i * 40}ms;--card-cat-color:${color}">
       <div class="card-cat-stripe"></div>
@@ -125,7 +128,7 @@ function renderList() {
       <div class="card-tags">
         ${c.isNew ? '<span class="badge-new">✨신규</span>' : ''}
         ${c.rating > 0 ? `<span class="cat-badge">⭐ ${c.rating.toFixed(1)}</span>` : ''}
-        ${c.enrollments > 0 ? `<span class="cat-badge">👥 ${c.enrollments >= 10000 ? Math.round(c.enrollments / 1000) + 'K' : c.enrollments}</span>` : ''}
+        ${c.enrollments > 0 ? `<span class="cat-badge">👥 ${enrollText}</span>` : ''}
         ${koSub ? `<span class="cat-badge">🇰🇷</span>` : ''}
       </div>
       <a href="${url}" target="_blank" class="card-cta">🚀 워프 점프 →</a>
@@ -204,7 +207,6 @@ function updateFAB() {
   }
 }
 
-// ★ 대시보드 카드 — 전체별 + 신규별 + 발견된별 (3개)
 function renderDashCards() {
   const total = S.courses.length;
   const newCount = S.courses.filter(c => c.isNew).length;
