@@ -46,39 +46,32 @@
 
 <div id="app-container">
   <header class="app-header">
-    <h1 class="app-title">🚀 Udemy Business Course Explorer</h1>
+    <h1>🚀 Udemy Business Course Explorer</h1>
     <p class="welcome" id="welcome-msg">탐험가님, <strong></strong> 우주에 도착했습니다!</p>
-    <!-- ★ 번역기 수동 켜기 -->
     <div class="translate-bar">
       <button class="translate-toggle-btn" id="translate-toggle" title="페이지 번역 켜기/끄기">🌐 번역기 켜기</button>
       <div id="google_translate_element" style="display:none;"></div>
     </div>
   </header>
 
-  <!-- ★ 대시보드 카드 — 다운로드 버튼 추가 -->
+  <!-- ★ 대시보드 카드 — 다운로드 버튼 카드 안에 -->
   <div class="dash-cards" id="dash-cards">
-    <div class="dash-card-group">
-      <div class="dash-card clickable" data-idx="0" title="모든 강의 표시">
-        <span class="icon">🌟</span>
-        <span class="value" data-target="0">0</span>
-        <span class="label">전체 별</span>
-      </div>
-      <button class="dash-download-btn" id="btn-download-all" title="전체 강의 목록 CSV 다운로드">📥 전체 별 목록 다운받기</button>
+    <div class="dash-card clickable" data-idx="0" title="모든 강의 표시">
+      <span class="icon">🌟</span>
+      <span class="value" data-target="0">0</span>
+      <span class="label">전체 별</span>
+      <button class="dash-download-btn" id="btn-download-all" title="전체 강의 목록 CSV 다운로드">📥 목록 다운받기</button>
     </div>
-    <div class="dash-card-group">
-      <div class="dash-card clickable" data-idx="1" title="최근 1개월 내 업데이트">
-        <span class="icon">✨</span>
-        <span class="value" data-target="0">0</span>
-        <span class="label">신규 별</span>
-      </div>
-      <button class="dash-download-btn" id="btn-download-new" title="신규 강의 목록 CSV 다운로드">📥 신규 별 목록 다운받기</button>
+    <div class="dash-card clickable" data-idx="1" title="최근 1개월 내 업데이트">
+      <span class="icon">✨</span>
+      <span class="value" data-target="0">0</span>
+      <span class="label">신규 별</span>
+      <button class="dash-download-btn" id="btn-download-new" title="신규 강의 목록 CSV 다운로드">📥 목록 다운받기</button>
     </div>
-    <div class="dash-card-group">
-      <div class="dash-card" data-idx="2" title="현재 필터링된 강의 수">
-        <span class="icon">🔍</span>
-        <span class="value" data-target="0">0</span>
-        <span class="label">발견된 별</span>
-      </div>
+    <div class="dash-card" data-idx="2" title="현재 필터링된 강의 수">
+      <span class="icon">🔍</span>
+      <span class="value" data-target="0">0</span>
+      <span class="label">발견된 별</span>
     </div>
   </div>
 
@@ -118,14 +111,12 @@
 
   <div class="tab-panel active" id="panel-explore">
     <div class="scanner-section">
-      <!-- ★ 검색창 글로우 강화 -->
       <div class="scanner-bar">
         <div class="scanner-input-wrap">
           <span class="scanner-icon">🔭</span>
           <input type="text" class="scanner-input glow-enhanced" id="search-input" placeholder="어떤 별을 찾고 계신가요?" />
         </div>
         <button class="btn-ai-scan" id="btn-ai-scan" title="AI가 관련 키워드를 확장합니다">🤖 AI 내비</button>
-        <!-- ★ 초기화 버튼 AI 내비 옆으로 이동 -->
         <button class="btn-reset-inline" id="btn-reset-inline" title="모든 필터 초기화">✨ 초기화</button>
       </div>
       <div class="scanner-meta">
@@ -147,7 +138,6 @@
 
     <div class="active-filters" id="active-filters"></div>
 
-    <!-- ★ AI 패널 안내 문구 추가 -->
     <div class="ai-panel" id="ai-panel">
       <h4>🤖 AI 내비게이션 — 항로 계산 완료!</h4>
       <p class="ai-guide">원하는 키워드를 클릭해서 선택 혹은 제외하고, 스캔 버튼을 누르세요.</p>
@@ -207,7 +197,6 @@
     </div>
   </div>
 
-  <!-- ★ 테이블 — 업데이트 컬럼 추가 (신규 컬럼 대체) -->
   <div class="list-section" id="list-section">
     <div class="list-header">
       <h2>📖 별 카탈로그</h2>
@@ -221,11 +210,11 @@
       <table>
         <thead><tr>
           <th class="col-check"><input type="checkbox" id="check-all" title="전체 선택" /></th>
-          <th class="sortable" data-sort="score" title="AI 추천도 점수 (클릭하여 정렬) - 제목 +40~50점, 카테고리 +30점, 주제 +20~25점, 소개 +15점, 학습목표 +10점, 설명 +5점(광역), 신규 +3점, 한국어자막 +3점, 고평점 +5점">🎯 추천도</th>
+          <th class="sortable" data-sort="score" title="AI 추천도 점수 (클릭하여 정렬)">🎯 추천도</th>
           <th class="sortable" data-sort="category" title="카테고리 (클릭하여 정렬)">카테고리</th>
           <th class="sortable" data-sort="title" title="강의명 (클릭하여 정렬)">강의명</th>
           <th class="sortable" data-sort="rating" title="평점 (클릭하여 정렬)">평점</th>
-          <th class="sortable" data-sort="enrollments" title="수강자 수 (클릭하여 정렬) - 정확한 숫자가 아닌 추정치입니다">👥 수강</th>
+          <th class="sortable" data-sort="enrollments" title="수강자 수 (클릭하여 정렬)">👥 수강</th>
           <th class="sortable" data-sort="language" title="언어 (클릭하여 정렬)">언어</th>
           <th title="한국어 자막 여부">🇰🇷자막</th>
           <th class="sortable" data-sort="difficulty" title="난이도 (클릭하여 정렬)">난이도</th>
@@ -253,6 +242,38 @@
   <div id="side-panel">
     <button class="sp-close" id="sp-close" title="닫기">&times;</button>
     <div id="sp-content"></div>
+  </div>
+</div>
+
+<!-- ★ CSV 헤더 선택 모달 -->
+<div id="csv-modal-overlay" class="help-overlay">
+  <div class="help-content" style="max-width:500px;">
+    <button class="help-close" id="csv-modal-close">&times;</button>
+    <h2>📥 CSV 다운로드 설정</h2>
+    
+    <div class="help-section">
+      <h3>포함할 컬럼을 선택하세요:</h3>
+      <div class="csv-columns">
+        <label><input type="checkbox" id="csv-col-id" checked> 강의ID</label>
+        <label><input type="checkbox" id="csv-col-title" checked> 강의명</label>
+        <label><input type="checkbox" id="csv-col-category" checked> 카테고리</label>
+        <label><input type="checkbox" id="csv-col-instructor"> 강사</label>
+        <label><input type="checkbox" id="csv-col-rating" checked> 평점</label>
+        <label><input type="checkbox" id="csv-col-enrollments"> 수강신청수</label>
+        <label><input type="checkbox" id="csv-col-language"> 언어</label>
+        <label><input type="checkbox" id="csv-col-subtitles"> 자막</label>
+        <label><input type="checkbox" id="csv-col-difficulty"> 난이도</label>
+        <label><input type="checkbox" id="csv-col-duration"> 강의시간</label>
+        <label><input type="checkbox" id="csv-col-updated"> 업데이트</label>
+        <label><input type="checkbox" id="csv-col-url" checked> 강의링크</label>
+      </div>
+    </div>
+    
+    <div class="help-section">
+      <button class="admin-btn admin-btn-primary" id="csv-download-confirm">📥 다운로드</button>
+      <button class="admin-btn" id="csv-select-all">전체 선택</button>
+      <button class="admin-btn" id="csv-select-basic">기본만</button>
+    </div>
   </div>
 </div>
 
@@ -312,7 +333,6 @@
 <script src="js/highlight.js"></script>
 <script src="js/app.js"></script>
 
-<!-- ★ 번역기 수동 켜기 -->
 <script>
 let translateEnabled = false;
 
@@ -323,19 +343,12 @@ function toggleTranslate() {
   if (!translateEnabled) {
     element.style.display = 'inline-block';
     btn.textContent = '🌐 번역기 끄기';
-    btn.title = '번역기 끄기';
     translateEnabled = true;
-    
-    if (!window.google || !window.google.translate) {
-      googleTranslateElementInit();
-    }
+    if (!window.google || !window.google.translate) googleTranslateElementInit();
   } else {
     element.style.display = 'none';
     btn.textContent = '🌐 번역기 켜기';
-    btn.title = '번역기 켜기';
     translateEnabled = false;
-    
-    // 번역 상태 초기화
     const frame = document.querySelector('.goog-te-banner-frame');
     if (frame) frame.style.display = 'none';
     document.body.classList.remove('translated-ltr', 'translated-rtl');
