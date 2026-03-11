@@ -457,6 +457,21 @@ function initApp() {
     });
   });
 
+  // ★ 하이라이트 강의 초기화
+  initHighlight();
+  setupHoverPause();
+
+  // ★ 관리자 모드 — 큐레이터 PICK 관리 (로고 트리플 클릭)
+  let clickCount = 0;
+  $('.app-header h1').addEventListener('click', () => {
+    clickCount++;
+    setTimeout(() => { clickCount = 0; }, 1000);
+    if (clickCount === 3) {
+      manageCuratorPicks();
+      clickCount = 0;
+    }
+  });
+  
   // ★ 감도 조절 버튼
   $$('.sensitivity-btn').forEach(btn => {
     btn.addEventListener('click', () => {
