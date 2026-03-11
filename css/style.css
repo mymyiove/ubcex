@@ -1943,3 +1943,110 @@ body::before {
   50% { opacity: 1; transform: scale(1.03); }
   100% { opacity: 0.7; transform: scale(0.98); }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   추천도 점수 뱃지
+   ═══════════════════════════════════════════════════════════ */
+.score-badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  min-width: 30px;
+}
+
+.score-high {
+  background: rgba(52, 211, 153, 0.2);
+  color: var(--success);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.score-mid {
+  background: rgba(251, 191, 36, 0.2);
+  color: var(--warning);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.score-low {
+  background: rgba(136, 136, 170, 0.15);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.td-score {
+  text-align: center;
+  width: 50px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   테이블 꽉 차게 — table-layout: auto
+   ═══════════════════════════════════════════════════════════ */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  table-layout: auto; /* ★ auto로 변경 — 내용에 맞게 자동 조절 */
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  width: 100%;
+}
+
+/* 강의명 컬럼 넓게 */
+.td-title {
+  min-width: 200px;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   사이드 패널 글 짤림 수정
+   ═══════════════════════════════════════════════════════════ */
+.sp-full-text {
+  overflow: visible !important;
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+  max-height: none !important;
+  white-space: normal !important;
+  word-break: break-word;
+  line-height: 1.7;
+}
+
+.sp-description {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.sp-section p, .sp-section ul, .sp-section div {
+  overflow: visible;
+  display: block;
+  max-height: none;
+}
+
+/* 구글 번역기 스타일 */
+#google_translate_element {
+  display: inline-block;
+}
+
+.goog-te-gadget {
+  font-size: 0 !important;
+}
+
+.goog-te-gadget .goog-te-combo {
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+}
