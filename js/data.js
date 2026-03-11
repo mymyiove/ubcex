@@ -27,6 +27,28 @@ const LANG_MAP = {
 };
 const mapLang = (c) => { if(!c) return 'N/A'; const k=c.toLowerCase().split(/[-_]/)[0]; return LANG_MAP[k]||c; };
 
+// ★ 카테고리 이모지 개선 — 실제 카테고리와 정확히 매칭
+const CAT_EMOJIS = {
+  'Development':'💻','IT & Software':'⚙️','Business':'💼','Finance & Accounting':'💰',
+  'Marketing':'📢','Office Productivity':'📊','Personal Development':'🧠','Design':'🎨',
+  'Lifestyle':'🌱','Photography & Video':'📹','Health & Fitness':'💪','Music':'🎵',
+  'Teaching & Academics':'📚','Data Science':'📈','Language Learning':'🗣️',
+  'Game Development & Design':'🎮','Web Development':'🌐','Mobile Development':'📱',
+  'Programming Languages':'⌨️','Database Design & Development':'🗄️',
+  'Software Testing':'🧪','Software Engineering':'🔧','Network & Security':'🔒',
+  'Hardware':'🔌','Operating Systems':'💿','Other':'📁'
+};
+const getCatEmoji = (cat) => { 
+  if(!cat) return '📁'; 
+  // 정확한 매칭 우선
+  if(CAT_EMOJIS[cat]) return CAT_EMOJIS[cat];
+  // 부분 매칭
+  for(const k in CAT_EMOJIS) { 
+    if(cat.includes(k)) return CAT_EMOJIS[k]; 
+  } 
+  return '📁'; 
+};
+
 const CAT_COLORS = {
   'Development':'#3b82f6','IT & Software':'#6366f1','Business':'#8b5cf6',
   'Marketing':'#f59e0b','Design':'#ec4899','Finance & Accounting':'#10b981',
@@ -36,15 +58,6 @@ const CAT_COLORS = {
   'Data Science':'#06b6d4','Language Learning':'#8b5cf6','Game Development & Design':'#f43f5e'
 };
 const getCatColor = (cat) => { if(!cat) return 'var(--accent)'; for(const k in CAT_COLORS) { if(cat.includes(k)) return CAT_COLORS[k]; } return 'var(--accent)'; };
-
-const CAT_EMOJIS = {
-  'Development':'👨‍💻','IT & Software':'⚙️','Business':'💼','Finance & Accounting':'🧾',
-  'Marketing':'📣','Office Productivity':'📊','Personal Development':'🧠','Design':'🎨',
-  'Lifestyle':'🧘','Photography & Video':'🎬','Health & Fitness':'💪','Music':'🎧',
-  'Teaching & Academics':'📚','Data Science':'📊','Language Learning':'🌐',
-  'Game Development & Design':'🎮'
-};
-const getCatEmoji = (cat) => { if(!cat) return '📁'; for(const k in CAT_EMOJIS) { if(cat.includes(k)) return CAT_EMOJIS[k]; } return '📁'; };
 
 const KO_EN_MAP = {
   '마케팅':['marketing'],'개발':['development','programming'],'디자인':['design'],
@@ -59,10 +72,23 @@ const KO_EN_MAP = {
   '머신러닝':['machine learning'],'딥러닝':['deep learning']
 };
 
-const NEW_MONTHS = 3;
+// ★ 신규 기준 변경 — 3개월 → 1개월
+const NEW_MONTHS = 1;
 const isNew = (d) => { if(!d) return false; const u=new Date(d), t=new Date(); t.setMonth(t.getMonth()-NEW_MONTHS); return u>=t; };
 
-// 감도 설정
+// ★ 업데이트 연월 포맷 — "2024-07-19" → "24.07"
+const formatUpdateDate = (dateStr) => {
+  if (!dateStr) return '-';
+  try {
+    const date = new Date(dateStr);
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    return `${year}.${month}`;
+  } catch {
+    return '-';
+  }
+};
+
 const SENSITIVITY_CONFIG = {
   precise: {
     label: '🔬 정밀',
