@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// filters.js — 멀티셀렉트, 감도 기반 필터링, 활성 필터 태그
+// filters.js — 시간 + 추천도 필터 추가
 // ═══════════════════════════════════════════════════════════
 
 function initMultiSelects() {
@@ -9,9 +9,12 @@ function initMultiSelects() {
   populateMS('f-subtitles', getUniqueSubtitles());
   populateMS('f-rating', [{v:'4.5',l:'⭐ 4.5점 이상'},{v:'4.0',l:'⭐ 4.0점 이상'},{v:'3.5',l:'⭐ 3.5점 이상'}]);
   populateMS('f-attr', [{v:'NEW',l:'✨ 신규 강의'}]);
+  // ★ 시간 필터 추가
+  populateMS('f-duration', [{v:'60',l:'⏱️ 1시간 미만'},{v:'120',l:'⏱️ 1-2시간'},{v:'180',l:'⏱️ 2-3시간'},{v:'240',l:'⏱️ 3-4시간'},{v:'300',l:'⏱️ 4시간 이상'}]);
+  // ★ 추천도 필터 추가
+  populateMS('f-score', [{v:'100',l:'🎯 100점 이상'},{v:'200',l:'🎯 200점 이상'},{v:'300',l:'🎯 300점 이상'},{v:'400',l:'🎯 400점 이상'}]);
 }
 
-// 자막 고유값 추출 — 한국어 최상단
 function getUniqueSubtitles() {
   const vals = new Set();
   S.courses.forEach(c => {
@@ -22,7 +25,6 @@ function getUniqueSubtitles() {
     });
   });
   const arr = [...vals];
-  // 한국어 관련 항목 최상단
   const koItems = arr.filter(a => a.toLowerCase().includes('ko'));
   const enItems = arr.filter(a => a.toLowerCase().includes('en') && !a.toLowerCase().includes('ko'));
   const rest = arr.filter(a => !a.toLowerCase().includes('ko') && !a.toLowerCase().includes('en'));
@@ -35,7 +37,6 @@ function populateMS(fid, items, showEmoji=false) {
   const panel = wrap.querySelector('.ms-panel');
   const btn = wrap.querySelector('.ms-btn');
 
-  // 언어/자막 필터에서 한국어 최상단 정렬
   if (fid === 'f-language') {
     const koItems = items.filter(i => typeof i === 'string' && (i.includes('한국어') || i.toLowerCase().includes('ko')));
     const enItems = items.filter(i => typeof i === 'string' && (i.includes('English') || i === 'English'));
@@ -64,7 +65,8 @@ function updateMSBtn(fid) {
   const checked = wrap.querySelectorAll('input:checked');
   const defaults = {
     'f-category':'모든 카테고리','f-difficulty':'모든 난이도','f-language':'모든 언어',
-    'f-subtitles':'모든 자막','f-rating':'모든 평점','f-attr':'모든 강의'
+    'f-subtitles':'모든 자막','f-rating':'모든 평점','f-attr':'모든 강의',
+    'f-duration':'모든 시간','f-score':'모든 점수'
   };
   if(checked.length===0) btn.textContent = defaults[fid]||'선택';
   else if(checked.length===1) btn.textContent = checked[0].value;
@@ -84,9 +86,6 @@ function setMSValues(fid, values) {
   updateMSBtn(fid);
 }
 
-// ═══════════════════════════════════════════════════════════
-// 감도 기반 스코어링
-// ═══════════════════════════════════════════════════════════
 function scoreWithSensitivity(course, keywords, sensitivity) {
   const config = SENSITIVITY_CONFIG[sensitivity] || SENSITIVITY_CONFIG.balanced;
   let totalScore = 0;
@@ -123,9 +122,7 @@ function filterWithSensitivity(course, keywords, sensitivity) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// 메인 필터링 함수
-// ═══════════════════════════════════════════════════════════
+// ★ 메인 필터링 함수 — 시간 + 추천도 필터 추가
 function applyFilters() {
   const cats = getMSValues('f-category');
   const diffs = getMSValues('f-difficulty');
@@ -133,6 +130,8 @@ function applyFilters() {
   const subs = getMSValues('f-subtitles');
   const ratings = getMSValues('f-rating');
   const attrs = getMSValues('f-attr');
+  const durations = getMSValues('f-duration');
+  const scores = getMSValues('f-score');
   const sort = $('#sort-select').value;
   const searchText = $('#search-input').value.trim();
   const sensitivity = S.sensitivity || 'balanced';
@@ -149,6 +148,22 @@ function applyFilters() {
   if(ratings.length>0) filtered = filtered.filter(c => ratings.some(r => c.rating >= parseFloat(r)));
   if(attrs.includes('NEW')) filtered = filtered.filter(c => c.isNew);
 
+  // ★ 시간 필터
+  if(durations.length>0) {
+    filtered = filtered.filter(c => {
+      const minutes = c.contentLength || 0;
+      return durations.some(d => {
+        const threshold = parseInt(d);
+        if (d === '60') return minutes < 60;
+        if (d === '120') return minutes >= 60 && minutes < 120;
+        if (d === '180') return minutes >= 120 && minutes < 180;
+        if (d === '240') return minutes >= 180 && minutes < 240;
+        if (d === '300') return minutes >= 240;
+        return false;
+      });
+    });
+  }
+
   if(searchText) {
     let keywords = searchText.split(/[,\s]+/).map(k => k.trim().toLowerCase()).filter(k => k.length>0);
     keywords = expandKeywordsLocal(keywords);
@@ -162,6 +177,11 @@ function applyFilters() {
     const config = SENSITIVITY_CONFIG[sensitivity];
     if (config.minScore > 0) {
       filtered = filtered.filter(c => c._score >= config.minScore);
+    }
+
+    // ★ 추천도 필터
+    if(scores.length>0) {
+      filtered = filtered.filter(c => scores.some(s => c._score >= parseInt(s)));
     }
   } else {
     filtered.forEach(c => { c._score = 0; });
@@ -184,6 +204,13 @@ function applyFilters() {
 
   renderActiveFilters();
   $('#results-count').innerHTML = `발견된 별: <strong>${filtered.length.toLocaleString()}</strong>개`;
+  
+  // ★ 발견된 별 카드 실시간 업데이트
+  const discoveredCard = $('.dash-card[data-idx="2"] .value');
+  if (discoveredCard) {
+    animateCount(discoveredCard, filtered.length, 800);
+  }
+  
   renderList();
 }
 
@@ -199,6 +226,8 @@ function renderActiveFilters() {
   add('f-subtitles', getMSValues('f-subtitles'), '자막');
   add('f-rating', getMSValues('f-rating'), '평점');
   add('f-attr', getMSValues('f-attr'), '속성');
+  add('f-duration', getMSValues('f-duration'), '시간');
+  add('f-score', getMSValues('f-score'), '추천도');
   
   const sensitivityLabel = SENSITIVITY_CONFIG[S.sensitivity || 'balanced']?.label || '📊 보통';
   if (S.sensitivity && S.sensitivity !== 'balanced') {
@@ -223,7 +252,7 @@ function renderActiveFilters() {
 
 function resetAll(notify=true) {
   $('#search-input').value = '';
-  ['f-category','f-difficulty','f-language','f-subtitles','f-rating','f-attr'].forEach(fid => {
+  ['f-category','f-difficulty','f-language','f-subtitles','f-rating','f-attr','f-duration','f-score'].forEach(fid => {
     const wrap = $(`[data-fid="${fid}"]`);
     if(wrap) { wrap.querySelectorAll('input:checked').forEach(cb => cb.checked=false); updateMSBtn(fid); }
   });
