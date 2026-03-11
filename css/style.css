@@ -1709,3 +1709,237 @@ td.col-check input { accent-color: var(--accent); width: 15px; height: 15px; cur
     width: 100%;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   감도 조절 + 검색 컨트롤 레이아웃
+   ═══════════════════════════════════════════════════════════ */
+.scan-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sensitivity-toggle {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.sensitivity-btn {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border);
+  background: var(--bg-glass);
+  color: var(--text-secondary);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: var(--transition);
+}
+
+.sensitivity-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.sensitivity-btn:hover:not(.active) {
+  border-color: var(--accent-light);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   테이블 개선 — 꽉 차게 + 예쁘게
+   ═══════════════════════════════════════════════════════════ */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  font-size: 0.82rem;
+}
+
+thead {
+  background: var(--bg-nebula);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+th {
+  padding: 0.7rem 0.6rem;
+  text-align: left;
+  font-weight: 700;
+  color: var(--accent-light);
+  white-space: nowrap;
+  border-bottom: 2px solid var(--accent);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+td {
+  padding: 0.6rem;
+  border-bottom: 1px solid rgba(100, 100, 160, 0.1);
+  vertical-align: middle;
+}
+
+tr { 
+  transition: background 0.2s, transform 0.1s; 
+  position: relative; 
+}
+
+tr:hover { 
+  background: rgba(124, 108, 240, 0.06); 
+}
+
+tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+tr:nth-child(even):hover {
+  background: rgba(124, 108, 240, 0.06);
+}
+
+/* 카테고리 컬러바 */
+tr::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--row-cat-color, var(--accent));
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 0 2px 2px 0;
+}
+
+tr:hover::before { opacity: 1; }
+
+/* 강의명 컬럼 — 넓게 */
+.td-title {
+  min-width: 250px;
+  max-width: 400px;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.td-topic {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.course-link {
+  color: var(--accent-light);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.course-link:hover { 
+  color: var(--accent); 
+  text-decoration: underline; 
+}
+
+th.col-check, td.col-check { width: 35px; text-align: center; }
+td.col-check input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+
+/* ═══════════════════════════════════════════════════════════
+   필터 그리드 — 짤림 방지
+   ═══════════════════════════════════════════════════════════ */
+.filters-grid {
+  display: none;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.6rem;
+  padding: 1rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  margin-bottom: 0.5rem;
+  overflow: visible; /* 짤림 방지 */
+  position: relative;
+  z-index: 50;
+}
+
+.filters-grid.open { display: grid; }
+
+/* 멀티셀렉트 패널 z-index 높이기 */
+.ms-panel {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0; right: 0;
+  z-index: 200; /* 높은 z-index */
+  background: var(--bg-card-solid);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-xs);
+  max-height: 250px;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  margin-top: 3px;
+}
+
+.ms-panel.open { display: block; }
+
+/* ═══════════════════════════════════════════════════════════
+   별 배경 강화 — 진짜 반짝이는 효과
+   ═══════════════════════════════════════════════════════════ */
+body::after {
+  background-image:
+    /* 큰 별 — 밝게 반짝 */
+    radial-gradient(2px 2px at 8% 15%, rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(2px 2px at 45% 25%, rgba(255,255,255,0.9) 0%, transparent 100%),
+    radial-gradient(2px 2px at 85% 35%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 15% 85%, rgba(167,139,250,1) 0%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 75% 60%, rgba(167,139,250,0.9) 0%, transparent 100%),
+    /* 중간 별 */
+    radial-gradient(1.5px 1.5px at 25% 65%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 65% 75%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 35% 45%, rgba(167,139,250,0.7) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 95% 25%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 55% 85%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    /* 작은 별 */
+    radial-gradient(1px 1px at 5% 55%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 10%, rgba(255,255,255,0.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 80%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 42% 88%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 78% 42%, rgba(255,255,255,0.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 12% 72%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 88% 12%, rgba(255,255,255,0.4) 0%, transparent 100%);
+  animation: starTwinkle 10s ease-in-out infinite;
+}
+
+@keyframes starTwinkle {
+  0% { opacity: 0.5; }
+  20% { opacity: 0.9; }
+  40% { opacity: 0.6; }
+  60% { opacity: 1; }
+  80% { opacity: 0.7; }
+  100% { opacity: 0.5; }
+}
+
+/* 성운 그라디언트 — 천천히 움직임 */
+body::before {
+  background:
+    radial-gradient(ellipse at 15% 30%, rgba(124,108,240,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse at 85% 20%, rgba(99,102,241,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 80%, rgba(139,92,246,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(96,165,250,0.05) 0%, transparent 45%),
+    radial-gradient(ellipse at 25% 70%, rgba(167,139,250,0.04) 0%, transparent 40%);
+  animation: nebulaFlow 30s ease-in-out infinite alternate;
+}
+
+@keyframes nebulaFlow {
+  0% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 0.7; transform: scale(0.98); }
+}
