@@ -1,11 +1,12 @@
 // ═══════════════════════════════════════════════════════════
-// sidepanel.js — 강의 상세 사이드 패널 (AI JSON 파싱 개선)
+// sidepanel.js — AI 요약 제거, 구글 번역기로 대체
 // ═══════════════════════════════════════════════════════════
 
 function openSidePanel(course) {
   const url = buildCourseUrl(course);
-  const cat = course.category?.split(',')[0]?.trim() || 'N/A';
+  const cat = course.category?.split(',')[0]?.trim() || '-';
   const durationText = formatDuration(course.contentLength);
+  const koSub = hasKoreanSub(course);
 
   // 자막 한국어화
   let subtitlesKR = '자막 없음';
@@ -23,7 +24,6 @@ function openSidePanel(course) {
       if (t.includes('ar')) return '🇸🇦 아랍어';
       if (t.includes('tr')) return '🇹🇷 터키어';
       if (t.includes('ru')) return '🇷🇺 러시아어';
-      if (t.includes('it')) return '🇮🇹 이탈리아어';
       return s.trim();
     });
     subtitlesKR = [...new Set(parts)].join(', ');
@@ -36,6 +36,7 @@ function openSidePanel(course) {
     enrollText = course.enrollments >= 10000 ? `${Math.round(course.enrollments/1000)}K명` : `${course.enrollments.toLocaleString()}명`;
   }
 
+  // ★ AI 요약 섹션 제거 — 구글 번역기가 대신함
   const content = `
     <h2 class="sp-title">${course.title}</h2>
     
@@ -44,25 +45,24 @@ function openSidePanel(course) {
     <a href="${url}" target="_blank" class="sp-cta" title="학습장에서 이 강의를 수강합니다">🚀 학습장으로 워프 →</a>
     
     <div class="sp-meta">
-      <span class="sp-meta-tag" title="카테고리">🌌 ${cat}</span>
-      <span class="sp-meta-tag" title="난이도">📊 ${diffKR}</span>
-      <span class="sp-meta-tag" title="언어">🌐 ${mapLang(course.language)}</span>
-      <span class="sp-meta-tag" title="자막">💬 ${subtitlesKR}</span>
-      ${course.rating > 0 ? `<span class="sp-meta-tag" title="평점">⭐ ${course.rating.toFixed(1)}점</span>` : ''}
-      ${enrollText ? `<span class="sp-meta-tag" title="수강신청 수">👥 ${enrollText}</span>` : ''}
-      ${durationText ? `<span class="sp-meta-tag" title="총 강의 시간">⏱️ ${durationText}</span>` : ''}
-      ${course.isNew ? '<span class="sp-meta-tag" title="최근 3개월 내 업데이트">✨ 신규</span>' : ''}
+      <span class="sp-meta-tag">🌌 ${cat}</span>
+      <span class="sp-meta-tag">📊 ${diffKR}</span>
+      <span class="sp-meta-tag">🌐 ${mapLang(course.language)}</span>
+      <span class="sp-meta-tag">💬 ${subtitlesKR}</span>
+      ${course.rating > 0 ? `<span class="sp-meta-tag">⭐ ${course.rating.toFixed(1)}점</span>` : ''}
+      ${enrollText ? `<span class="sp-meta-tag">👥 ${enrollText}</span>` : ''}
+      ${durationText ? `<span class="sp-meta-tag">⏱️ ${durationText}</span>` : ''}
+      ${course.isNew ? '<span class="sp-meta-tag">✨ 신규</span>' : ''}
+      ${course._score > 0 ? `<span class="sp-meta-tag">🎯 추천도: ${course._score}점</span>` : ''}
     </div>
 
-    ${course.headline ? `<div class="sp-section"><h4>📝 강의 소개</h4><p>${course.headline}</p></div>` : ''}
-    ${course.objectives ? `<div class="sp-section"><h4>🎯 학습 목표</h4><ul>${course.objectives.split('|').map(o => o.trim()).filter(Boolean).map(o => `<li>${o}</li>`).join('')}</ul></div>` : ''}
+    ${course.headline ? `<div class="sp-section"><h4>📝 강의 소개</h4><p class="sp-full-text">${course.headline}</p></div>` : ''}
+    ${course.objectives ? `<div class="sp-section"><h4>🎯 학습 목표</h4><ul class="sp-full-text">${course.objectives.split('|').map(o => o.trim()).filter(Boolean).map(o => `<li>${o}</li>`).join('')}</ul></div>` : ''}
+    ${course.description ? `<div class="sp-section"><h4>📄 상세 설명</h4><div class="sp-full-text sp-description">${course.description.substring(0, 1000)}${course.description.length > 1000 ? '...' : ''}</div></div>` : ''}
     ${course.instructor ? `<div class="sp-section"><h4>👩‍🏫 강사</h4><p>${course.instructor}</p></div>` : ''}
     ${course.topic ? `<div class="sp-section"><h4>💡 주제</h4><p>${course.topic}</p></div>` : ''}
 
-    <div class="sp-section">
-      <h4>🤖 AI 분석</h4>
-      <div id="sp-ai" class="ai-loading"><span class="spinner"></span> AI가 분석 중입니다...</div>
-    </div>
+    <p style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem;text-align:center;">💡 페이지 상단의 번역기로 한국어 번역이 가능합니다</p>
 
     <button class="sp-similar-btn" id="sp-similar" data-id="${course.id}" title="비슷한 강의 검색">🔍 비슷한 별 찾기</button>
   `;
@@ -74,7 +74,7 @@ function openSidePanel(course) {
   // 비슷한 별 찾기
   $('#sp-similar')?.addEventListener('click', () => {
     const keywords = course.title.split(/[\s:—\-,]+/).filter(w => w.length > 2).slice(0, 3);
-    if (cat && cat !== 'N/A') keywords.push(cat);
+    if (cat && cat !== '-') keywords.push(cat);
     $('#search-input').value = keywords.join(', ');
     closeSidePanel();
     switchTab('explore');
@@ -86,63 +86,6 @@ function openSidePanel(course) {
     $('.scan-mode-btn[data-mode="or"]')?.classList.add('active');
     applyFilters();
     toast(`🔍 비슷한 별을 스캔합니다.`);
-  });
-
-  // ★ AI 요약 — JSON 파싱 개선
-  fetch('/api/ai-summarize', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ 
-      title: course.title, 
-      headline: course.headline, 
-      description: course.description?.substring(0, 2000), 
-      objectives: course.objectives 
-    })
-  }).then(r => r.json()).then(data => {
-    const ai = $('#sp-ai');
-    if (!ai) return;
-    
-    if (data.success && data.data) {
-      const d = data.data;
-      let html = '';
-      
-      // 안전한 텍스트 추출 — JSON 잔여물 제거
-      const cleanText = (text) => {
-        if (!text) return '';
-        if (typeof text !== 'string') text = String(text);
-        // JSON 관련 잔여물 제거
-        return text
-          .replace(/```json/g, '')
-          .replace(/```/g, '')
-          .replace(/^\s*\{[\s\S]*\}\s*$/g, '') // 순수 JSON 객체 제거
-          .replace(/\\n/g, ' ')
-          .replace(/\\"/g, '"')
-          .trim();
-      };
-      
-      const summary = cleanText(d.summary);
-      if (summary && summary.length > 5) html += `<p><strong>📋 요약:</strong> ${summary}</p>`;
-      
-      if (d.recommendedFor && Array.isArray(d.recommendedFor) && d.recommendedFor.length > 0) {
-        html += `<p><strong>👥 추천 대상:</strong> ${d.recommendedFor.join(', ')}</p>`;
-      }
-      
-      if (d.keyTopics && Array.isArray(d.keyTopics) && d.keyTopics.length > 0) {
-        html += `<p><strong>🔑 주요 토픽:</strong> ${d.keyTopics.join(', ')}</p>`;
-      }
-      
-      const practical = cleanText(d.practicalValue);
-      if (practical && practical.length > 5) html += `<p><strong>💼 실무 활용:</strong> ${practical}</p>`;
-      
-      ai.innerHTML = html || '<p style="color:var(--text-muted)">AI 분석 결과를 표시할 수 없습니다.</p>';
-      ai.classList.remove('ai-loading');
-    } else {
-      ai.innerHTML = `<p style="color:var(--text-muted)">AI 분석을 불러올 수 없습니다.</p>`;
-      ai.classList.remove('ai-loading');
-    }
-  }).catch(() => {
-    const ai = $('#sp-ai');
-    if(ai) { ai.innerHTML = '<p style="color:var(--text-muted)">AI 분석 연결 실패</p>'; ai.classList.remove('ai-loading'); }
   });
 }
 
