@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// app.js — 앱 초기화, 게이트, 워프, 관리자 모드, 병렬 chunk 로딩
+// app.js — 앱 초기화, 게이트, 워프, 관리자 모드, 병렬 chunk 로딩, 하이라이트 섹션
 // ═══════════════════════════════════════════════════════════
 
 const ADMIN_CODE = 'jhj11';
@@ -116,6 +116,16 @@ function enterAdminMode() {
         </div>
 
         <div class="admin-section">
+          <h3>⭐ 큐레이터 PICK 관리</h3>
+          <p class="admin-desc">하이라이트 섹션에 표시될 추천 강의를 관리합니다.</p>
+          <div class="admin-btn-group">
+            <button class="admin-btn admin-btn-primary" id="btn-manage-picks">⭐ 큐레이터 PICK 설정</button>
+            <button class="admin-btn" id="btn-view-picks">📋 현재 PICK 보기</button>
+          </div>
+          <div class="admin-log" id="picks-log"></div>
+        </div>
+
+        <div class="admin-section">
           <h3>🔍 데이터 검증</h3>
           <p class="admin-desc">저장된 강의 데이터의 품질을 확인합니다.</p>
           <div class="admin-btn-group">
@@ -157,6 +167,8 @@ function enterAdminMode() {
     if (confirm('⚠️ 모든 데이터를 삭제하고 처음부터 다시 동기화합니다. 계속?')) runSync(true);
   });
   $('#btn-sync-auto').addEventListener('click', runAutoSync);
+  $('#btn-manage-picks').addEventListener('click', manageCuratorPicks);
+  $('#btn-view-picks').addEventListener('click', viewCurrentPicks);
   $('#btn-verify-data').addEventListener('click', verifyData);
   $('#btn-verify-sample').addEventListener('click', verifySample);
   $('#btn-test-graphql').addEventListener('click', testGraphQL);
@@ -250,6 +262,35 @@ async function runAutoSync() {
   loadAdminStatus();
 }
 
+// ★ 큐레이터 PICK 관리
+function manageCuratorPicks() {
+  const currentPicks = localStorage.getItem('curator_picks');
+  const pickIds = currentPicks ? JSON.parse(currentPicks) : ['8324', '1717020', '2360128'];
+  
+  const newPicks = prompt(
+    '큐레이터 PICK 강의 ID를 입력하세요 (쉼표로 구분):\n\n예: 8324,1717020,2360128\n\n현재 설정:',
+    pickIds.join(',')
+  );
+  
+  if (newPicks !== null) {
+    const ids = newPicks.split(',').map(id => id.trim()).filter(Boolean);
+    localStorage.setItem('curator_picks', JSON.stringify(ids));
+    
+    const log = $('#picks-log');
+    log.innerHTML = `<div class="log-entry log-success">⭐ 큐레이터 PICK이 ${ids.length}개로 업데이트되었습니다.<br>강의 ID: ${ids.join(', ')}</div>`;
+    
+    toast(`⭐ 큐레이터 PICK이 ${ids.length}개로 업데이트되었습니다.`);
+  }
+}
+
+function viewCurrentPicks() {
+  const currentPicks = localStorage.getItem('curator_picks');
+  const pickIds = currentPicks ? JSON.parse(currentPicks) : ['8324', '1717020', '2360128'];
+  
+  const log = $('#picks-log');
+  log.innerHTML = `<div class="log-entry log-info"><strong>📋 현재 큐레이터 PICK:</strong><br>${pickIds.map((id, i) => `${i+1}. 강의 ID: ${id}`).join('<br>')}<br><br>💡 일반 모드에서 로고 3번 클릭으로도 관리 가능합니다.</div>`;
+}
+
 async function verifyData() {
   const log = $('#verify-log');
   log.innerHTML = `<div class="log-entry log-info">🔍 검증 시작...</div>`;
@@ -315,7 +356,7 @@ async function viewChunk() {
     const res = await fetch(`${WORKER_URL}/get-courses?chunk=${num}`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
     if (!res.ok) { log.innerHTML += `<div class="log-entry log-error">❌ Chunk ${num} 없음</div>`; return; }
     const data = await res.json();
-    log.innerHTML += `<div class="log-entry log-success"><strong>📦 Chunk ${num}: ${data.length}개</strong><br>${data.slice(0, 5).map((c, i) => `${i + 1}. <strong>${c.title?.substring(0, 45)}</strong> | ⭐${c.rating?.toFixed(1) || '-'} | 👥${c.enrollments || '-'} | 💬${c.subtitles || '없음'}`).join('<br>')}${data.length > 5 ? `<br>... 외 ${data.length - 5}개` : ''}</div>`;
+    log.innerHTML += `<div class="log-entry log-success"><strong>📦 Chunk ${num}: ${data.length}개</strong><br>${data.slice(0, 5).map((c, i) => `${i + 1}. <strong>${c.title?.substring(0, 45)}</strong> | ⭐${c.rating?.toFixed(1) || '-'} | 👥${c.enrollments || '-'}▲ | 💬${c.subtitles || '없음'}`).join('<br>')}${data.length > 5 ? `<br>... 외 ${data.length - 5}개` : ''}</div>`;
   } catch (e) { log.innerHTML += `<div class="log-entry log-error">❌ ${e.message}</div>`; }
 }
 
@@ -339,7 +380,7 @@ async function launch() {
       const status = await statusRes.json();
       totalChunks = status.totalChunks || 0;
     } catch (e) {
-      console.warn('Worker 상태 확인 실패');
+      console.warn('Worker 상태 확인 실패, 순차 로딩으로 전환');
     }
 
     let allCourses = [];
@@ -430,7 +471,7 @@ async function playLaunchSequence() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 앱 초기화
+// 앱 초기화 — 모든 기능 통합
 // ═══════════════════════════════════════════════════════════
 function initApp() {
   $('#welcome-msg').innerHTML = S.selectedFamilies.length > 0
@@ -439,6 +480,10 @@ function initApp() {
 
   renderDashCards();
   initMultiSelects();
+
+  // ★ 하이라이트 강의 초기화
+  initHighlight();
+  setupHoverPause();
 
   // 탭 이벤트
   $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
@@ -457,21 +502,6 @@ function initApp() {
     });
   });
 
-  // ★ 하이라이트 강의 초기화
-  initHighlight();
-  setupHoverPause();
-
-  // ★ 관리자 모드 — 큐레이터 PICK 관리 (로고 트리플 클릭)
-  let clickCount = 0;
-  $('.app-header h1').addEventListener('click', () => {
-    clickCount++;
-    setTimeout(() => { clickCount = 0; }, 1000);
-    if (clickCount === 3) {
-      manageCuratorPicks();
-      clickCount = 0;
-    }
-  });
-  
   // ★ 감도 조절 버튼
   $$('.sensitivity-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -552,6 +582,17 @@ function initApp() {
   // 첫 필터링
   applyFilters();
 
+  // ★ 큐레이터 PICK 관리 (로고 3번 클릭)
+  let clickCount = 0;
+  $('.app-header h1').addEventListener('click', () => {
+    clickCount++;
+    setTimeout(() => { clickCount = 0; }, 1000);
+    if (clickCount === 3) {
+      manageCuratorPicks();
+      clickCount = 0;
+    }
+  });
+
   // ★ 도움말 버튼
   $('#btn-help')?.addEventListener('click', () => {
     $('#help-overlay').classList.add('active');
@@ -565,7 +606,7 @@ function initApp() {
 
   // ★ 키보드 단축키
   document.addEventListener('keydown', (e) => {
-    // / 키 = 검색창 포커스 (input, textarea, select에서는 무시)
+    // / 키 = 검색창 포커스
     if (e.key === '/' && !e.target.matches('input, textarea, select')) {
       e.preventDefault();
       $('#search-input').focus();
@@ -576,7 +617,7 @@ function initApp() {
       $('#help-overlay')?.classList.remove('active');
       $('#ai-panel')?.classList.remove('open');
     }
-    // ← → 키 = 페이지 이동 (input에서는 무시)
+    // ← → 키 = 페이지 이동
     if (!e.target.matches('input, textarea, select')) {
       if (e.key === 'ArrowLeft' && S.page > 1) {
         S.page--;
