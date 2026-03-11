@@ -16,33 +16,47 @@ function renderList() {
 
   if(data.length === 0) {
     const empty = `<div class="empty-state"><h3>😅 발견된 별이 없습니다</h3><p>스캐너 설정을 변경해보세요.</p></div>`;
-    $('#table-body').innerHTML = `<tr><td colspan="11">${empty}</td></tr>`;
+    $('#table-body').innerHTML = `<tr><td colspan="12">${empty}</td></tr>`;
     $('#view-card').innerHTML = empty;
     $('#view-compact').innerHTML = empty;
     $('#pagination').innerHTML = '';
     return;
   }
 
-  // 테이블 뷰
+  // 테이블 뷰 — 자막 컬럼 추가, 텍스트 오버플로우 처리
   $('#table-body').innerHTML = data.map(c => {
     const url = buildCourseUrl(c);
     const cat = c.category?.split(',')[0]?.trim() || 'N/A';
     const color = getCatColor(cat);
     const checked = S.selectedIds.has(c.id) ? 'checked' : '';
     const rating = c.rating > 0 ? c.rating.toFixed(1) : '-';
-    const enrollments = c.enrollments > 0 ? (c.enrollments > 1000 ? `${Math.round(c.enrollments/1000)}K` : c.enrollments) : '-';
+    const enrollments = c.enrollments > 0 ? (c.enrollments > 1000 ? `${Math.round(c.enrollments/1000)}K` : c.enrollments.toLocaleString()) : '-';
+    
+    // 자막 처리 — 한국어 포함 여부 체크
+    let subtitlesDisplay = '-';
+    if (c.subtitles && c.subtitles !== '없음') {
+      const hasKorean = c.subtitles.includes('한국어') || c.subtitles.includes('Korean');
+      if (hasKorean) {
+        subtitlesDisplay = '🇰🇷 한국어';
+      } else {
+        const langs = c.subtitles.split(',').map(s => s.trim()).slice(0, 2);
+        subtitlesDisplay = langs.join(', ');
+        if (langs.length > 2) subtitlesDisplay += '...';
+      }
+    }
 
     return `<tr style="--row-cat-color:${color}">
       <td class="col-check"><input type="checkbox" data-id="${c.id}" ${checked} /></td>
-      <td><span class="cat-badge" style="border-color:${color}33;color:${color}">${getCatEmoji(cat)} ${cat}</span></td>
-      <td>${c.topic||'-'}</td>
-      <td><a href="${url}" target="_blank" class="course-link">${c.title}</a></td>
+      <td><span class="cat-badge" style="border-color:${color}33;color:${color}" title="${cat}">${getCatEmoji(cat)} ${cat.length > 12 ? cat.substring(0,12)+'...' : cat}</span></td>
+      <td title="${c.topic||''}">${c.topic ? (c.topic.length > 15 ? c.topic.substring(0,15)+'...' : c.topic) : '-'}</td>
+      <td><a href="${url}" target="_blank" class="course-link" title="${c.title}">${c.title}</a></td>
       <td><button class="detail-btn" data-id="${c.id}">📋</button></td>
       <td>${rating}</td>
       <td>${enrollments}</td>
       <td>${c.language}</td>
+      <td title="${c.subtitles||''}">${subtitlesDisplay}</td>
       <td>${c.difficulty}</td>
-      <td>${c.instructor?.split(',')[0]?.trim()||'-'}</td>
+      <td title="${c.instructor||''}">${c.instructor ? (c.instructor.length > 20 ? c.instructor.substring(0,20)+'...' : c.instructor) : '-'}</td>
       <td>${c.isNew?'<span class="badge-new">✨NEW</span>':''}</td>
     </tr>`;
   }).join('');
@@ -52,6 +66,8 @@ function renderList() {
     const url = buildCourseUrl(c);
     const cat = c.category?.split(',')[0]?.trim() || 'N/A';
     const color = getCatColor(cat);
+    const hasKoreanSub = c.subtitles && (c.subtitles.includes('한국어') || c.subtitles.includes('Korean'));
+    
     return `<div class="course-card" style="animation-delay:${i*40}ms;--card-cat-color:${color}">
       <div class="card-cat-stripe"></div>
       <span class="cat-badge" style="border-color:${color}33;color:${color}">${getCatEmoji(cat)} ${cat}</span>
@@ -61,6 +77,7 @@ function renderList() {
         ${c.isNew?'<span class="badge-new">✨NEW</span>':''}
         ${c.rating > 0 ? `<span class="cat-badge">⭐ ${c.rating.toFixed(1)}</span>` : ''}
         ${c.enrollments > 0 ? `<span class="cat-badge">👥 ${c.enrollments > 1000 ? Math.round(c.enrollments/1000)+'K' : c.enrollments}</span>` : ''}
+        ${hasKoreanSub ? `<span class="cat-badge">🇰🇷 자막</span>` : ''}
       </div>
       <a href="${url}" target="_blank" class="card-cta">🚀 워프 점프 →</a>
     </div>`;
@@ -100,7 +117,6 @@ function renderList() {
   updateFAB();
 }
 
-// 페이지네이션
 function renderPagination() {
   const container = $('#pagination');
   const totalPages = Math.ceil(S.filtered.length / S.rows);
@@ -127,7 +143,6 @@ function renderPagination() {
   });
 }
 
-// 플로팅 액션 바
 function updateFAB() {
   const fab = $('#fab');
   if(S.selectedIds.size > 0) {
@@ -138,17 +153,17 @@ function updateFAB() {
   }
 }
 
-// 대시보드 카드
+// 대시보드 카드 — 한국어 제거, 자막 추가
 function renderDashCards() {
   const total = S.courses.length;
-  const korean = S.courses.filter(c => c.language === '한국어').length;
   const newCount = S.courses.filter(c => c.isNew).length;
   const highRated = S.courses.filter(c => c.rating >= 4.5).length;
   const popular = S.courses.filter(c => c.enrollments > 1000).length;
+  const withSubtitles = S.courses.filter(c => c.subtitles && c.subtitles !== '없음' && (c.subtitles.includes('한국어') || c.subtitles.includes('Korean'))).length;
 
   const cards = [
     { icon:'🌟', value: total, label:'전체 별', action: () => { resetAll(); } },
-    { icon:'🇰🇷', value: korean, label:'한국어 별', action: () => { setMSValues('f-language',['한국어']); applyFilters(); } },
+    { icon:'💬', value: withSubtitles, label:'한글자막', action: () => { setMSValues('f-subtitles',['한국어']); applyFilters(); } },
     { icon:'✨', value: newCount, label:'신규 별', action: () => { setMSValues('f-attr',['NEW']); applyFilters(); } },
     { icon:'⭐', value: highRated, label:'고평점 별', action: () => { setMSValues('f-rating',['4.5']); applyFilters(); } },
     { icon:'🔥', value: popular, label:'인기 별', action: () => { $('#sort-select').value='enrollments'; applyFilters(); } },
