@@ -522,3 +522,4 @@ function switchTab(tabId) {
   $(`#panel-${tabId}`).classList.add('active');
   $(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
   $('#list-section').style.display = tabId === 'stars' ? 'none' : '';
+}
