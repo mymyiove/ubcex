@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -54,6 +54,37 @@
   </header>
 
   <div class="dash-cards" id="dash-cards"></div>
+
+  <!-- ★ 하이라이트 강의 섹션 (새로 추가) -->
+  <div class="highlight-section">
+    <div class="highlight-grid">
+      <!-- 왼쪽: 최신 인기 과정 TOP 6 -->
+      <div class="highlight-panel">
+        <div class="highlight-header">
+          <h3>🔥 최신 인기 과정</h3>
+          <div class="highlight-controls">
+            <button class="highlight-prev" id="popular-prev" title="이전">◀</button>
+            <span class="highlight-indicator" id="popular-indicator">1 / 6</span>
+            <button class="highlight-next" id="popular-next" title="다음">▶</button>
+          </div>
+        </div>
+        <div class="highlight-carousel" id="popular-carousel"></div>
+      </div>
+
+      <!-- 오른쪽: 큐레이터 PICK -->
+      <div class="highlight-panel">
+        <div class="highlight-header">
+          <h3>⭐ 큐레이터 PICK</h3>
+          <div class="highlight-controls">
+            <button class="highlight-prev" id="curator-prev" title="이전">◀</button>
+            <span class="highlight-indicator" id="curator-indicator">1 / 3</span>
+            <button class="highlight-next" id="curator-next" title="다음">▶</button>
+          </div>
+        </div>
+        <div class="highlight-carousel" id="curator-carousel"></div>
+      </div>
+    </div>
+  </div>
 
   <nav class="tab-nav">
     <button class="tab-btn active" data-tab="explore" title="자유롭게 강의를 탐험합니다">🧭 우주 탐험</button>
@@ -147,7 +178,6 @@
     </div>
   </div>
 
-  <!-- ★ 테이블 헤더 — 클릭 정렬 가능 -->
   <div class="list-section" id="list-section">
     <div class="list-header">
       <h2>📖 별 카탈로그</h2>
@@ -181,7 +211,6 @@
   </div>
 </div>
 
-<!-- Floating Action Bar -->
 <div class="fab" id="fab">
   <span id="fab-count">🛸 0개 별 선택</span>
   <button class="btn-fab-csv" id="fab-csv" title="선택한 강의 CSV 다운로드">📋 미션 보고서</button>
@@ -189,7 +218,6 @@
   <button id="fab-clear" title="선택 해제">✨ 해제</button>
 </div>
 
-<!-- Side Panel -->
 <div id="side-panel-overlay">
   <div id="side-panel">
     <button class="sp-close" id="sp-close" title="닫기">&times;</button>
@@ -197,7 +225,6 @@
   </div>
 </div>
 
-<!-- ★ 도움말 오버레이 -->
 <div id="help-overlay" class="help-overlay">
   <div class="help-content">
     <button class="help-close" id="help-close">&times;</button>
@@ -252,6 +279,7 @@
       <ul>
         <li><strong>/</strong> — 검색창 포커스</li>
         <li><strong>Esc</strong> — 패널/도움말 닫기</li>
+        <li><strong>← →</strong> — 페이지 이동</li>
       </ul>
     </div>
   </div>
@@ -260,7 +288,6 @@
 <button id="scroll-to-top" title="맨 위로">↑</button>
 <div id="toast-container"></div>
 
-<!-- ★ 저작권 + 도움말 버튼 -->
 <footer class="app-footer">
   <p>🚀 Udemy Business Course Explorer v2.0</p>
   <p>© 2026 Woongjin Thinkbig. Hugh Jung. All rights reserved.</p>
@@ -275,9 +302,9 @@
 <script src="js/ai.js"></script>
 <script src="js/mission.js"></script>
 <script src="js/stars.js"></script>
+<script src="js/highlight.js"></script>
 <script src="js/app.js"></script>
 
-<!-- ★ 구글 번역기 — 기본 한국어 -->
 <script>
 function googleTranslateElementInit() {
   new google.translate.TranslateElement({
@@ -287,7 +314,6 @@ function googleTranslateElementInit() {
     autoDisplay: false
   }, 'google_translate_element');
   
-  // 기본 한국어 선택 시도
   setTimeout(() => {
     const select = document.querySelector('.goog-te-combo');
     if (select) {
