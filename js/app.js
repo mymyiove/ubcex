@@ -415,7 +415,31 @@ function initApp() {
   initMultiSelects();
 
   // ★ 카테고리 자동 필터 제거 — 이전 버그 원인
+  // ★ 도움말 버튼
+    $('#btn-help')?.addEventListener('click', () => {
+      $('#help-overlay').classList.add('active');
+    });
+    $('#help-close')?.addEventListener('click', () => {
+      $('#help-overlay').classList.remove('active');
+    });
+    $('#help-overlay')?.addEventListener('click', (e) => {
+      if (e.target === $('#help-overlay')) $('#help-overlay').classList.remove('active');
+    });
+  
+    // ★ 키보드 단축키
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && !e.target.matches('input, textarea, select')) {
+        e.preventDefault();
+        $('#search-input').focus();
+      }
+      if (e.key === 'Escape') {
+        closeSidePanel();
+        $('#help-overlay')?.classList.remove('active');
+      }
+    });
 
+
+  
   // 탭 이벤트
   $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
