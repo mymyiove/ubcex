@@ -743,3 +743,217 @@ th.sortable.sort-asc::after {
   color: var(--text-muted);
   opacity: 0.7;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   번역기 툴바 여백 — 사이드 패널 수정
+   ═══════════════════════════════════════════════════════════ */
+body.translated-ltr #side-panel,
+body.translated-rtl #side-panel {
+  top: 40px !important;
+  height: calc(100vh - 40px) !important;
+}
+
+.goog-te-banner-frame {
+  z-index: 10000 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   하이라이트 강의 섹션
+   ═══════════════════════════════════════════════════════════ */
+.highlight-section {
+  margin: 1.5rem 0;
+}
+
+.highlight-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.highlight-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  position: relative;
+}
+
+.highlight-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.highlight-header h3 {
+  font-size: 1rem;
+  color: var(--text-bright);
+  margin: 0;
+}
+
+.highlight-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.highlight-prev, .highlight-next {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: var(--bg-card-solid);
+  color: var(--text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.highlight-prev:hover, .highlight-next:hover {
+  border-color: var(--accent);
+  color: var(--accent-light);
+}
+
+.highlight-indicator {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-width: 40px;
+  text-align: center;
+}
+
+.highlight-carousel {
+  min-height: 200px;
+  position: relative;
+}
+
+.highlight-card {
+  display: flex;
+  gap: 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.highlight-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--card-color, var(--accent));
+}
+
+.highlight-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.highlight-card.curator-pick {
+  border-color: var(--warning);
+}
+
+.highlight-card.curator-pick::before {
+  background: linear-gradient(90deg, var(--warning), var(--accent));
+}
+
+.highlight-thumbnail {
+  flex-shrink: 0;
+  width: 80px;
+  height: 60px;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+}
+
+.highlight-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.highlight-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.highlight-category {
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.highlight-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.highlight-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+.highlight-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: auto;
+}
+
+.highlight-cta {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  background: var(--accent-gradient);
+  color: white;
+  text-decoration: none;
+  border-radius: var(--radius-xs);
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: var(--transition);
+  margin-top: 0.5rem;
+  align-self: flex-start;
+}
+
+.highlight-cta:hover {
+  box-shadow: var(--shadow-glow);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .highlight-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .highlight-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .highlight-thumbnail {
+    width: 100%;
+    height: 120px;
+    align-self: center;
+  }
+}
