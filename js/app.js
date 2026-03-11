@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// app.js — 앱 초기화, 게이트, 워프, 관리자 모드, chunk 직접 로딩
+// app.js — 앱 초기화, 게이트, 워프, 관리자 모드, 병렬 chunk 로딩
 // ═══════════════════════════════════════════════════════════
 
 const ADMIN_CODE = 'jhj11';
@@ -108,9 +108,9 @@ function enterAdminMode() {
           <h3>📡 강의 동기화</h3>
           <p class="admin-desc">Udemy Business GraphQL API에서 강의 데이터를 가져옵니다.</p>
           <div class="admin-btn-group">
-            <button class="admin-btn admin-btn-primary" id="btn-sync-continue" title="마지막 지점부터 이어서">▶️ 이어서 동기화</button>
-            <button class="admin-btn admin-btn-warning" id="btn-sync-reset" title="처음부터 다시">🔄 전체 재동기화</button>
-            <button class="admin-btn admin-btn-danger" id="btn-sync-auto" title="완료될 때까지 자동 반복">🚀 자동 전체 동기화</button>
+            <button class="admin-btn admin-btn-primary" id="btn-sync-continue">▶️ 이어서 동기화</button>
+            <button class="admin-btn admin-btn-warning" id="btn-sync-reset">🔄 전체 재동기화</button>
+            <button class="admin-btn admin-btn-danger" id="btn-sync-auto">🚀 자동 전체 동기화</button>
           </div>
           <div class="admin-log" id="sync-log"></div>
         </div>
@@ -119,8 +119,8 @@ function enterAdminMode() {
           <h3>🔍 데이터 검증</h3>
           <p class="admin-desc">저장된 강의 데이터의 품질을 확인합니다.</p>
           <div class="admin-btn-group">
-            <button class="admin-btn" id="btn-verify-data" title="데이터 현황 확인">📊 데이터 현황</button>
-            <button class="admin-btn" id="btn-verify-sample" title="샘플 데이터 확인">📋 샘플 보기</button>
+            <button class="admin-btn" id="btn-verify-data">📊 데이터 현황</button>
+            <button class="admin-btn" id="btn-verify-sample">📋 샘플 보기</button>
           </div>
           <div class="admin-log" id="verify-log"></div>
         </div>
@@ -129,8 +129,8 @@ function enterAdminMode() {
           <h3>🔑 API 테스트</h3>
           <p class="admin-desc">외부 API 연결 상태를 확인합니다.</p>
           <div class="admin-btn-group">
-            <button class="admin-btn" id="btn-test-graphql" title="GraphQL 토큰 테스트">🔐 GraphQL 테스트</button>
-            <button class="admin-btn" id="btn-test-gemini" title="Gemini AI 테스트">🤖 Gemini 테스트</button>
+            <button class="admin-btn" id="btn-test-graphql">🔐 GraphQL 테스트</button>
+            <button class="admin-btn" id="btn-test-gemini">🤖 Gemini 테스트</button>
           </div>
           <div class="admin-log" id="api-log"></div>
         </div>
@@ -141,7 +141,7 @@ function enterAdminMode() {
           <div class="admin-btn-group" style="align-items:center;">
             <label style="color:var(--text-secondary);font-size:0.85rem;">Chunk:</label>
             <input type="number" id="chunk-number" value="0" min="0" max="50" style="width:60px;padding:0.4rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);text-align:center;" />
-            <button class="admin-btn" id="btn-view-chunk" title="조회">🔍 조회</button>
+            <button class="admin-btn" id="btn-view-chunk">🔍 조회</button>
           </div>
           <div class="admin-log" id="raw-log"></div>
         </div>
@@ -283,7 +283,7 @@ async function verifySample() {
     const s = data[0];
     log.innerHTML += `<div class="log-entry"><strong>필드:</strong> ${Object.keys(s).join(', ')}<br>${Object.entries(s).map(([k, v]) => `<strong>${k}:</strong> ${typeof v === 'string' && v.length > 80 ? v.substring(0, 80) + '...' : v}`).join('<br>')}</div>`;
     const withSubs = data.filter(c => c.subtitles && c.subtitles !== '없음' && c.subtitles !== '');
-    log.innerHTML += `<div class="log-entry log-success">💬 자막 있는 강의: ${withSubs.length}/${data.length}개<br>${withSubs.slice(0, 3).map(c => `- ${c.title?.substring(0, 35)}: [${c.subtitles}]`).join('<br>')}</div>`;
+    log.innerHTML += `<div class="log-entry log-success">💬 자막: ${withSubs.length}/${data.length}개<br>${withSubs.slice(0, 3).map(c => `- ${c.title?.substring(0, 35)}: [${c.subtitles}]`).join('<br>')}</div>`;
   } catch (e) { log.innerHTML += `<div class="log-entry log-error">❌ ${e.message}</div>`; }
 }
 
@@ -293,7 +293,7 @@ async function testGraphQL() {
   try {
     const res = await fetch(`${WORKER_URL}/test-token`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
     const data = await res.json();
-    log.innerHTML += `<div class="log-entry ${data.success ? 'log-success' : 'log-error'}">${data.success ? '✅ 토큰 발급 성공' : '❌ 실패: ' + data.error}</div>`;
+    log.innerHTML += `<div class="log-entry ${data.success ? 'log-success' : 'log-error'}">${data.success ? '✅ 토큰 성공' : '❌ 실패: ' + data.error}</div>`;
   } catch (e) { log.innerHTML += `<div class="log-entry log-error">❌ ${e.message}</div>`; }
 }
 
@@ -303,7 +303,7 @@ async function testGemini() {
   try {
     const res = await fetch('/api/ai-expand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: 'python' }) });
     const data = await res.json();
-    log.innerHTML += `<div class="log-entry ${data.success ? 'log-success' : 'log-error'}">${data.success ? '✅ Gemini 연결 성공' : '❌ ' + (data.error || '실패')}</div>`;
+    log.innerHTML += `<div class="log-entry ${data.success ? 'log-success' : 'log-error'}">${data.success ? '✅ Gemini 성공' : '❌ ' + (data.error || '실패')}</div>`;
   } catch (e) { log.innerHTML += `<div class="log-entry log-error">❌ ${e.message}</div>`; }
 }
 
@@ -320,7 +320,7 @@ async function viewChunk() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 일반 모드 — 워프 전환 + 프론트엔드 직접 chunk 로딩
+// 일반 모드 — 워프 전환 + ★ 병렬 chunk 로딩
 // ═══════════════════════════════════════════════════════════
 async function launch() {
   S.selectedFamilies = [...$$('.gate-job-card.selected')].map(c => c.dataset.family);
@@ -330,38 +330,64 @@ async function launch() {
 
   let dataLoaded = false;
   try {
-    // ★ 프론트엔드에서 직접 Worker chunk 로딩 (Pages Function 우회)
+    // ★ 1단계: Worker 상태 확인 → chunk 수 파악
+    let totalChunks = 0;
+    try {
+      const statusRes = await fetch(`${WORKER_URL}/status`, {
+        headers: { 'Authorization': `Bearer ${WORKER_SECRET}` }
+      });
+      const status = await statusRes.json();
+      totalChunks = status.totalChunks || 0;
+    } catch (e) {
+      console.warn('Worker 상태 확인 실패');
+    }
+
     let allCourses = [];
-    let chunkIndex = 0;
 
-    while (true) {
-      try {
-        const chunkRes = await fetch(`${WORKER_URL}/get-courses?chunk=${chunkIndex}`, {
-          headers: { 'Authorization': `Bearer ${WORKER_SECRET}` }
-        });
+    if (totalChunks > 0) {
+      // ★ 2단계: 모든 chunk 병렬 로딩 (Promise.all)
+      const msgEl = $('#launch-message');
+      if (msgEl) msgEl.textContent = `강의 데이터 병렬 로딩 중... (${totalChunks}개 chunk)`;
 
-        if (!chunkRes.ok) {
-          if (chunkIndex === 0) {
-            console.error('Worker 첫 chunk 로드 실패:', chunkRes.status);
-          }
+      const chunkPromises = [];
+      for (let i = 0; i < totalChunks; i++) {
+        chunkPromises.push(
+          fetch(`${WORKER_URL}/get-courses?chunk=${i}`, {
+            headers: { 'Authorization': `Bearer ${WORKER_SECRET}` }
+          })
+          .then(res => res.ok ? res.json() : [])
+          .catch(() => [])
+        );
+      }
+
+      const results = await Promise.all(chunkPromises);
+      results.forEach(chunkData => {
+        if (Array.isArray(chunkData) && chunkData.length > 0) {
+          allCourses = allCourses.concat(chunkData);
+        }
+      });
+
+      if (msgEl) msgEl.textContent = `${allCourses.length.toLocaleString()}개 강의 로드 완료!`;
+    } else {
+      // ★ 폴백: chunk 수를 모르면 순차 로딩
+      let chunkIndex = 0;
+      while (true) {
+        try {
+          const chunkRes = await fetch(`${WORKER_URL}/get-courses?chunk=${chunkIndex}`, {
+            headers: { 'Authorization': `Bearer ${WORKER_SECRET}` }
+          });
+          if (!chunkRes.ok) break;
+          const chunkData = await chunkRes.json();
+          if (!chunkData || !Array.isArray(chunkData) || chunkData.length === 0) break;
+          allCourses = allCourses.concat(chunkData);
+          chunkIndex++;
+          const msgEl = $('#launch-message');
+          if (msgEl) msgEl.textContent = `강의 데이터 로딩 중... (${allCourses.length.toLocaleString()}개)`;
+          if (chunkIndex >= 50) break;
+        } catch (e) {
+          if (chunkIndex === 0) break;
           break;
         }
-
-        const chunkData = await chunkRes.json();
-        if (!chunkData || !Array.isArray(chunkData) || chunkData.length === 0) break;
-
-        allCourses = allCourses.concat(chunkData);
-        chunkIndex++;
-
-        // 로딩 메시지 업데이트
-        const msgEl = $('#launch-message');
-        if (msgEl) msgEl.textContent = `강의 데이터 로딩 중... (${allCourses.length.toLocaleString()}개)`;
-
-        if (chunkIndex >= 50) break;
-      } catch (e) {
-        console.warn(`Chunk ${chunkIndex} 로드 실패:`, e.message);
-        if (chunkIndex === 0) break;
-        break;
       }
     }
 
@@ -414,32 +440,6 @@ function initApp() {
   renderDashCards();
   initMultiSelects();
 
-  // ★ 카테고리 자동 필터 제거 — 이전 버그 원인
-  // ★ 도움말 버튼
-    $('#btn-help')?.addEventListener('click', () => {
-      $('#help-overlay').classList.add('active');
-    });
-    $('#help-close')?.addEventListener('click', () => {
-      $('#help-overlay').classList.remove('active');
-    });
-    $('#help-overlay')?.addEventListener('click', (e) => {
-      if (e.target === $('#help-overlay')) $('#help-overlay').classList.remove('active');
-    });
-  
-    // ★ 키보드 단축키
-    document.addEventListener('keydown', (e) => {
-      if (e.key === '/' && !e.target.matches('input, textarea, select')) {
-        e.preventDefault();
-        $('#search-input').focus();
-      }
-      if (e.key === 'Escape') {
-        closeSidePanel();
-        $('#help-overlay')?.classList.remove('active');
-      }
-    });
-
-
-  
   // 탭 이벤트
   $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
@@ -521,7 +521,6 @@ function initApp() {
   // 사이드 패널
   $('#side-panel-overlay').addEventListener('click', (e) => { if (e.target === $('#side-panel-overlay')) closeSidePanel(); });
   $('#sp-close').addEventListener('click', closeSidePanel);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidePanel(); });
 
   // 멀티셀렉트 외부 클릭 닫기
   window.addEventListener('click', e => { if (!e.target.closest('.ms-wrap')) $$('.ms-panel').forEach(p => p.classList.remove('open')); });
@@ -537,6 +536,48 @@ function initApp() {
 
   // 첫 필터링
   applyFilters();
+
+  // ★ 도움말 버튼
+  $('#btn-help')?.addEventListener('click', () => {
+    $('#help-overlay').classList.add('active');
+  });
+  $('#help-close')?.addEventListener('click', () => {
+    $('#help-overlay').classList.remove('active');
+  });
+  $('#help-overlay')?.addEventListener('click', (e) => {
+    if (e.target === $('#help-overlay')) $('#help-overlay').classList.remove('active');
+  });
+
+  // ★ 키보드 단축키
+  document.addEventListener('keydown', (e) => {
+    // / 키 = 검색창 포커스 (input, textarea, select에서는 무시)
+    if (e.key === '/' && !e.target.matches('input, textarea, select')) {
+      e.preventDefault();
+      $('#search-input').focus();
+    }
+    // Esc 키 = 패널/도움말 닫기
+    if (e.key === 'Escape') {
+      closeSidePanel();
+      $('#help-overlay')?.classList.remove('active');
+      $('#ai-panel')?.classList.remove('open');
+    }
+    // ← → 키 = 페이지 이동 (input에서는 무시)
+    if (!e.target.matches('input, textarea, select')) {
+      if (e.key === 'ArrowLeft' && S.page > 1) {
+        S.page--;
+        renderList();
+        $('#list-section').scrollIntoView({ behavior: 'smooth' });
+      }
+      if (e.key === 'ArrowRight') {
+        const totalPages = Math.ceil(S.filtered.length / S.rows);
+        if (S.page < totalPages) {
+          S.page++;
+          renderList();
+          $('#list-section').scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    }
+  });
 }
 
 // 탭 전환
