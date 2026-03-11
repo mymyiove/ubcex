@@ -2,7 +2,6 @@
 // data.js — 전역 상태, 상수, 큐레이션 데이터, 매핑 테이블
 // ═══════════════════════════════════════════════════════════
 
-// 전역 상태 — 모든 JS 파일에서 접근
 const S = {
   subdomain: '',
   selectedFamilies: [],
@@ -11,25 +10,23 @@ const S = {
   page: 1,
   rows: 15,
   searchMode: 'ai',
+  sensitivity: 'balanced',
   viewMode: 'table',
   selectedIds: new Set(),
   currentGalaxy: 'development',
   starsMode: 'rating',
 };
 
-// DOM 헬퍼
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
-// 언어 매핑
 const LANG_MAP = {
   'en':'English','ko':'한국어','ja':'日本語','zh':'中文','es':'Español',
   'fr':'Français','de':'Deutsch','pt':'Português','ru':'Русский',
   'it':'Italiano','tr':'Türkçe','ar':'العربية','id':'Bahasa','hi':'हिन्दी','pl':'Polski'
 };
-const mapLang = (c) => { if(!c) return 'N/A'; const k=c.toLowerCase().split('_')[0]; return LANG_MAP[k]||c; };
+const mapLang = (c) => { if(!c) return 'N/A'; const k=c.toLowerCase().split(/[-_]/)[0]; return LANG_MAP[k]||c; };
 
-// 카테고리 컬러
 const CAT_COLORS = {
   'Development':'#3b82f6','IT & Software':'#6366f1','Business':'#8b5cf6',
   'Marketing':'#f59e0b','Design':'#ec4899','Finance & Accounting':'#10b981',
@@ -40,7 +37,6 @@ const CAT_COLORS = {
 };
 const getCatColor = (cat) => { if(!cat) return 'var(--accent)'; for(const k in CAT_COLORS) { if(cat.includes(k)) return CAT_COLORS[k]; } return 'var(--accent)'; };
 
-// 카테고리 이모지
 const CAT_EMOJIS = {
   'Development':'👨‍💻','IT & Software':'⚙️','Business':'💼','Finance & Accounting':'🧾',
   'Marketing':'📣','Office Productivity':'📊','Personal Development':'🧠','Design':'🎨',
@@ -50,7 +46,6 @@ const CAT_EMOJIS = {
 };
 const getCatEmoji = (cat) => { if(!cat) return '📁'; for(const k in CAT_EMOJIS) { if(cat.includes(k)) return CAT_EMOJIS[k]; } return '📁'; };
 
-// 한영 키워드 매핑 (AI 없이도 기본 번역)
 const KO_EN_MAP = {
   '마케팅':['marketing'],'개발':['development','programming'],'디자인':['design'],
   '리더십':['leadership'],'데이터':['data'],'분석':['analysis','analytics'],
@@ -64,11 +59,34 @@ const KO_EN_MAP = {
   '머신러닝':['machine learning'],'딥러닝':['deep learning']
 };
 
-// NEW 기준 (3개월)
 const NEW_MONTHS = 3;
 const isNew = (d) => { if(!d) return false; const u=new Date(d), t=new Date(); t.setMonth(t.getMonth()-NEW_MONTHS); return u>=t; };
 
-// NCS 기반 직무별 큐레이션 데이터
+// 감도 설정
+const SENSITIVITY_CONFIG = {
+  precise: {
+    label: '🔬 정밀',
+    description: '제목·주제에 키워드가 있는 강의만',
+    minScore: 40,
+    searchFields: ['title', 'topic', 'category'],
+    scoreWeights: { title: 50, category: 30, topic: 25, headline: 0, objectives: 0, description: 0 },
+  },
+  balanced: {
+    label: '📊 보통',
+    description: '제목·소개·학습목표에서 검색',
+    minScore: 15,
+    searchFields: ['title', 'topic', 'category', 'headline', 'objectives'],
+    scoreWeights: { title: 40, category: 30, topic: 20, headline: 15, objectives: 10, description: 0 },
+  },
+  wide: {
+    label: '🔭 광역',
+    description: '설명 전체에서 검색 (가장 넓음)',
+    minScore: 1,
+    searchFields: ['title', 'topic', 'category', 'headline', 'objectives', 'description'],
+    scoreWeights: { title: 40, category: 30, topic: 20, headline: 15, objectives: 10, description: 5 },
+  }
+};
+
 const CURATION = {
   product: { name: "제품", emoji: "🚀", color: "#8b5cf6", roles: [
     { id:"pm_po", name:"PM / PO", prompt:"PM PO product management 제품 관리 roadmap 로드맵 backlog 백로그 user story agile scrum kanban", keywords:["Product Mgt","Roadmap","Backlog","Agile"], cats:["Business","IT & Software"] },
@@ -119,7 +137,6 @@ const CURATION = {
   ]}
 };
 
-// 워프 로딩 단계
 const LAUNCH_STEPS = [
   { emoji: '⛽', message: '연료 주입 중...' },
   { emoji: '🗺️', message: '항로 계산 중...' },
