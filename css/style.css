@@ -578,3 +578,168 @@ td.col-check input { accent-color: var(--accent); width: 15px; height: 15px; cur
 ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-light); }
 ::selection { background: rgba(124, 108, 240, 0.3); color: var(--text-bright); }
+
+/* ═══════════════════════════════════════════════════════════
+   번역기 툴바 여백 보정
+   ═══════════════════════════════════════════════════════════ */
+.translate-bar {
+  margin-top: 0.5rem;
+}
+
+body.translated-ltr, body.translated-rtl {
+  padding-top: 40px !important;
+}
+
+.goog-te-banner-frame {
+  position: fixed !important;
+  top: 0 !important;
+  z-index: 10000 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   테이블 헤더 정렬 표시
+   ═══════════════════════════════════════════════════════════ */
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 1.2rem;
+}
+
+th.sortable:hover {
+  color: var(--text-bright);
+}
+
+th.sortable::after {
+  content: '⇅';
+  position: absolute;
+  right: 0.3rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.65rem;
+  opacity: 0.3;
+}
+
+th.sortable.sort-desc::after {
+  content: '▼';
+  opacity: 1;
+  color: var(--accent-light);
+}
+
+th.sortable.sort-asc::after {
+  content: '▲';
+  opacity: 1;
+  color: var(--accent-light);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   도움말 오버레이
+   ═══════════════════════════════════════════════════════════ */
+.help-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 3000;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.help-overlay.active {
+  display: flex;
+}
+
+.help-content {
+  background: var(--bg-nebula);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-width: 700px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 2rem;
+  position: relative;
+  animation: fadeSlideUp 0.3s ease;
+}
+
+.help-close {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.help-close:hover { color: var(--text-bright); }
+
+.help-content h2 {
+  font-size: 1.3rem;
+  color: var(--text-bright);
+  margin-bottom: 1.5rem;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.help-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.help-section:last-child {
+  border-bottom: none;
+}
+
+.help-section h3 {
+  font-size: 1rem;
+  color: var(--accent-light);
+  margin-bottom: 0.5rem;
+}
+
+.help-section p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+.help-section ul {
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.help-section li strong {
+  color: var(--text-primary);
+}
+
+/* 도움말 버튼 */
+.help-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: var(--transition);
+  margin-top: 0.5rem;
+}
+
+.help-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-light);
+}
+
+/* 저작권 */
+.app-footer p:nth-child(2) {
+  font-size: 0.7rem;
+  margin-top: 0.3rem;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
