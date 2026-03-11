@@ -48,8 +48,9 @@
   <header class="app-header">
     <h1>🚀 Udemy Business Course Explorer</h1>
     <p class="welcome" id="welcome-msg">탐험가님, <strong></strong> 우주에 도착했습니다!</p>
-    <!-- 구글 번역기 -->
-    <div id="google_translate_element" style="margin-top:0.5rem;"></div>
+    <div class="translate-bar">
+      <div id="google_translate_element"></div>
+    </div>
   </header>
 
   <div class="dash-cards" id="dash-cards"></div>
@@ -146,7 +147,7 @@
     </div>
   </div>
 
-  <!-- ★ 테이블 헤더 수정: 추천도 + 언어 + 한국어자막 여부 -->
+  <!-- ★ 테이블 헤더 — 클릭 정렬 가능 -->
   <div class="list-section" id="list-section">
     <div class="list-header">
       <h2>📖 별 카탈로그</h2>
@@ -160,15 +161,15 @@
       <table>
         <thead><tr>
           <th class="col-check"><input type="checkbox" id="check-all" title="전체 선택" /></th>
-          <th title="AI 추천도 점수">🎯 추천도</th>
-          <th title="카테고리">카테고리</th>
-          <th title="강의 제목 (클릭하면 상세 정보)">강의명</th>
-          <th title="강의 평점">평점</th>
-          <th title="수강자 수">수강</th>
-          <th title="강의 언어">언어</th>
+          <th class="sortable" data-sort="score" title="AI 추천도 점수 (클릭하여 정렬)">🎯 추천도</th>
+          <th class="sortable" data-sort="category" title="카테고리 (클릭하여 정렬)">카테고리</th>
+          <th class="sortable" data-sort="title" title="강의명 (클릭하여 정렬)">강의명</th>
+          <th class="sortable" data-sort="rating" title="평점 (클릭하여 정렬)">평점</th>
+          <th class="sortable" data-sort="enrollments" title="수강자 수 (클릭하여 정렬)">수강</th>
+          <th class="sortable" data-sort="language" title="언어 (클릭하여 정렬)">언어</th>
           <th title="한국어 자막 여부">🇰🇷자막</th>
-          <th title="난이도">난이도</th>
-          <th title="강의 시간">시간</th>
+          <th class="sortable" data-sort="difficulty" title="난이도 (클릭하여 정렬)">난이도</th>
+          <th class="sortable" data-sort="duration" title="강의 시간 (클릭하여 정렬)">시간</th>
           <th title="신규 여부">신규</th>
         </tr></thead>
         <tbody id="table-body"></tbody>
@@ -180,6 +181,7 @@
   </div>
 </div>
 
+<!-- Floating Action Bar -->
 <div class="fab" id="fab">
   <span id="fab-count">🛸 0개 별 선택</span>
   <button class="btn-fab-csv" id="fab-csv" title="선택한 강의 CSV 다운로드">📋 미션 보고서</button>
@@ -187,6 +189,7 @@
   <button id="fab-clear" title="선택 해제">✨ 해제</button>
 </div>
 
+<!-- Side Panel -->
 <div id="side-panel-overlay">
   <div id="side-panel">
     <button class="sp-close" id="sp-close" title="닫기">&times;</button>
@@ -194,11 +197,74 @@
   </div>
 </div>
 
+<!-- ★ 도움말 오버레이 -->
+<div id="help-overlay" class="help-overlay">
+  <div class="help-content">
+    <button class="help-close" id="help-close">&times;</button>
+    <h2>📖 사용 가이드</h2>
+    
+    <div class="help-section">
+      <h3>🧭 우주 탐험</h3>
+      <p>검색창에 키워드를 입력하면 관련 강의를 찾을 수 있습니다.</p>
+      <ul>
+        <li><strong>🤖 AI 내비</strong> — AI가 입력한 키워드를 확장하여 더 많은 관련 강의를 찾아줍니다.</li>
+        <li><strong>OR / AND</strong> — OR은 키워드 중 하나라도 포함된 강의, AND는 모든 키워드가 포함된 강의만 표시합니다.</li>
+        <li><strong>🔬 정밀 / 📊 보통 / 🔭 광역</strong> — 검색 감도를 조절합니다. 정밀할수록 적지만 정확한 결과, 광역일수록 많지만 넓은 결과를 보여줍니다.</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>🎯 추천도 점수</h3>
+      <p>검색 시 각 강의에 추천도 점수가 부여됩니다. 산출 방식:</p>
+      <ul>
+        <li><strong>제목에 키워드 포함</strong> — +40~50점</li>
+        <li><strong>카테고리 일치</strong> — +30점</li>
+        <li><strong>주제(토픽) 일치</strong> — +20~25점</li>
+        <li><strong>소개(headline) 포함</strong> — +15점</li>
+        <li><strong>학습목표 포함</strong> — +10점</li>
+        <li><strong>설명(description) 포함</strong> — +5점 (광역 모드만)</li>
+        <li><strong>보너스</strong> — 신규 강의 +3점, 한국어 자막 +3점, 고평점(4.5+) +5점</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>🛸 미션 센터</h3>
+      <p>직무별로 미리 설정된 키워드로 빠르게 큐레이션할 수 있습니다. 직군 → 직무 → 직급 순으로 선택하세요.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>📋 미션 보고서 (CSV)</h3>
+      <p>현재 필터링된 강의 목록을 CSV 파일로 다운로드합니다. 검색 키워드와 필터 조건이 파일에 포함됩니다.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>🔗 공유 링크</h3>
+      <p>현재 검색/필터 설정을 URL로 생성하여 슬랙이나 이메일로 공유할 수 있습니다.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>🌐 번역</h3>
+      <p>상단의 번역기를 사용하면 페이지 전체를 한국어로 번역할 수 있습니다. 강의 제목, 설명 등이 한국어로 표시됩니다.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>⌨️ 단축키</h3>
+      <ul>
+        <li><strong>/</strong> — 검색창 포커스</li>
+        <li><strong>Esc</strong> — 패널/도움말 닫기</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 <button id="scroll-to-top" title="맨 위로">↑</button>
 <div id="toast-container"></div>
 
+<!-- ★ 저작권 + 도움말 버튼 -->
 <footer class="app-footer">
   <p>🚀 Udemy Business Course Explorer v2.0</p>
+  <p>© 2026 Woongjin Thinkbig. Hugh Jung. All rights reserved.</p>
+  <p><button class="help-btn" id="btn-help" title="사용 가이드를 확인합니다">❓ 도움말</button></p>
 </footer>
 
 <script src="js/data.js"></script>
@@ -211,7 +277,7 @@
 <script src="js/stars.js"></script>
 <script src="js/app.js"></script>
 
-<!-- ★ 구글 번역기 -->
+<!-- ★ 구글 번역기 — 기본 한국어 -->
 <script>
 function googleTranslateElementInit() {
   new google.translate.TranslateElement({
@@ -220,6 +286,15 @@ function googleTranslateElementInit() {
     layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL,
     autoDisplay: false
   }, 'google_translate_element');
+  
+  // 기본 한국어 선택 시도
+  setTimeout(() => {
+    const select = document.querySelector('.goog-te-combo');
+    if (select) {
+      select.value = 'ko';
+      select.dispatchEvent(new Event('change'));
+    }
+  }, 1500);
 }
 </script>
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
