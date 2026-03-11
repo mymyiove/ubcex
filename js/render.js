@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// render.js — 헤더 클릭 정렬 + 추천도 툴팁
+// render.js — 강사명 추가 + 수강생 표시 개선 + 대시보드 3개
 // ═══════════════════════════════════════════════════════════
 
 let currentSortColumn = null;
@@ -10,7 +10,6 @@ function getPageData() {
   return S.filtered.slice(start, start + S.rows);
 }
 
-// ★ 테이블 헤더 클릭 정렬
 function sortByColumn(column) {
   if (currentSortColumn === column) {
     currentSortDirection = currentSortDirection === 'desc' ? 'asc' : 'desc';
@@ -32,6 +31,7 @@ function sortByColumn(column) {
       case 'language': va = a.language || ''; vb = b.language || ''; return dir * va.localeCompare(vb);
       case 'difficulty': va = a.difficulty || ''; vb = b.difficulty || ''; return dir * va.localeCompare(vb);
       case 'duration': va = a.contentLength || 0; vb = b.contentLength || 0; break;
+      case 'instructor': va = a.instructor || ''; vb = b.instructor || ''; return dir * va.localeCompare(vb);
       default: return 0;
     }
     return dir * (va - vb);
@@ -39,7 +39,6 @@ function sortByColumn(column) {
 
   S.page = 1;
 
-  // 헤더 정렬 표시 업데이트
   $$('th.sortable').forEach(th => {
     th.classList.remove('sort-asc', 'sort-desc');
     if (th.dataset.sort === column) {
@@ -59,26 +58,34 @@ function renderList() {
 
   if (data.length === 0) {
     const empty = `<div class="empty-state"><h3>😅 발견된 별이 없습니다</h3><p>감도를 🔭 광역으로 조절하거나 검색어를 변경해보세요.</p></div>`;
-    $('#table-body').innerHTML = `<tr><td colspan="11">${empty}</td></tr>`;
+    $('#table-body').innerHTML = `<tr><td colspan="12">${empty}</td></tr>`;
     $('#view-card').innerHTML = empty;
     $('#view-compact').innerHTML = empty;
     $('#pagination').innerHTML = '';
     return;
   }
 
-  // 추천도 산출 방법 툴팁
   const scoreTooltip = '추천도 산출: 제목 +40~50점, 카테고리 +30점, 주제 +20~25점, 소개 +15점, 학습목표 +10점, 설명 +5점(광역), 신규 +3점, 한국어자막 +3점, 고평점 +5점';
 
-  // 테이블 뷰
+  // ★ 테이블 뷰 — 강사명 추가
   $('#table-body').innerHTML = data.map(c => {
     const cat = c.category?.split(',')[0]?.trim() || '-';
     const color = getCatColor(cat);
     const checked = S.selectedIds.has(c.id) ? 'checked' : '';
     const rating = c.rating > 0 ? c.rating.toFixed(1) : '-';
-    const enrollments = c.enrollments > 0 ? (c.enrollments >= 10000 ? `${Math.round(c.enrollments / 1000)}K` : c.enrollments.toLocaleString()) : '-';
+    
+    // ★ 수강생 표시 개선
+    let enrollments = '-';
+    if (c.enrollments > 0) {
+      if (c.enrollments < 10) enrollments = `${c.enrollments}▼`;
+      else if (c.enrollments >= 10000) enrollments = `${Math.round(c.enrollments/1000)}K`;
+      else enrollments = c.enrollments.toLocaleString();
+    }
+    
     const durationText = formatDuration(c.contentLength);
-    const diffKR = { 'Beginner': '초급', 'BEGINNER': '초급', 'Intermediate': '중급', 'INTERMEDIATE': '중급', 'Expert': '고급', 'EXPERT': '고급', 'All Levels': '전체', 'ALL_LEVELS': '전체' }[c.difficulty] || c.difficulty;
+    const diffKR = {'Beginner':'초급','BEGINNER':'초급','Intermediate':'중급','INTERMEDIATE':'중급','Expert':'고급','EXPERT':'고급','All Levels':'전체','ALL_LEVELS':'전체'}[c.difficulty] || c.difficulty;
     const koSub = hasKoreanSub(c);
+    const instructor = c.instructor ? (c.instructor.length > 15 ? c.instructor.substring(0,15)+'...' : c.instructor) : '-';
 
     let scoreDisplay = '';
     if (c._score > 0) {
@@ -97,6 +104,7 @@ function renderList() {
       <td>${koSub ? '🇰🇷' : '-'}</td>
       <td>${diffKR}</td>
       <td title="${durationText}">${durationText || '-'}</td>
+      <td title="${c.instructor||''}">${instructor}</td>
       <td>${c.isNew ? '<span class="badge-new">✨</span>' : ''}</td>
     </tr>`;
   }).join('');
@@ -135,7 +143,6 @@ function renderList() {
     </div>`;
   }).join('');
 
-  // 강의 제목 클릭 → 사이드 패널
   document.querySelectorAll('.course-link[data-id]').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
@@ -144,7 +151,6 @@ function renderList() {
     });
   });
 
-  // 체크박스
   document.querySelectorAll('#table-body input[type="checkbox"], #view-compact input[type="checkbox"]').forEach(cb => {
     cb.addEventListener('change', () => {
       if (cb.checked) S.selectedIds.add(cb.dataset.id);
@@ -153,7 +159,6 @@ function renderList() {
     });
   });
 
-  // ★ 테이블 헤더 클릭 정렬 이벤트
   document.querySelectorAll('th.sortable').forEach(th => {
     th.style.cursor = 'pointer';
     th.onclick = () => sortByColumn(th.dataset.sort);
@@ -199,18 +204,21 @@ function updateFAB() {
   }
 }
 
+// ★ 대시보드 카드 — 전체별 + 신규별 + 발견된별 (3개)
 function renderDashCards() {
   const total = S.courses.length;
   const newCount = S.courses.filter(c => c.isNew).length;
+  const filteredCount = S.filtered.length;
 
   const cards = [
     { icon: '🌟', value: total, label: '전체 별', action: () => { resetAll(); }, tooltip: '모든 강의 표시' },
     { icon: '✨', value: newCount, label: '신규 별', action: () => { setMSValues('f-attr', ['NEW']); applyFilters(); }, tooltip: '최근 3개월 내 업데이트' },
+    { icon: '🔍', value: filteredCount, label: '발견된 별', action: null, tooltip: '현재 필터링된 강의 수' },
   ];
 
   const container = $('#dash-cards');
   container.innerHTML = cards.map((c, i) => `
-    <div class="dash-card" data-idx="${i}" title="${c.tooltip}">
+    <div class="dash-card ${c.action ? 'clickable' : ''}" data-idx="${i}" title="${c.tooltip}">
       <span class="icon">${c.icon}</span>
       <span class="value" data-target="${c.value}">0</span>
       <span class="label">${c.label}</span>
@@ -220,7 +228,9 @@ function renderDashCards() {
   container.querySelectorAll('.dash-card').forEach((card, i) => {
     const target = parseInt(card.querySelector('.value').dataset.target);
     animateCount(card.querySelector('.value'), target, 1200);
-    if (cards[i].action) card.addEventListener('click', cards[i].action);
-    card.style.cursor = 'pointer';
+    if (cards[i].action) {
+      card.addEventListener('click', cards[i].action);
+      card.style.cursor = 'pointer';
+    }
   });
 }
