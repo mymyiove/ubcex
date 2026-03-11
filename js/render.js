@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// render.js — 강사명 컬럼 + 수강생 ▲ 표기 + 헤더 클릭 정렬
+// render.js — 업데이트 컬럼 + 대시보드 다운로드 + 수강생 ▲
 // ═══════════════════════════════════════════════════════════
 
 let currentSortColumn = null;
@@ -32,6 +32,10 @@ function sortByColumn(column) {
       case 'difficulty': va = a.difficulty || ''; vb = b.difficulty || ''; return dir * va.localeCompare(vb);
       case 'duration': va = a.contentLength || 0; vb = b.contentLength || 0; break;
       case 'instructor': va = a.instructor || ''; vb = b.instructor || ''; return dir * va.localeCompare(vb);
+      case 'updated': 
+        va = a.lastUpdated ? new Date(a.lastUpdated) : new Date(0);
+        vb = b.lastUpdated ? new Date(b.lastUpdated) : new Date(0);
+        return dir * (va - vb);
       default: return 0;
     }
     return dir * (va - vb);
@@ -67,14 +71,14 @@ function renderList() {
 
   const scoreTooltip = '추천도 산출: 제목 +40~50점, 카테고리 +30점, 주제 +20~25점, 소개 +15점, 학습목표 +10점, 설명 +5점(광역), 신규 +3점, 한국어자막 +3점, 고평점 +5점';
 
-  // ★ 테이블 뷰 — 강사명 컬럼 + 수강생 ▲ 표기
+  // ★ 테이블 뷰 — 업데이트 컬럼 + 수강생 ▲
   $('#table-body').innerHTML = data.map(c => {
     const cat = c.category?.split(',')[0]?.trim() || '-';
     const color = getCatColor(cat);
     const checked = S.selectedIds.has(c.id) ? 'checked' : '';
     const rating = c.rating > 0 ? c.rating.toFixed(1) : '-';
     
-    // ★ 수강생 ▲ 표기 — 모든 숫자에 적용
+    // 수강생 ▲ 표기
     let enrollments = '-';
     if (c.enrollments > 0) {
       if (c.enrollments < 10) enrollments = `${c.enrollments}▲`;
@@ -85,9 +89,8 @@ function renderList() {
     const durationText = formatDuration(c.contentLength);
     const diffKR = {'Beginner':'초급','BEGINNER':'초급','Intermediate':'중급','INTERMEDIATE':'중급','Expert':'고급','EXPERT':'고급','All Levels':'전체','ALL_LEVELS':'전체'}[c.difficulty] || c.difficulty;
     const koSub = hasKoreanSub(c);
-    
-    // ★ 강사명 처리
     const instructor = c.instructor ? (c.instructor.length > 20 ? c.instructor.substring(0,20)+'...' : c.instructor) : '-';
+    const updateDate = formatUpdateDate(c.lastUpdated);
 
     let scoreDisplay = '';
     if (c._score > 0) {
@@ -107,7 +110,7 @@ function renderList() {
       <td>${diffKR}</td>
       <td title="${durationText}">${durationText || '-'}</td>
       <td title="${c.instructor||''}">${instructor}</td>
-      <td>${c.isNew ? '<span class="badge-new">✨</span>' : ''}</td>
+      <td title="${c.lastUpdated||''}">${updateDate}</td>
     </tr>`;
   }).join('');
 
@@ -130,6 +133,7 @@ function renderList() {
         ${c.rating > 0 ? `<span class="cat-badge">⭐ ${c.rating.toFixed(1)}</span>` : ''}
         ${c.enrollments > 0 ? `<span class="cat-badge">👥 ${enrollText}</span>` : ''}
         ${koSub ? `<span class="cat-badge">🇰🇷</span>` : ''}
+        <span class="cat-badge">📅 ${formatUpdateDate(c.lastUpdated)}</span>
       </div>
       <a href="${url}" target="_blank" class="card-cta">🚀 워프 점프 →</a>
     </div>`;
@@ -207,32 +211,102 @@ function updateFAB() {
   }
 }
 
+// ★ 대시보드 카드 + 다운로드 버튼
 function renderDashCards() {
   const total = S.courses.length;
   const newCount = S.courses.filter(c => c.isNew).length;
   const filteredCount = S.filtered.length;
 
-  const cards = [
-    { icon: '🌟', value: total, label: '전체 별', action: () => { resetAll(); }, tooltip: '모든 강의 표시' },
-    { icon: '✨', value: newCount, label: '신규 별', action: () => { setMSValues('f-attr', ['NEW']); applyFilters(); }, tooltip: '최근 3개월 내 업데이트' },
-    { icon: '🔍', value: filteredCount, label: '발견된 별', action: null, tooltip: '현재 필터링된 강의 수' },
-  ];
+  // 전체 별 카드
+  const totalCard = $('.dash-card[data-idx="0"]');
+  if (totalCard) {
+    const target = total;
+    animateCount(totalCard.querySelector('.value'), target, 1200);
+    totalCard.addEventListener('click', () => { resetAll(); });
+  }
 
-  const container = $('#dash-cards');
-  container.innerHTML = cards.map((c, i) => `
-    <div class="dash-card ${c.action ? 'clickable' : ''}" data-idx="${i}" title="${c.tooltip}">
-      <span class="icon">${c.icon}</span>
-      <span class="value" data-target="${c.value}">0</span>
-      <span class="label">${c.label}</span>
-    </div>
-  `).join('');
+  // 신규 별 카드
+  const newCard = $('.dash-card[data-idx="1"]');
+  if (newCard) {
+    const target = newCount;
+    animateCount(newCard.querySelector('.value'), target, 1200);
+    newCard.addEventListener('click', () => { setMSValues('f-attr', ['NEW']); applyFilters(); });
+  }
 
-  container.querySelectorAll('.dash-card').forEach((card, i) => {
-    const target = parseInt(card.querySelector('.value').dataset.target);
-    animateCount(card.querySelector('.value'), target, 1200);
-    if (cards[i].action) {
-      card.addEventListener('click', cards[i].action);
-      card.style.cursor = 'pointer';
-    }
+  // 발견된 별 카드
+  const discoveredCard = $('.dash-card[data-idx="2"]');
+  if (discoveredCard) {
+    const target = filteredCount;
+    animateCount(discoveredCard.querySelector('.value'), target, 1200);
+  }
+
+  // ★ 다운로드 버튼 이벤트
+  $('#btn-download-all')?.addEventListener('click', () => downloadAllCourses());
+  $('#btn-download-new')?.addEventListener('click', () => downloadNewCourses());
+}
+
+// ★ 전체 강의 다운로드
+function downloadAllCourses() {
+  const data = S.courses;
+  const headers = ['강의ID','강의명','카테고리','평점','수강신청수','언어','한국어자막','난이도','강의시간(분)','강사','업데이트','강의링크'];
+  const rows = data.map(c => {
+    const url = buildCourseUrl(c);
+    return [
+      c.id,
+      `"${(c.title||'').replace(/"/g,'""')}"`,
+      `"${c.category||''}"`,
+      c.rating||0,
+      c.enrollments||0,
+      c.language,
+      hasKoreanSub(c) ? 'Y' : 'N',
+      c.difficulty,
+      c.contentLength||0,
+      `"${(c.instructor||'').replace(/"/g,'""')}"`,
+      c.lastUpdated||'',
+      url
+    ].join(',');
   });
+
+  const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `All_Courses_${S.subdomain}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast(`📥 전체 ${data.length}개 강의 목록이 다운로드되었습니다.`);
+}
+
+// ★ 신규 강의 다운로드
+function downloadNewCourses() {
+  const data = S.courses.filter(c => c.isNew);
+  if (data.length === 0) { toast('신규 강의가 없습니다.', 'warning'); return; }
+
+  const headers = ['강의ID','강의명','카테고리','평점','수강신청수','언어','한국어자막','난이도','강의시간(분)','강사','업데이트','강의링크'];
+  const rows = data.map(c => {
+    const url = buildCourseUrl(c);
+    return [
+      c.id,
+      `"${(c.title||'').replace(/"/g,'""')}"`,
+      `"${c.category||''}"`,
+      c.rating||0,
+      c.enrollments||0,
+      c.language,
+      hasKoreanSub(c) ? 'Y' : 'N',
+      c.difficulty,
+      c.contentLength||0,
+      `"${(c.instructor||'').replace(/"/g,'""')}"`,
+      c.lastUpdated||'',
+      url
+    ].join(',');
+  });
+
+  const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `New_Courses_${S.subdomain}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast(`📥 신규 ${data.length}개 강의 목록이 다운로드되었습니다.`);
 }
