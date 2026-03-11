@@ -1,6 +1,3 @@
-// functions/api/ai-summarize.js
-// POST /api/ai-summarize — AI 강의 요약 (Gemini)
-
 export async function onRequestPost(context) {
   const { env, request } = context;
   const corsHeaders = {
@@ -58,7 +55,7 @@ JSON만 반환하고 마크다운 코드블록이나 설명을 추가하지 마�
 
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
-      throw new Error(`Gemini API ${geminiRes.status}: ${errText}`);
+      throw new Error(`Gemini API ${geminiRes.status}: ${errText.substring(0, 200)}`);
     }
 
     const geminiData = await geminiRes.json();
@@ -69,7 +66,13 @@ JSON만 반환하고 마크다운 코드블록이나 설명을 추가하지 마�
       const cleaned = rawText.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
       parsed = JSON.parse(cleaned);
     } catch {
-      parsed = { summary: rawText, recommendedFor: [], keyTopics: [], practicalValue: "", similarSearchTerms: [] };
+      parsed = {
+        summary: rawText,
+        recommendedFor: [],
+        keyTopics: [],
+        practicalValue: "",
+        similarSearchTerms: [],
+      };
     }
 
     return new Response(
