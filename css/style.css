@@ -1470,3 +1470,242 @@ td.col-check input { accent-color: var(--accent); width: 15px; height: 15px; cur
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-light); }
 
 ::selection { background: rgba(124, 108, 240, 0.3); color: var(--text-bright); }
+
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN PANEL
+   ═══════════════════════════════════════════════════════════ */
+#admin-panel {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.admin-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.admin-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.admin-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f59e0b, #ef4444, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.3rem;
+}
+
+.admin-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.admin-exit-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: var(--transition);
+}
+
+.admin-exit-btn:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* 상태 카드 */
+.admin-status-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.admin-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.admin-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.admin-card-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.admin-card-title {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.admin-card-value {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-bright);
+}
+
+.admin-card-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+
+/* 기능 섹션 */
+.admin-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.admin-section {
+  background: var(--bg-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.admin-section h3 {
+  font-size: 1.1rem;
+  color: var(--text-bright);
+  margin-bottom: 0.3rem;
+}
+
+.admin-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.admin-btn-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+}
+
+.admin-btn {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--border);
+  background: var(--bg-card-solid);
+  color: var(--text-primary);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: var(--transition);
+}
+
+.admin-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-light);
+}
+
+.admin-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-btn-primary {
+  background: var(--accent-gradient);
+  border: none;
+  color: white;
+  font-weight: 600;
+}
+
+.admin-btn-primary:hover {
+  box-shadow: var(--shadow-glow);
+}
+
+.admin-btn-warning {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.admin-btn-warning:hover {
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.admin-btn-danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.admin-btn-danger:hover {
+  background: rgba(248, 113, 113, 0.1);
+}
+
+/* 로그 영역 */
+.admin-log {
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 0.8rem;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.admin-log:empty {
+  display: none;
+}
+
+.log-entry {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(100, 100, 160, 0.1);
+}
+
+.log-entry:last-child {
+  border-bottom: none;
+}
+
+.log-entry.log-success {
+  color: var(--success);
+}
+
+.log-entry.log-error {
+  color: var(--danger);
+}
+
+.log-entry.log-info {
+  color: var(--info);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .admin-status-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .admin-btn-group {
+    flex-direction: column;
+  }
+  
+  .admin-btn {
+    width: 100%;
+  }
+}
