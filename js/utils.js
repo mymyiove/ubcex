@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// utils.js — 토스트, CSV, 공유링크, URL 빌더, 유틸리티, 한국어화
+// utils.js — 토스트, CSV, 공유링크, URL 빌더, 유틸리티
 // ═══════════════════════════════════════════════════════════
 
 // 토스트 알림
@@ -17,30 +17,54 @@ function buildCourseUrl(course) {
   return `https://${S.subdomain}.udemy.com/course/${course.url}/`;
 }
 
-// 데이터 전처리 — 자막 데이터 개선
+// ★ 강의 시간 문자열 파싱 — "7h 32m 16s" → 분 단위 숫자
+function parseDuration(value) {
+  if (!value) return 0;
+  
+  // 이미 숫자면 그대로 반환
+  if (typeof value === 'number') return value;
+  
+  // 문자열 파싱
+  const str = String(value);
+  const hours = str.match(/(\d+)h/);
+  const minutes = str.match(/(\d+)m/);
+  const seconds = str.match(/(\d+)s/);
+  
+  return (hours ? parseInt(hours[1]) * 60 : 0) + 
+         (minutes ? parseInt(minutes[1]) : 0) + 
+         (seconds ? Math.round(parseInt(seconds[1]) / 60) : 0);
+}
+
+// ★ 분 단위 숫자 → 한국어 시간 표시
+function formatDuration(minutes) {
+  if (!minutes || minutes <= 0) return '';
+  
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  
+  if (h > 0 && m > 0) return `${h}시간 ${m}분`;
+  if (h > 0) return `${h}시간`;
+  return `${m}분`;
+}
+
+// ★ 데이터 전처리 — 자막 + 시간 데이터 정규화
 function processCourses(raw) {
   return raw.map(c => {
-    // 자막 데이터 정규화 — GraphQL에서 오는 다양한 형태 처리
+    // 자막 데이터 정규화 — 다양한 형태 처리
     let subtitles = '없음';
-    if (c.subtitles && c.subtitles !== '없음') {
+    if (c.subtitles && c.subtitles !== '없음' && c.subtitles !== '') {
       subtitles = c.subtitles;
     } else if (c.captions && Array.isArray(c.captions)) {
-      // GraphQL captions 배열 처리
-      subtitles = c.captions.map(cap => cap.locale || cap).join(', ');
+      const locs = c.captions.map(cap => cap.locale || cap).filter(Boolean);
+      if (locs.length > 0) subtitles = locs.join(', ');
     } else if (c.captionLanguages && Array.isArray(c.captionLanguages)) {
-      // REST API captionLanguages 처리
-      subtitles = c.captionLanguages.join(', ');
+      if (c.captionLanguages.length > 0) subtitles = c.captionLanguages.join(', ');
     }
 
-    // 강의 시간 정규화 (분 단위로 통일)
-    let contentLength = 0;
-    if (c.duration && c.duration > 0) {
-      contentLength = c.duration; // GraphQL duration (분)
-    } else if (c.contentLength && c.contentLength > 0) {
-      contentLength = c.contentLength; // REST contentLength (분)
-    } else if (c.durationVideoContent && c.durationVideoContent > 0) {
-      contentLength = c.durationVideoContent; // GraphQL durationVideoContent (분)
-    }
+    // 강의 시간 정규화 (분 단위 숫자로 통일)
+    let contentLength = parseDuration(c.contentLength);
+    if (contentLength === 0) contentLength = parseDuration(c.duration);
+    if (contentLength === 0) contentLength = parseDuration(c.durationVideoContent);
 
     return {
       ...c,
@@ -48,7 +72,7 @@ function processCourses(raw) {
       subtitles: subtitles,
       contentLength: contentLength,
       isNew: isNew(c.lastUpdated),
-      _search: `${c.title} ${c.headline} ${c.description} ${c.objectives} ${c.category} ${c.topic} ${c.instructor}`.toLowerCase(),
+      _search: `${c.title} ${c.headline} ${c.description} ${c.objectives} ${c.category} ${c.topic} ${c.instructor} ${subtitles}`.toLowerCase(),
     };
   });
 }
@@ -82,7 +106,7 @@ function expandKeywordsLocal(keywords) {
   return [...new Set(expanded)];
 }
 
-// 큐레이션 스코어링
+// 큐레이션 스코어링 (기본 — 감도 시스템 없을 때 폴백)
 function scoreKeyword(course, kw) {
   let score = 0;
   const kwl = kw.toLowerCase();
@@ -93,11 +117,11 @@ function scoreKeyword(course, kw) {
   if (course.description && course.description.toLowerCase().includes(kwl)) score += 10;
   if (course.topic && course.topic.toLowerCase().includes(kwl)) score += 10;
   if (course.isNew) score += 5;
-  if (course.subtitles && (course.subtitles.includes('한국어') || course.subtitles.toLowerCase().includes('korean'))) score += 5;
+  if (course.subtitles && (course.subtitles.toLowerCase().includes('korean') || course.subtitles.includes('한국어'))) score += 5;
   return score;
 }
 
-// CSV 다운로드 — 키워드 포함, 한국어 헤더
+// ★ CSV 다운로드 — 키워드 포함, 한국어 헤더, 메타 정보
 function downloadCSV(selectedOnly = false) {
   const data = selectedOnly
     ? S.courses.filter(c => S.selectedIds.has(c.id))
@@ -108,18 +132,18 @@ function downloadCSV(selectedOnly = false) {
   // 현재 검색 키워드 가져오기
   const searchKeywords = $('#search-input').value.trim();
   const filterInfo = [];
-  if (searchKeywords) filterInfo.push(`검색어: ${searchKeywords}`);
-  if (getMSValues('f-category').length > 0) filterInfo.push(`카테고리: ${getMSValues('f-category').join(', ')}`);
-  if (getMSValues('f-difficulty').length > 0) filterInfo.push(`난이도: ${getMSValues('f-difficulty').join(', ')}`);
+  if (searchKeywords) filterInfo.push(`검색어_${searchKeywords}`);
+  const cats = getMSValues('f-category');
+  if (cats.length > 0) filterInfo.push(`카테고리_${cats.join('-')}`);
+  const diffs = getMSValues('f-difficulty');
+  if (diffs.length > 0) filterInfo.push(`난이도_${diffs.join('-')}`);
   
-  const filterSummary = filterInfo.length > 0 ? ` (${filterInfo.join(' | ')})` : '';
+  const filterSuffix = filterInfo.length > 0 ? `_${filterInfo.join('_')}` : '';
   const timestamp = new Date().toLocaleString('ko-KR');
 
-  const headers = ['강의ID','강의명','카테고리','주제','난이도','언어','자막','강사','소개','학습목표','평점','수강신청수','강의시간','신규여부','최종업데이트','강의링크'];
+  const headers = ['강의ID','강의명','카테고리','주제','난이도','언어','자막','강사','소개','학습목표','평점','수강신청수','강의시간(분)','신규여부','최종업데이트','강의링크'];
   const rows = data.map(c => {
     const url = buildCourseUrl(c);
-    const durationText = c.contentLength > 0 ? `${Math.round(c.contentLength)}분` : '';
-    
     return [
       c.id,
       `"${(c.title||'').replace(/"/g,'""')}"`,
@@ -127,13 +151,13 @@ function downloadCSV(selectedOnly = false) {
       `"${c.topic||''}"`,
       c.difficulty,
       c.language,
-      `"${c.subtitles||''}"`,
+      `"${c.subtitles||'없음'}"`,
       `"${(c.instructor||'').replace(/"/g,'""')}"`,
       `"${(c.headline||'').replace(/"/g,'""')}"`,
       `"${(c.objectives||'').replace(/"/g,'""')}"`,
       c.rating||0,
       c.enrollments||0,
-      durationText,
+      c.contentLength||0,
       c.isNew?'신규':'',
       c.lastUpdated||'',
       url
@@ -141,13 +165,23 @@ function downloadCSV(selectedOnly = false) {
   });
 
   // CSV 헤더에 메타 정보 추가
-  const csvHeader = `# Udemy Business 강의 큐레이션 보고서\n# 생성일시: ${timestamp}\n# 필터 조건: ${filterSummary}\n# 총 강의 수: ${data.length}개\n\n`;
-  const csv = '\uFEFF' + csvHeader + headers.join(',') + '\n' + rows.join('\n');
+  const csvMeta = [
+    `# Udemy Business 강의 큐레이션 보고서`,
+    `# 생성일시: ${timestamp}`,
+    `# 학습장: ${S.subdomain}.udemy.com`,
+    searchKeywords ? `# 검색 키워드: ${searchKeywords}` : '',
+    cats.length > 0 ? `# 카테고리 필터: ${cats.join(', ')}` : '',
+    `# 총 강의 수: ${data.length}개`,
+    `# 감도: ${SENSITIVITY_CONFIG[S.sensitivity || 'balanced']?.label || '보통'}`,
+    ''
+  ].filter(Boolean).join('\n');
+
+  const csv = '\uFEFF' + csvMeta + headers.join(',') + '\n' + rows.join('\n');
   
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `Mission_Report_${S.subdomain}${filterSummary}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = `Mission_Report_${S.subdomain}${filterSuffix}_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
   toast(`📋 미션 보고서: ${data.length}개 별의 좌표가 기록되었습니다.`);
@@ -160,12 +194,15 @@ function shareLink() {
   const q = $('#search-input').value.trim();
   if(q) params.set('q', q);
   params.set('mode', S.searchMode);
+  if(S.sensitivity !== 'balanced') params.set('sens', S.sensitivity);
   const cats = getMSValues('f-category');
   if(cats.length) params.set('cat', cats.join(','));
   const diffs = getMSValues('f-difficulty');
   if(diffs.length) params.set('diff', diffs.join(','));
   const langs = getMSValues('f-language');
   if(langs.length) params.set('lang', langs.join(','));
+  const subs = getMSValues('f-subtitles');
+  if(subs.length) params.set('subs', subs.join(','));
 
   const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
   navigator.clipboard.writeText(url).then(() => {
@@ -184,9 +221,15 @@ function applyURLParams() {
     $$('.scan-mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
     $(`.scan-mode-btn[data-mode="${S.searchMode}"]`)?.classList.add('active');
   }
+  if(params.has('sens')) {
+    S.sensitivity = params.get('sens');
+    $$('.sensitivity-btn').forEach(b => b.classList.remove('active'));
+    $(`.sensitivity-btn[data-sensitivity="${S.sensitivity}"]`)?.classList.add('active');
+  }
   if(params.has('cat')) setMSValues('f-category', params.get('cat').split(','));
   if(params.has('diff')) setMSValues('f-difficulty', params.get('diff').split(','));
   if(params.has('lang')) setMSValues('f-language', params.get('lang').split(','));
+  if(params.has('subs')) setMSValues('f-subtitles', params.get('subs').split(','));
 }
 
 // 카운트업 애니메이션
