@@ -42,20 +42,51 @@ export async function onRequestPost(context) {
 
 JSON만 반환하고 마크다운 코드블록이나 설명을 추가하지 마세요.`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    // ★ 올바른 모델명: gemini-2.5-flash (안정 버전)
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-    const geminiRes = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
-      }),
-    });
+    // 429 에러 대비 재시도 로직
+    let geminiRes = null;
+    let retries = 0;
+    const maxRetries = 3;
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      throw new Error(`Gemini API ${geminiRes.status}: ${errText.substring(0, 200)}`);
+    while (retries <= maxRetries) {
+      geminiRes = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+        }),
+      });
+
+      if (geminiRes.status === 429) {
+        retries++;
+        if (retries > maxRetries) break;
+        const waitTime = Math.pow(2, retries) * 5000;
+        await new Promise(r => setTimeout(r, waitTime));
+        continue;
+      }
+
+      break;
+    }
+
+    if (!geminiRes || !geminiRes.ok) {
+      // 폴백: gemini-2.5-flash-lite
+      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
+      geminiRes = await fetch(fallbackUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+        }),
+      });
+
+      if (!geminiRes.ok) {
+        const errText = await geminiRes.text();
+        throw new Error(`Gemini API ${geminiRes.status}: ${errText.substring(0, 300)}`);
+      }
     }
 
     const geminiData = await geminiRes.json();
