@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// app.js — 앱 초기화, 게이트 페이지, 워프 전환, 관리자 모드
+// app.js — 앱 초기화, 게이트, 워프, 관리자 모드, chunk 직접 로딩
 // ═══════════════════════════════════════════════════════════
 
 const ADMIN_CODE = 'jhj11';
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   $('#btn-step1-next').addEventListener('click', goStep2);
-  $('#input-subdomain').addEventListener('keyup', e => { if(e.key==='Enter') goStep2(); });
+  $('#input-subdomain').addEventListener('keyup', e => { if (e.key === 'Enter') goStep2(); });
 
   const grid = $('#gate-job-grid');
   Object.entries(CURATION).forEach(([id, data]) => {
@@ -42,18 +42,18 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#btn-skip').addEventListener('click', launch);
 
   window.addEventListener('scroll', () => { $('#scroll-to-top').classList.toggle('visible', window.scrollY > 300); });
-  $('#scroll-to-top').addEventListener('click', () => window.scrollTo({top:0,behavior:'smooth'}));
+  $('#scroll-to-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 });
 
 function goStep2() {
   const sub = $('#input-subdomain').value.trim();
   if (!sub) { toast('모선 주소를 입력해주세요.', 'error'); return; }
-  
+
   if (sub === ADMIN_CODE) {
     enterAdminMode();
     return;
   }
-  
+
   S.subdomain = sub;
   localStorage.setItem('kv_subdomain', sub);
   $('#gate-step-1').classList.remove('active');
@@ -65,7 +65,7 @@ function goStep2() {
 // ═══════════════════════════════════════════════════════════
 function enterAdminMode() {
   $('#gate-page').style.display = 'none';
-  
+
   const adminPanel = document.createElement('div');
   adminPanel.id = 'admin-panel';
   adminPanel.innerHTML = `
@@ -76,7 +76,7 @@ function enterAdminMode() {
         <button class="admin-exit-btn" id="admin-exit" title="일반 모드로 돌아갑니다">🚪 나가기</button>
       </div>
 
-      <div class="admin-status-cards" id="admin-status-cards">
+      <div class="admin-status-cards">
         <div class="admin-card">
           <div class="admin-card-icon">📡</div>
           <div class="admin-card-title">동기화 상태</div>
@@ -108,8 +108,8 @@ function enterAdminMode() {
           <h3>📡 강의 동기화</h3>
           <p class="admin-desc">Udemy Business GraphQL API에서 강의 데이터를 가져옵니다.</p>
           <div class="admin-btn-group">
-            <button class="admin-btn admin-btn-primary" id="btn-sync-continue" title="마지막 지점부터 이어서 동기화">▶️ 이어서 동기화</button>
-            <button class="admin-btn admin-btn-warning" id="btn-sync-reset" title="처음부터 다시 동기화">🔄 전체 재동기화</button>
+            <button class="admin-btn admin-btn-primary" id="btn-sync-continue" title="마지막 지점부터 이어서">▶️ 이어서 동기화</button>
+            <button class="admin-btn admin-btn-warning" id="btn-sync-reset" title="처음부터 다시">🔄 전체 재동기화</button>
             <button class="admin-btn admin-btn-danger" id="btn-sync-auto" title="완료될 때까지 자동 반복">🚀 자동 전체 동기화</button>
           </div>
           <div class="admin-log" id="sync-log"></div>
@@ -148,9 +148,9 @@ function enterAdminMode() {
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(adminPanel);
-  
+
   $('#admin-exit').addEventListener('click', exitAdminMode);
   $('#btn-sync-continue').addEventListener('click', () => runSync(false));
   $('#btn-sync-reset').addEventListener('click', () => {
@@ -162,7 +162,7 @@ function enterAdminMode() {
   $('#btn-test-graphql').addEventListener('click', testGraphQL);
   $('#btn-test-gemini').addEventListener('click', testGemini);
   $('#btn-view-chunk').addEventListener('click', viewChunk);
-  
+
   loadAdminStatus();
   toast('🔧 관리자 모드에 진입했습니다.');
 }
@@ -218,10 +218,10 @@ async function runAutoSync() {
   btn.disabled = true;
   btn.textContent = '⏳ 진행 중...';
   log.innerHTML = `<div class="log-entry log-info">🚀 자동 전체 동기화 시작...</div>`;
-  
+
   let cycle = 1;
   let keepGoing = true;
-  
+
   while (keepGoing) {
     log.innerHTML += `<div class="log-entry log-info">📡 [사이클 ${cycle}] 수집 중...</div>`;
     log.scrollTop = log.scrollHeight;
@@ -269,7 +269,7 @@ async function verifyData() {
       chunk++;
     } catch (e) { break; }
   }
-  const pct = (n) => total > 0 ? `${(n/total*100).toFixed(1)}%` : '0%';
+  const pct = (n) => total > 0 ? `${(n / total * 100).toFixed(1)}%` : '0%';
   log.innerHTML += `<div class="log-entry log-success"><strong>📊 결과</strong><br>📚 총: ${total.toLocaleString()}개 (${chunk} chunks)<br>💬 자막: ${subsCount.toLocaleString()} (${pct(subsCount)})<br>🇰🇷 한국어자막: ${koSubCount.toLocaleString()} (${pct(koSubCount)})<br>⏱️ 시간: ${durCount.toLocaleString()} (${pct(durCount)})<br>⭐ 평점: ${ratingCount.toLocaleString()} (${pct(ratingCount)})<br>👥 수강: ${enrollCount.toLocaleString()} (${pct(enrollCount)})</div>`;
 }
 
@@ -281,9 +281,9 @@ async function verifySample() {
     const data = await res.json();
     if (!data || data.length === 0) { log.innerHTML += `<div class="log-entry log-error">❌ 데이터 없음</div>`; return; }
     const s = data[0];
-    log.innerHTML += `<div class="log-entry"><strong>필드:</strong> ${Object.keys(s).join(', ')}<br>${Object.entries(s).map(([k,v]) => `<strong>${k}:</strong> ${typeof v === 'string' && v.length > 80 ? v.substring(0,80)+'...' : v}`).join('<br>')}</div>`;
+    log.innerHTML += `<div class="log-entry"><strong>필드:</strong> ${Object.keys(s).join(', ')}<br>${Object.entries(s).map(([k, v]) => `<strong>${k}:</strong> ${typeof v === 'string' && v.length > 80 ? v.substring(0, 80) + '...' : v}`).join('<br>')}</div>`;
     const withSubs = data.filter(c => c.subtitles && c.subtitles !== '없음' && c.subtitles !== '');
-    log.innerHTML += `<div class="log-entry log-success">💬 자막 있는 강의: ${withSubs.length}/${data.length}개<br>${withSubs.slice(0,3).map(c => `- ${c.title?.substring(0,35)}: [${c.subtitles}]`).join('<br>')}</div>`;
+    log.innerHTML += `<div class="log-entry log-success">💬 자막 있는 강의: ${withSubs.length}/${data.length}개<br>${withSubs.slice(0, 3).map(c => `- ${c.title?.substring(0, 35)}: [${c.subtitles}]`).join('<br>')}</div>`;
   } catch (e) { log.innerHTML += `<div class="log-entry log-error">❌ ${e.message}</div>`; }
 }
 
@@ -315,33 +315,68 @@ async function viewChunk() {
     const res = await fetch(`${WORKER_URL}/get-courses?chunk=${num}`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
     if (!res.ok) { log.innerHTML += `<div class="log-entry log-error">❌ Chunk ${num} 없음</div>`; return; }
     const data = await res.json();
-    log.innerHTML += `<div class="log-entry log-success"><strong>📦 Chunk ${num}: ${data.length}개</strong><br>${data.slice(0,5).map((c,i) => `${i+1}. <strong>${c.title?.substring(0,45)}</strong> | ⭐${c.rating?.toFixed(1)||'-'} | 👥${c.enrollments||'-'} | 💬${c.subtitles||'없음'}`).join('<br>')}${data.length > 5 ? `<br>... 외 ${data.length-5}개` : ''}</div>`;
+    log.innerHTML += `<div class="log-entry log-success"><strong>📦 Chunk ${num}: ${data.length}개</strong><br>${data.slice(0, 5).map((c, i) => `${i + 1}. <strong>${c.title?.substring(0, 45)}</strong> | ⭐${c.rating?.toFixed(1) || '-'} | 👥${c.enrollments || '-'} | 💬${c.subtitles || '없음'}`).join('<br>')}${data.length > 5 ? `<br>... 외 ${data.length - 5}개` : ''}</div>`;
   } catch (e) { log.innerHTML += `<div class="log-entry log-error">❌ ${e.message}</div>`; }
 }
 
 // ═══════════════════════════════════════════════════════════
-// 일반 모드 — 워프 전환 + 앱 초기화
+// 일반 모드 — 워프 전환 + 프론트엔드 직접 chunk 로딩
 // ═══════════════════════════════════════════════════════════
 async function launch() {
   S.selectedFamilies = [...$$('.gate-job-card.selected')].map(c => c.dataset.family);
   const warp = $('#warp-overlay');
   warp.classList.add('active');
   const loadingPromise = playLaunchSequence();
-  
+
   let dataLoaded = false;
   try {
-    const res = await fetch('/api/courses');
-    const data = await res.json();
-    if (data.courses && data.courses.length > 0) {
-      S.courses = processCourses(data.courses);
+    // ★ 프론트엔드에서 직접 Worker chunk 로딩 (Pages Function 우회)
+    let allCourses = [];
+    let chunkIndex = 0;
+
+    while (true) {
+      try {
+        const chunkRes = await fetch(`${WORKER_URL}/get-courses?chunk=${chunkIndex}`, {
+          headers: { 'Authorization': `Bearer ${WORKER_SECRET}` }
+        });
+
+        if (!chunkRes.ok) {
+          if (chunkIndex === 0) {
+            console.error('Worker 첫 chunk 로드 실패:', chunkRes.status);
+          }
+          break;
+        }
+
+        const chunkData = await chunkRes.json();
+        if (!chunkData || !Array.isArray(chunkData) || chunkData.length === 0) break;
+
+        allCourses = allCourses.concat(chunkData);
+        chunkIndex++;
+
+        // 로딩 메시지 업데이트
+        const msgEl = $('#launch-message');
+        if (msgEl) msgEl.textContent = `강의 데이터 로딩 중... (${allCourses.length.toLocaleString()}개)`;
+
+        if (chunkIndex >= 50) break;
+      } catch (e) {
+        console.warn(`Chunk ${chunkIndex} 로드 실패:`, e.message);
+        if (chunkIndex === 0) break;
+        break;
+      }
+    }
+
+    if (allCourses.length > 0) {
+      S.courses = processCourses(allCourses);
       dataLoaded = true;
     }
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error('데이터 로드 실패:', e);
+  }
 
   await loadingPromise;
 
   if (!dataLoaded) {
-    toast('강의 데이터를 불러올 수 없습니다.', 'error');
+    toast('강의 데이터를 불러올 수 없습니다. 관리자 모드에서 동기화 상태를 확인해주세요.', 'error');
     warp.classList.remove('active');
     return;
   }
@@ -368,22 +403,27 @@ async function playLaunchSequence() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════
+// 앱 초기화
+// ═══════════════════════════════════════════════════════════
 function initApp() {
   $('#welcome-msg').innerHTML = S.selectedFamilies.length > 0
-    ? `${S.selectedFamilies.map(f => CURATION[f]?.emoji||'').join('')} 탐험가님, <strong>${S.subdomain}</strong> 우주에 도착했습니다!`
+    ? `${S.selectedFamilies.map(f => CURATION[f]?.emoji || '').join('')} 탐험가님, <strong>${S.subdomain}</strong> 우주에 도착했습니다!`
     : `탐험가님, <strong>${S.subdomain}</strong> 우주에 도착했습니다!`;
 
   renderDashCards();
   initMultiSelects();
 
-  // ★ 카테고리 자동 필터 제거 — 이전에 버그 원인이었음
-  // 직무 선택해도 카테고리를 자동으로 한정하지 않음
+  // ★ 카테고리 자동 필터 제거 — 이전 버그 원인
 
+  // 탭 이벤트
   $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
+  // 검색
   let debounce;
   $('#search-input').addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(applyFilters, 300); });
 
+  // 검색 모드
   $$('.scan-mode-btn[data-mode]').forEach(btn => {
     btn.addEventListener('click', () => {
       $$('.scan-mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
@@ -404,23 +444,28 @@ function initApp() {
     });
   });
 
+  // AI 스캔
   $('#btn-ai-scan').addEventListener('click', handleAIScan);
   $('#btn-apply-ai').addEventListener('click', applyAIKeywords);
   $('#btn-ai-select-all').addEventListener('click', () => $$('#ai-panel-results .ai-kw-tag').forEach(t => t.classList.add('selected')));
   $('#btn-ai-close').addEventListener('click', () => $('#ai-panel').classList.remove('open'));
 
+  // 필터 토글
   $('#filters-toggle').addEventListener('click', () => {
     $('#filters-toggle').classList.toggle('open');
     $('#filters-grid').classList.toggle('open');
   });
 
+  // 정렬, 표시 개수
   $('#sort-select').addEventListener('change', applyFilters);
   $('#rows-select').addEventListener('change', () => { S.rows = parseInt($('#rows-select').value); S.page = 1; renderList(); });
 
+  // 기능 버튼
   $('#btn-csv').addEventListener('click', () => downloadCSV(false));
   $('#btn-share').addEventListener('click', shareLink);
   $('#btn-reset').addEventListener('click', () => resetAll(true));
 
+  // 뷰 모드 전환
   $$('.view-btn').forEach(btn => btn.addEventListener('click', () => {
     $$('.view-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -428,6 +473,7 @@ function initApp() {
     renderList();
   }));
 
+  // 전체 선택 체크박스
   $('#check-all').addEventListener('change', (e) => {
     const pageIds = getPageData().map(c => c.id);
     if (e.target.checked) pageIds.forEach(id => S.selectedIds.add(id));
@@ -436,6 +482,7 @@ function initApp() {
     updateFAB();
   });
 
+  // FAB 버튼
   $('#fab-csv').addEventListener('click', () => downloadCSV(true));
   $('#fab-link').addEventListener('click', () => {
     const links = [...S.selectedIds].map(id => {
@@ -447,22 +494,31 @@ function initApp() {
   });
   $('#fab-clear').addEventListener('click', () => { S.selectedIds.clear(); renderList(); updateFAB(); });
 
-  $('#side-panel-overlay').addEventListener('click', (e) => { if(e.target === $('#side-panel-overlay')) closeSidePanel(); });
+  // 사이드 패널
+  $('#side-panel-overlay').addEventListener('click', (e) => { if (e.target === $('#side-panel-overlay')) closeSidePanel(); });
   $('#sp-close').addEventListener('click', closeSidePanel);
-  document.addEventListener('keydown', e => { if(e.key==='Escape') closeSidePanel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidePanel(); });
 
-  window.addEventListener('click', e => { if(!e.target.closest('.ms-wrap')) $$('.ms-panel').forEach(p => p.classList.remove('open')); });
+  // 멀티셀렉트 외부 클릭 닫기
+  window.addEventListener('click', e => { if (!e.target.closest('.ms-wrap')) $$('.ms-panel').forEach(p => p.classList.remove('open')); });
 
+  // 미션 센터
   initMissionCenter();
+
+  // TOP 6
   initStars();
+
+  // URL 파라미터 적용
   applyURLParams();
+
+  // 첫 필터링
   applyFilters();
 }
 
+// 탭 전환
 function switchTab(tabId) {
   $$('.tab-panel').forEach(p => p.classList.remove('active'));
   $$('.tab-btn').forEach(b => b.classList.remove('active'));
   $(`#panel-${tabId}`).classList.add('active');
   $(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
   $('#list-section').style.display = tabId === 'stars' ? 'none' : '';
-}
