@@ -537,3 +537,137 @@ body.translated-ltr #side-panel, body.translated-rtl #side-panel { top: 40px !im
 ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-light); }
 ::selection { background: rgba(124, 108, 240, 0.3); color: var(--text-bright); }
+
+/* ═══════════════════════════════════════════════════════════
+   검색창 글로우 강화
+   ═══════════════════════════════════════════════════════════ */
+.scanner-input.glow-enhanced {
+  box-shadow: 0 0 15px rgba(124, 108, 240, 0.3);
+  border: 2px solid rgba(124, 108, 240, 0.4);
+}
+
+.scanner-input.glow-enhanced:focus {
+  box-shadow: 0 0 30px rgba(124, 108, 240, 0.6), 0 0 60px rgba(124, 108, 240, 0.3);
+  border: 2px solid var(--accent);
+  transform: scale(1.01);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   사이드 패널 강제 여백
+   ═══════════════════════════════════════════════════════════ */
+#side-panel {
+  padding-top: 3rem !important;
+}
+
+body.translated-ltr #side-panel,
+body.translated-rtl #side-panel {
+  top: 40px !important;
+  height: calc(100vh - 40px) !important;
+  padding-top: 3rem !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   번역기 수동 켜기 버튼
+   ═══════════════════════════════════════════════════════════ */
+.translate-toggle-btn {
+  padding: 0.4rem 1rem;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: var(--transition);
+}
+
+.translate-toggle-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-light);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   대시보드 카드 그룹 + 다운로드 버튼
+   ═══════════════════════════════════════════════════════════ */
+.dash-cards {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.dash-card-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dash-download-btn {
+  padding: 0.4rem 0.8rem;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.dash-download-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-light);
+  background: rgba(124, 108, 240, 0.05);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   초기화 버튼 인라인
+   ═══════════════════════════════════════════════════════════ */
+.btn-reset-inline {
+  padding: 0 1rem;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btn-reset-inline:hover {
+  border-color: var(--accent);
+  color: var(--accent-light);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AI 패널 안내 문구
+   ═══════════════════════════════════════════════════════════ */
+.ai-guide {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.8rem;
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   로켓 이모지 색상 제외
+   ═══════════════════════════════════════════════════════════ */
+.app-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.app-title::before {
+  content: '🚀 ';
+  filter: none !important;
+}
+
+.app-title::after {
+  content: 'Udemy Business Course Explorer';
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
