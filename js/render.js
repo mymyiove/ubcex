@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// render.js — 렌더링, 페이지네이션, FAB, 대시보드
+// render.js — 추천도 점수 + 언어 + 한국어자막 여부 표시
 // ═══════════════════════════════════════════════════════════
 
 function getPageData() {
@@ -15,45 +15,42 @@ function renderList() {
   $('#view-compact').className = `compact-list ${S.viewMode==='compact'?'active':''}`;
 
   if(data.length === 0) {
-    const empty = `<div class="empty-state"><h3>😅 발견된 별이 없습니다</h3><p>스캐너 설정을 변경하거나 감도를 🔭 광역으로 조절해보세요.</p></div>`;
-    $('#table-body').innerHTML = `<tr><td colspan="12">${empty}</td></tr>`;
+    const empty = `<div class="empty-state"><h3>😅 발견된 별이 없습니다</h3><p>감도를 🔭 광역으로 조절하거나 검색어를 변경해보세요.</p></div>`;
+    $('#table-body').innerHTML = `<tr><td colspan="11">${empty}</td></tr>`;
     $('#view-card').innerHTML = empty;
     $('#view-compact').innerHTML = empty;
     $('#pagination').innerHTML = '';
     return;
   }
 
-  // 테이블 뷰
+  // ★ 테이블 뷰 — 추천도 + 언어 + 한국어자막 여부
   $('#table-body').innerHTML = data.map(c => {
-    const cat = c.category?.split(',')[0]?.trim() || 'N/A';
+    const cat = c.category?.split(',')[0]?.trim() || '-';
     const color = getCatColor(cat);
     const checked = S.selectedIds.has(c.id) ? 'checked' : '';
     const rating = c.rating > 0 ? c.rating.toFixed(1) : '-';
     const enrollments = c.enrollments > 0 ? (c.enrollments >= 10000 ? `${Math.round(c.enrollments/1000)}K` : c.enrollments.toLocaleString()) : '-';
     const durationText = formatDuration(c.contentLength);
-    
-    // 자막 표시
-    let subtitlesDisplay = '-';
-    if (c.subtitles && c.subtitles !== '없음') {
-      const subLower = c.subtitles.toLowerCase();
-      if (subLower.includes('ko')) subtitlesDisplay = '🇰🇷';
-      else {
-        const count = c.subtitles.split(',').length;
-        subtitlesDisplay = `💬${count}`;
-      }
-    }
-
-    // 난이도 한국어
     const diffKR = {'Beginner':'초급','BEGINNER':'초급','Intermediate':'중급','INTERMEDIATE':'중급','Expert':'고급','EXPERT':'고급','All Levels':'전체','ALL_LEVELS':'전체'}[c.difficulty] || c.difficulty;
+    const koSub = hasKoreanSub(c);
+    
+    // 추천도 점수 표시
+    let scoreDisplay = '';
+    if (c._score > 0) {
+      if (c._score >= 80) scoreDisplay = `<span class="score-badge score-high">${c._score}</span>`;
+      else if (c._score >= 40) scoreDisplay = `<span class="score-badge score-mid">${c._score}</span>`;
+      else scoreDisplay = `<span class="score-badge score-low">${c._score}</span>`;
+    }
 
     return `<tr style="--row-cat-color:${color}">
       <td class="col-check"><input type="checkbox" data-id="${c.id}" ${checked} /></td>
+      <td class="td-score">${scoreDisplay}</td>
       <td title="${cat}"><span class="cat-badge" style="border-color:${color}33;color:${color}">${getCatEmoji(cat)}</span></td>
-      <td class="td-topic" title="${c.topic||''}">${c.topic||'-'}</td>
       <td class="td-title"><a href="#" class="course-link" data-id="${c.id}" title="${c.title}">${c.title}</a></td>
       <td>${rating}</td>
       <td title="${c.enrollments?.toLocaleString()||0}명">${enrollments}</td>
-      <td>${subtitlesDisplay}</td>
+      <td>${c.language}</td>
+      <td>${koSub ? '🇰🇷' : '-'}</td>
       <td>${diffKR}</td>
       <td title="${durationText}">${durationText || '-'}</td>
       <td>${c.isNew?'<span class="badge-new">✨</span>':''}</td>
@@ -63,20 +60,21 @@ function renderList() {
   // 카드 뷰
   $('#view-card').innerHTML = data.map((c,i) => {
     const url = buildCourseUrl(c);
-    const cat = c.category?.split(',')[0]?.trim() || 'N/A';
+    const cat = c.category?.split(',')[0]?.trim() || '-';
     const color = getCatColor(cat);
-    const hasKoreanSub = c.subtitles && c.subtitles.toLowerCase().includes('ko');
+    const koSub = hasKoreanSub(c);
     
     return `<div class="course-card" style="animation-delay:${i*40}ms;--card-cat-color:${color}">
       <div class="card-cat-stripe"></div>
       <span class="cat-badge" style="border-color:${color}33;color:${color}">${getCatEmoji(cat)} ${cat}</span>
+      ${c._score > 0 ? `<span class="score-badge score-${c._score >= 80 ? 'high' : c._score >= 40 ? 'mid' : 'low'}" style="float:right">${c._score}점</span>` : ''}
       <h4>${c.title}</h4>
       <div class="card-meta">${c.instructor?.split(',')[0]?.trim()||''} · ${c.difficulty} · ${c.language}</div>
       <div class="card-tags">
         ${c.isNew?'<span class="badge-new">✨신규</span>':''}
         ${c.rating > 0 ? `<span class="cat-badge">⭐ ${c.rating.toFixed(1)}</span>` : ''}
         ${c.enrollments > 0 ? `<span class="cat-badge">👥 ${c.enrollments >= 10000 ? Math.round(c.enrollments/1000)+'K' : c.enrollments}</span>` : ''}
-        ${hasKoreanSub ? `<span class="cat-badge">🇰🇷</span>` : ''}
+        ${koSub ? `<span class="cat-badge">🇰🇷</span>` : ''}
       </div>
       <a href="${url}" target="_blank" class="card-cta">🚀 워프 점프 →</a>
     </div>`;
@@ -84,12 +82,12 @@ function renderList() {
 
   // 컴팩트 뷰
   $('#view-compact').innerHTML = data.map(c => {
-    const cat = c.category?.split(',')[0]?.trim() || '';
     return `<div class="compact-item">
       <input type="checkbox" data-id="${c.id}" ${S.selectedIds.has(c.id)?'checked':''} style="accent-color:var(--accent)" />
-      <span class="cat-badge" style="font-size:0.7rem">${getCatEmoji(cat)}</span>
+      ${c._score > 0 ? `<span class="score-badge score-${c._score >= 80 ? 'high' : c._score >= 40 ? 'mid' : 'low'}" style="font-size:0.7rem">${c._score}</span>` : ''}
       <span class="compact-title"><a href="#" class="course-link" data-id="${c.id}">${c.title}</a></span>
       <span style="font-size:0.75rem;color:var(--text-muted)">${c.language}</span>
+      ${hasKoreanSub(c) ? '<span>🇰🇷</span>' : ''}
     </div>`;
   }).join('');
 
@@ -151,14 +149,13 @@ function updateFAB() {
   }
 }
 
-// 대시보드 카드 — 전체별, 신규별만
 function renderDashCards() {
   const total = S.courses.length;
   const newCount = S.courses.filter(c => c.isNew).length;
 
   const cards = [
-    { icon:'🌟', value: total, label:'전체 별', action: () => { resetAll(); }, tooltip: '모든 강의를 표시합니다' },
-    { icon:'✨', value: newCount, label:'신규 별', action: () => { setMSValues('f-attr',['NEW']); applyFilters(); }, tooltip: '최근 3개월 내 업데이트된 강의' },
+    { icon:'🌟', value: total, label:'전체 별', action: () => { resetAll(); }, tooltip: '모든 강의 표시' },
+    { icon:'✨', value: newCount, label:'신규 별', action: () => { setMSValues('f-attr',['NEW']); applyFilters(); }, tooltip: '최근 3개월 내 업데이트' },
   ];
 
   const container = $('#dash-cards');
