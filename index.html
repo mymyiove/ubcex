@@ -46,19 +46,44 @@
 
 <div id="app-container">
   <header class="app-header">
-    <h1>🚀 Udemy Business Course Explorer</h1>
+    <h1 class="app-title">🚀 Udemy Business Course Explorer</h1>
     <p class="welcome" id="welcome-msg">탐험가님, <strong></strong> 우주에 도착했습니다!</p>
+    <!-- ★ 번역기 수동 켜기 -->
     <div class="translate-bar">
-      <div id="google_translate_element"></div>
+      <button class="translate-toggle-btn" id="translate-toggle" title="페이지 번역 켜기/끄기">🌐 번역기 켜기</button>
+      <div id="google_translate_element" style="display:none;"></div>
     </div>
   </header>
 
-  <div class="dash-cards" id="dash-cards"></div>
+  <!-- ★ 대시보드 카드 — 다운로드 버튼 추가 -->
+  <div class="dash-cards" id="dash-cards">
+    <div class="dash-card-group">
+      <div class="dash-card clickable" data-idx="0" title="모든 강의 표시">
+        <span class="icon">🌟</span>
+        <span class="value" data-target="0">0</span>
+        <span class="label">전체 별</span>
+      </div>
+      <button class="dash-download-btn" id="btn-download-all" title="전체 강의 목록 CSV 다운로드">📥 전체 별 목록 다운받기</button>
+    </div>
+    <div class="dash-card-group">
+      <div class="dash-card clickable" data-idx="1" title="최근 1개월 내 업데이트">
+        <span class="icon">✨</span>
+        <span class="value" data-target="0">0</span>
+        <span class="label">신규 별</span>
+      </div>
+      <button class="dash-download-btn" id="btn-download-new" title="신규 강의 목록 CSV 다운로드">📥 신규 별 목록 다운받기</button>
+    </div>
+    <div class="dash-card-group">
+      <div class="dash-card" data-idx="2" title="현재 필터링된 강의 수">
+        <span class="icon">🔍</span>
+        <span class="value" data-target="0">0</span>
+        <span class="label">발견된 별</span>
+      </div>
+    </div>
+  </div>
 
-  <!-- ★ 하이라이트 강의 섹션 (자세히 보기 + 사이드바 연동) -->
   <div class="highlight-section">
     <div class="highlight-grid">
-      <!-- 왼쪽: 최신 인기 과정 TOP 6 -->
       <div class="highlight-panel">
         <div class="highlight-header">
           <h3>🔥 최신 인기 과정</h3>
@@ -71,7 +96,6 @@
         <div class="highlight-carousel" id="popular-carousel"></div>
       </div>
 
-      <!-- 오른쪽: 큐레이터 PICK -->
       <div class="highlight-panel">
         <div class="highlight-header">
           <h3>⭐ 큐레이터 PICK</h3>
@@ -94,12 +118,15 @@
 
   <div class="tab-panel active" id="panel-explore">
     <div class="scanner-section">
+      <!-- ★ 검색창 글로우 강화 -->
       <div class="scanner-bar">
         <div class="scanner-input-wrap">
           <span class="scanner-icon">🔭</span>
-          <input type="text" class="scanner-input" id="search-input" placeholder="어떤 별을 찾고 계신가요?" />
+          <input type="text" class="scanner-input glow-enhanced" id="search-input" placeholder="어떤 별을 찾고 계신가요?" />
         </div>
         <button class="btn-ai-scan" id="btn-ai-scan" title="AI가 관련 키워드를 확장합니다">🤖 AI 내비</button>
+        <!-- ★ 초기화 버튼 AI 내비 옆으로 이동 -->
+        <button class="btn-reset-inline" id="btn-reset-inline" title="모든 필터 초기화">✨ 초기화</button>
       </div>
       <div class="scanner-meta">
         <div class="scan-controls">
@@ -120,8 +147,10 @@
 
     <div class="active-filters" id="active-filters"></div>
 
+    <!-- ★ AI 패널 안내 문구 추가 -->
     <div class="ai-panel" id="ai-panel">
       <h4>🤖 AI 내비게이션 — 항로 계산 완료!</h4>
+      <p class="ai-guide">원하는 키워드를 클릭해서 선택 혹은 제외하고, 스캔 버튼을 누르세요.</p>
       <div id="ai-panel-results"></div>
       <div class="ai-panel-actions">
         <button class="btn-apply-ai" id="btn-apply-ai" title="선택한 키워드로 검색">🚀 선택한 항로로 스캔</button>
@@ -139,7 +168,6 @@
       <div class="f-group"><label>📊 난이도</label><div class="ms-wrap" data-fid="f-difficulty"><button class="ms-btn">모든 난이도</button><div class="ms-panel"></div></div></div>
       <div class="f-group"><label>🌐 언어</label><div class="ms-wrap" data-fid="f-language"><button class="ms-btn">모든 언어</button><div class="ms-panel"></div></div></div>
       <div class="f-group"><label>💬 자막</label><div class="ms-wrap" data-fid="f-subtitles"><button class="ms-btn">모든 자막</button><div class="ms-panel"></div></div></div>
-      <div class="f-group"><label>⭐ 평점</label><div class="ms-wrap" data-fid="f-rating"><button class="ms-btn">모든 평점</button><div class="ms-panel"></div></div></div>
       <div class="f-group"><label>⏱️ 시간</label><div class="ms-wrap" data-fid="f-duration"><button class="ms-btn">모든 시간</button><div class="ms-panel"></div></div></div>
       <div class="f-group"><label>🎯 추천도</label><div class="ms-wrap" data-fid="f-score"><button class="ms-btn">모든 점수</button><div class="ms-panel"></div></div></div>
       <div class="f-group"><label>✨ 속성</label><div class="ms-wrap" data-fid="f-attr"><button class="ms-btn">모든 강의</button><div class="ms-panel"></div></div></div>
@@ -148,7 +176,6 @@
       <div class="f-actions">
         <button id="btn-csv" title="CSV 다운로드">📋 미션 보고서</button>
         <button id="btn-share" title="공유 링크 생성">🔗 공유 링크</button>
-        <button id="btn-reset" title="모든 필터 초기화">✨ 초기화</button>
       </div>
     </div>
   </div>
@@ -180,7 +207,7 @@
     </div>
   </div>
 
-  <!-- ★ 테이블 — 강사명 추가 + 수강생 ▲ 표기 -->
+  <!-- ★ 테이블 — 업데이트 컬럼 추가 (신규 컬럼 대체) -->
   <div class="list-section" id="list-section">
     <div class="list-header">
       <h2>📖 별 카탈로그</h2>
@@ -204,7 +231,7 @@
           <th class="sortable" data-sort="difficulty" title="난이도 (클릭하여 정렬)">난이도</th>
           <th class="sortable" data-sort="duration" title="강의 시간 (클릭하여 정렬)">시간</th>
           <th class="sortable" data-sort="instructor" title="강사명 (클릭하여 정렬)">강사</th>
-          <th title="신규 여부 (최근 3개월 내 업데이트)">신규</th>
+          <th class="sortable" data-sort="updated" title="업데이트 연월 (클릭하여 정렬)">업데이트</th>
         </tr></thead>
         <tbody id="table-body"></tbody>
       </table>
@@ -240,7 +267,7 @@
       <ul>
         <li><strong>🤖 AI 내비</strong> — AI가 입력한 키워드를 확장하여 더 많은 관련 강의를 찾아줍니다.</li>
         <li><strong>OR / AND</strong> — OR은 키워드 중 하나라도 포함된 강의, AND는 모든 키워드가 포함된 강의만 표시합니다.</li>
-        <li><strong>🔬 정밀 / 📊 보통 / 🔭 광역</strong> — 검색 감도를 조절합니다. 정밀할수록 적지만 정확한 결과, 광역일수록 많지만 넓은 결과를 보여줍니다.</li>
+        <li><strong>🔬 정밀 / 📊 보통 / 🔭 광역</strong> — 검색 감도를 조절합니다.</li>
       </ul>
     </div>
 
@@ -255,45 +282,6 @@
         <li><strong>학습목표 포함</strong> — +10점</li>
         <li><strong>설명(description) 포함</strong> — +5점 (광역 모드만)</li>
         <li><strong>보너스</strong> — 신규 강의 +3점, 한국어 자막 +3점, 고평점(4.5+) +5점</li>
-      </ul>
-    </div>
-
-    <div class="help-section">
-      <h3>🔥 하이라이트 강의</h3>
-      <p>메인 화면의 하이라이트 섹션에서 추천 강의를 확인할 수 있습니다.</p>
-      <ul>
-        <li><strong>최신 인기 과정</strong> — 평점 4.5+ & 수강 1000+ & 한글자막 강의 중 최신순</li>
-        <li><strong>큐레이터 PICK</strong> — 관리자가 직접 선택한 추천 강의 (로고 3번 클릭으로 관리)</li>
-        <li><strong>자동 롤링</strong> — 3초마다 자동 전환 (마우스 올리면 일시정지)</li>
-      </ul>
-    </div>
-
-    <div class="help-section">
-      <h3>🛸 미션 센터</h3>
-      <p>직무별로 미리 설정된 키워드로 빠르게 큐레이션할 수 있습니다. 직군 → 직무 → 직급 순으로 선택하세요.</p>
-    </div>
-
-    <div class="help-section">
-      <h3>📋 미션 보고서 (CSV)</h3>
-      <p>현재 필터링된 강의 목록을 CSV 파일로 다운로드합니다. 검색 키워드와 필터 조건이 파일에 포함됩니다.</p>
-    </div>
-
-    <div class="help-section">
-      <h3>🔗 공유 링크</h3>
-      <p>현재 검색/필터 설정을 URL로 생성하여 슬랙이나 이메일로 공유할 수 있습니다.</p>
-    </div>
-
-    <div class="help-section">
-      <h3>🌐 번역</h3>
-      <p>상단의 번역기를 사용하면 페이지 전체를 한국어로 번역할 수 있습니다. 강의 제목, 설명 등이 한국어로 표시됩니다.</p>
-    </div>
-
-    <div class="help-section">
-      <h3>⌨️ 단축키</h3>
-      <ul>
-        <li><strong>/</strong> — 검색창 포커스</li>
-        <li><strong>Esc</strong> — 패널/도움말 닫기</li>
-        <li><strong>← →</strong> — 페이지 이동</li>
       </ul>
     </div>
 
@@ -324,7 +312,36 @@
 <script src="js/highlight.js"></script>
 <script src="js/app.js"></script>
 
+<!-- ★ 번역기 수동 켜기 -->
 <script>
+let translateEnabled = false;
+
+function toggleTranslate() {
+  const btn = $('#translate-toggle');
+  const element = $('#google_translate_element');
+  
+  if (!translateEnabled) {
+    element.style.display = 'inline-block';
+    btn.textContent = '🌐 번역기 끄기';
+    btn.title = '번역기 끄기';
+    translateEnabled = true;
+    
+    if (!window.google || !window.google.translate) {
+      googleTranslateElementInit();
+    }
+  } else {
+    element.style.display = 'none';
+    btn.textContent = '🌐 번역기 켜기';
+    btn.title = '번역기 켜기';
+    translateEnabled = false;
+    
+    // 번역 상태 초기화
+    const frame = document.querySelector('.goog-te-banner-frame');
+    if (frame) frame.style.display = 'none';
+    document.body.classList.remove('translated-ltr', 'translated-rtl');
+  }
+}
+
 function googleTranslateElementInit() {
   new google.translate.TranslateElement({
     pageLanguage: 'en',
@@ -332,15 +349,11 @@ function googleTranslateElementInit() {
     layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL,
     autoDisplay: false
   }, 'google_translate_element');
-  
-  setTimeout(() => {
-    const select = document.querySelector('.goog-te-combo');
-    if (select) {
-      select.value = 'ko';
-      select.dispatchEvent(new Event('change'));
-    }
-  }, 1500);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  $('#translate-toggle')?.addEventListener('click', toggleTranslate);
+});
 </script>
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
