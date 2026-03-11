@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -55,7 +55,7 @@
 
   <div class="dash-cards" id="dash-cards"></div>
 
-  <!-- ★ 하이라이트 강의 섹션 (새로 추가) -->
+  <!-- ★ 하이라이트 강의 섹션 (자세히 보기 + 사이드바 연동) -->
   <div class="highlight-section">
     <div class="highlight-grid">
       <!-- 왼쪽: 최신 인기 과정 TOP 6 -->
@@ -140,6 +140,8 @@
       <div class="f-group"><label>🌐 언어</label><div class="ms-wrap" data-fid="f-language"><button class="ms-btn">모든 언어</button><div class="ms-panel"></div></div></div>
       <div class="f-group"><label>💬 자막</label><div class="ms-wrap" data-fid="f-subtitles"><button class="ms-btn">모든 자막</button><div class="ms-panel"></div></div></div>
       <div class="f-group"><label>⭐ 평점</label><div class="ms-wrap" data-fid="f-rating"><button class="ms-btn">모든 평점</button><div class="ms-panel"></div></div></div>
+      <div class="f-group"><label>⏱️ 시간</label><div class="ms-wrap" data-fid="f-duration"><button class="ms-btn">모든 시간</button><div class="ms-panel"></div></div></div>
+      <div class="f-group"><label>🎯 추천도</label><div class="ms-wrap" data-fid="f-score"><button class="ms-btn">모든 점수</button><div class="ms-panel"></div></div></div>
       <div class="f-group"><label>✨ 속성</label><div class="ms-wrap" data-fid="f-attr"><button class="ms-btn">모든 강의</button><div class="ms-panel"></div></div></div>
       <div class="f-group"><label>📈 정렬</label><select id="sort-select"><option value="relevance">추천도순</option><option value="rating">평점순</option><option value="enrollments">인기순</option><option value="latest">최신순</option><option value="alpha">가나다순</option></select></div>
       <div class="f-group"><label>👀 표시</label><select id="rows-select"><option value="15">15개</option><option value="25">25개</option><option value="50">50개</option></select></div>
@@ -168,7 +170,7 @@
   <div class="tab-panel" id="panel-stars">
     <div class="stars-section">
       <h2>🌟 가장 밝게 빛나는 별들</h2>
-      <p class="subtitle">평점과 수강신청 수 기준 TOP 강의입니다</p>
+      <p class="subtitle">평점과 수강신청 수 기준 TOP 강의입니다 (한글자막 강의만)</p>
       <div class="stars-toggle">
         <button class="scan-mode-btn active" data-stars="rating">⭐ 최고 평점</button>
         <button class="scan-mode-btn" data-stars="popular">🔥 최다 수강</button>
@@ -178,6 +180,7 @@
     </div>
   </div>
 
+  <!-- ★ 테이블 — 강사명 추가 + 수강생 ▲ 표기 -->
   <div class="list-section" id="list-section">
     <div class="list-header">
       <h2>📖 별 카탈로그</h2>
@@ -191,16 +194,17 @@
       <table>
         <thead><tr>
           <th class="col-check"><input type="checkbox" id="check-all" title="전체 선택" /></th>
-          <th class="sortable" data-sort="score" title="AI 추천도 점수 (클릭하여 정렬)">🎯 추천도</th>
+          <th class="sortable" data-sort="score" title="AI 추천도 점수 (클릭하여 정렬) - 제목 +40~50점, 카테고리 +30점, 주제 +20~25점, 소개 +15점, 학습목표 +10점, 설명 +5점(광역), 신규 +3점, 한국어자막 +3점, 고평점 +5점">🎯 추천도</th>
           <th class="sortable" data-sort="category" title="카테고리 (클릭하여 정렬)">카테고리</th>
           <th class="sortable" data-sort="title" title="강의명 (클릭하여 정렬)">강의명</th>
           <th class="sortable" data-sort="rating" title="평점 (클릭하여 정렬)">평점</th>
-          <th class="sortable" data-sort="enrollments" title="수강자 수 (클릭하여 정렬)">수강</th>
+          <th class="sortable" data-sort="enrollments" title="수강자 수 (클릭하여 정렬) - 정확한 숫자가 아닌 추정치입니다">👥 수강</th>
           <th class="sortable" data-sort="language" title="언어 (클릭하여 정렬)">언어</th>
           <th title="한국어 자막 여부">🇰🇷자막</th>
           <th class="sortable" data-sort="difficulty" title="난이도 (클릭하여 정렬)">난이도</th>
           <th class="sortable" data-sort="duration" title="강의 시간 (클릭하여 정렬)">시간</th>
-          <th title="신규 여부">신규</th>
+          <th class="sortable" data-sort="instructor" title="강사명 (클릭하여 정렬)">강사</th>
+          <th title="신규 여부 (최근 3개월 내 업데이트)">신규</th>
         </tr></thead>
         <tbody id="table-body"></tbody>
       </table>
@@ -255,6 +259,16 @@
     </div>
 
     <div class="help-section">
+      <h3>🔥 하이라이트 강의</h3>
+      <p>메인 화면의 하이라이트 섹션에서 추천 강의를 확인할 수 있습니다.</p>
+      <ul>
+        <li><strong>최신 인기 과정</strong> — 평점 4.5+ & 수강 1000+ & 한글자막 강의 중 최신순</li>
+        <li><strong>큐레이터 PICK</strong> — 관리자가 직접 선택한 추천 강의 (로고 3번 클릭으로 관리)</li>
+        <li><strong>자동 롤링</strong> — 3초마다 자동 전환 (마우스 올리면 일시정지)</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
       <h3>🛸 미션 센터</h3>
       <p>직무별로 미리 설정된 키워드로 빠르게 큐레이션할 수 있습니다. 직군 → 직무 → 직급 순으로 선택하세요.</p>
     </div>
@@ -281,6 +295,11 @@
         <li><strong>Esc</strong> — 패널/도움말 닫기</li>
         <li><strong>← →</strong> — 페이지 이동</li>
       </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>📊 데이터 신뢰성</h3>
+      <p><strong>⚠️ 중요:</strong> 수강신청 수는 Udemy에서 제공하는 추정치입니다. 모든 수강생 숫자에 ▲ 표시가 있는 이유입니다.</p>
     </div>
   </div>
 </div>
