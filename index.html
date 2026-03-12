@@ -20,7 +20,7 @@
       <div class="gate-preview" id="subdomain-preview"></div>
       <p class="hint">학습장 주소가 woongjin.udemy.com이면 "woongjin"만 입력</p>
     </div>
-    <button class="btn-warp" id="btn-step1-next" title="다음 단계로 이동">다음 단계 →</button>
+    <button class="btn-warp" id="btn-step1-next">다음 단계 →</button>
     <div class="gate-history" id="gate-history"></div>
   </div>
 
@@ -28,8 +28,8 @@
     <h2 class="gate-title" style="font-size:1.6rem;">🧭 항로를 선택하세요</h2>
     <p class="gate-subtitle">관심 있는 직무를 고르면 맞춤 추천을 받을 수 있어요 (복수 선택 가능)</p>
     <div class="gate-job-grid" id="gate-job-grid"></div>
-    <button class="btn-warp" id="btn-launch" title="우주 여행을 시작합니다">🚀 우주 여행 출발!</button>
-    <button class="btn-skip" id="btn-skip" title="직무 선택 없이 바로 탐험">건너뛰기 — 자유 탐험</button>
+    <button class="btn-warp" id="btn-launch">🚀 우주 여행 출발!</button>
+    <button class="btn-skip" id="btn-skip">건너뛰기 — 자유 탐험</button>
   </div>
 </div>
 
@@ -44,58 +44,75 @@
   </div>
 </div>
 
+<!-- ★ 메인 앱 — 고정 헤더 구조 -->
 <div id="app-container">
-  <header class="app-header">
-    <h1>🚀 Udemy Business Course Explorer</h1>
-    <p class="welcome" id="welcome-msg">탐험가님, <strong></strong> 우주에 도착했습니다!</p>
-    <div class="translate-bar">
-      <button class="translate-toggle-btn" id="translate-toggle" title="페이지 번역 켜기/끄기">🌐 번역기 켜기</button>
-      <div id="google_translate_element" style="display:none;"></div>
+  
+  <!-- ★ 고정 헤더 -->
+  <header class="fixed-header" id="fixed-header">
+    <div class="header-inner">
+      <h1 class="header-title">🚀 Udemy Business Course Explorer</h1>
+      <nav class="header-nav">
+        <button class="header-nav-btn active" data-tab="explore" title="자유롭게 강의를 탐험합니다">🧭 우주 탐험</button>
+        <button class="header-nav-btn" data-tab="mission" title="직무별 큐레이션 강의">🛸 미션 센터</button>
+        <button class="header-nav-btn" data-tab="stars" title="인기 강의 TOP">🌟 가장 밝은 별</button>
+      </nav>
     </div>
   </header>
 
-  <!-- ★ 대시보드 카드 — 다운로드 버튼 카드 안에 -->
-  <div class="dash-cards" id="dash-cards">
-    <div class="dash-card clickable" data-idx="0" title="모든 강의 표시">
-      <span class="icon">🌟</span>
-      <span class="value" data-target="0">0</span>
-      <span class="label">전체 별</span>
-      <button class="dash-download-btn" id="btn-download-all" title="전체 강의 목록 CSV 다운로드">📥 목록 다운받기</button>
+  <!-- ★ 헤더 아래 여백 -->
+  <div class="header-spacer"></div>
+
+  <!-- ★ 환영 메시지 -->
+  <p class="welcome" id="welcome-msg">탐험가님, <strong></strong> 우주에 도착했습니다!</p>
+
+  <!-- ★ 통계 섹션 — 가로형 카드 -->
+  <div class="stats-section" id="dash-cards">
+    <div class="stats-card clickable" data-idx="0" title="모든 강의 표시 (최근 3년 내 업데이트)">
+      <span class="stats-icon">🌟</span>
+      <div class="stats-info">
+        <span class="stats-value" data-target="0">0</span>
+        <span class="stats-label">전체 별 (3년 이내)</span>
+      </div>
+      <button class="stats-download-btn" data-type="all" title="전체 강의 목록 CSV 다운로드">📥 다운받기</button>
     </div>
-    <div class="dash-card clickable" data-idx="1" title="최근 1개월 내 업데이트">
-      <span class="icon">✨</span>
-      <span class="value" data-target="0">0</span>
-      <span class="label">신규 별</span>
-      <button class="dash-download-btn" id="btn-download-new" title="신규 강의 목록 CSV 다운로드">📥 목록 다운받기</button>
+    <div class="stats-card clickable" data-idx="1" title="최근 1개월 내 업데이트된 강의">
+      <span class="stats-icon">✨</span>
+      <div class="stats-info">
+        <span class="stats-value" data-target="0">0</span>
+        <span class="stats-label">신규 별 (1개월)</span>
+      </div>
+      <button class="stats-download-btn" data-type="new" title="신규 강의 목록 CSV 다운로드">📥 다운받기</button>
     </div>
-    <div class="dash-card" data-idx="2" title="현재 필터링된 강의 수">
-      <span class="icon">🔍</span>
-      <span class="value" data-target="0">0</span>
-      <span class="label">발견된 별</span>
+    <div class="stats-card" data-idx="2" title="현재 필터링된 강의 수">
+      <span class="stats-icon">🔍</span>
+      <div class="stats-info">
+        <span class="stats-value" data-target="0">0</span>
+        <span class="stats-label">발견된 별</span>
+      </div>
     </div>
   </div>
 
+  <!-- 하이라이트 섹션 -->
   <div class="highlight-section">
     <div class="highlight-grid">
       <div class="highlight-panel">
         <div class="highlight-header">
           <h3>🔥 최신 인기 과정</h3>
           <div class="highlight-controls">
-            <button class="highlight-prev" id="popular-prev" title="이전">◀</button>
+            <button class="highlight-prev" id="popular-prev">◀</button>
             <span class="highlight-indicator" id="popular-indicator">1 / 6</span>
-            <button class="highlight-next" id="popular-next" title="다음">▶</button>
+            <button class="highlight-next" id="popular-next">▶</button>
           </div>
         </div>
         <div class="highlight-carousel" id="popular-carousel"></div>
       </div>
-
       <div class="highlight-panel">
         <div class="highlight-header">
           <h3>⭐ 큐레이터 PICK</h3>
           <div class="highlight-controls">
-            <button class="highlight-prev" id="curator-prev" title="이전">◀</button>
+            <button class="highlight-prev" id="curator-prev">◀</button>
             <span class="highlight-indicator" id="curator-indicator">1 / 3</span>
-            <button class="highlight-next" id="curator-next" title="다음">▶</button>
+            <button class="highlight-next" id="curator-next">▶</button>
           </div>
         </div>
         <div class="highlight-carousel" id="curator-carousel"></div>
@@ -103,12 +120,7 @@
     </div>
   </div>
 
-  <nav class="tab-nav">
-    <button class="tab-btn active" data-tab="explore" title="자유롭게 강의를 탐험합니다">🧭 우주 탐험</button>
-    <button class="tab-btn" data-tab="mission" title="직무별 큐레이션 강의">🛸 미션 센터</button>
-    <button class="tab-btn" data-tab="stars" title="인기 강의 TOP">🌟 가장 밝은 별</button>
-  </nav>
-
+  <!-- ★ 탐험 탭 — 검색창 + 상세필터 한 줄 -->
   <div class="tab-panel active" id="panel-explore">
     <div class="scanner-section">
       <div class="scanner-bar">
@@ -118,18 +130,20 @@
         </div>
         <button class="btn-ai-scan" id="btn-ai-scan" title="AI가 관련 키워드를 확장합니다">🤖 AI 내비</button>
         <button class="btn-reset-inline" id="btn-reset-inline" title="모든 필터 초기화">✨ 초기화</button>
+        <!-- ★ 상세 필터 토글 검색창 옆으로 -->
+        <button class="btn-filter-toggle" id="btn-filter-toggle" title="상세 필터 열기/닫기">⚙️ 필터</button>
       </div>
       <div class="scanner-meta">
         <div class="scan-controls">
           <div class="scan-mode-toggle">
-            <button class="scan-mode-btn active" data-mode="ai" title="AI 키워드 확장 검색">🤖 AI</button>
-            <button class="scan-mode-btn" data-mode="or" title="하나라도 포함 (OR)">OR</button>
-            <button class="scan-mode-btn" data-mode="and" title="모두 포함 (AND)">AND</button>
+            <button class="scan-mode-btn active" data-mode="ai">🤖 AI</button>
+            <button class="scan-mode-btn" data-mode="or">OR</button>
+            <button class="scan-mode-btn" data-mode="and">AND</button>
           </div>
           <div class="sensitivity-toggle">
-            <button class="sensitivity-btn" data-sensitivity="precise" title="제목·주제만 검색 (가장 정확)">🔬 정밀</button>
-            <button class="sensitivity-btn active" data-sensitivity="balanced" title="제목+소개+목표 검색 (기본)">📊 보통</button>
-            <button class="sensitivity-btn" data-sensitivity="wide" title="설명 전체 검색 (가장 넓음)">🔭 광역</button>
+            <button class="sensitivity-btn" data-sensitivity="precise">🔬 정밀</button>
+            <button class="sensitivity-btn active" data-sensitivity="balanced">📊 보통</button>
+            <button class="sensitivity-btn" data-sensitivity="wide">🔭 광역</button>
           </div>
         </div>
         <div class="scan-results-count" id="results-count">발견된 별: <strong>0</strong>개</div>
@@ -143,16 +157,13 @@
       <p class="ai-guide">원하는 키워드를 클릭해서 선택 혹은 제외하고, 스캔 버튼을 누르세요.</p>
       <div id="ai-panel-results"></div>
       <div class="ai-panel-actions">
-        <button class="btn-apply-ai" id="btn-apply-ai" title="선택한 키워드로 검색">🚀 선택한 항로로 스캔</button>
-        <button id="btn-ai-select-all" title="모든 키워드 선택">전체 선택</button>
-        <button id="btn-ai-close" title="패널 닫기">닫기</button>
+        <button class="btn-apply-ai" id="btn-apply-ai">🚀 선택한 항로로 스캔</button>
+        <button id="btn-ai-select-all">전체 선택</button>
+        <button id="btn-ai-close">닫기</button>
       </div>
     </div>
 
-    <div class="filters-toggle-bar" id="filters-toggle">
-      <span>⚙️ 상세 필터</span>
-      <span class="arrow">▼</span>
-    </div>
+    <!-- ★ 상세 필터 — 기본 숨김 -->
     <div class="filters-grid" id="filters-grid">
       <div class="f-group"><label>🌌 카테고리</label><div class="ms-wrap" data-fid="f-category"><button class="ms-btn">모든 카테고리</button><div class="ms-panel"></div></div></div>
       <div class="f-group"><label>📊 난이도</label><div class="ms-wrap" data-fid="f-difficulty"><button class="ms-btn">모든 난이도</button><div class="ms-panel"></div></div></div>
@@ -170,8 +181,9 @@
     </div>
   </div>
 
+  <!-- 미션 센터 탭 -->
   <div class="tab-panel" id="panel-mission">
-    <div class="mission-search"><input type="search" id="mission-search" placeholder="🔍 직무명 검색 (예: 백엔드, 마케팅)" /></div>
+    <div class="mission-search"><input type="search" id="mission-search" placeholder="🔍 직무명 검색 (예: 백엔드, 마케팅, 인사)" /></div>
     <h4 style="color:var(--text-secondary); margin-bottom:0.5rem;">은하 선택</h4>
     <div class="galaxy-grid" id="galaxy-grid"></div>
     <div class="level-bar">
@@ -184,6 +196,7 @@
     <div class="orbit-grid" id="orbit-grid"></div>
   </div>
 
+  <!-- 가장 밝은 별 탭 -->
   <div class="tab-panel" id="panel-stars">
     <div class="stars-section">
       <h2>🌟 가장 밝게 빛나는 별들</h2>
@@ -197,30 +210,31 @@
     </div>
   </div>
 
+  <!-- 별 카탈로그 -->
   <div class="list-section" id="list-section">
     <div class="list-header">
       <h2>📖 별 카탈로그</h2>
       <div class="view-toggle">
-        <button class="view-btn active" data-view="table" title="테이블">📋</button>
-        <button class="view-btn" data-view="card" title="카드">🃏</button>
-        <button class="view-btn" data-view="compact" title="간단">📄</button>
+        <button class="view-btn active" data-view="table">📋</button>
+        <button class="view-btn" data-view="card">🃏</button>
+        <button class="view-btn" data-view="compact">📄</button>
       </div>
     </div>
     <div class="table-wrap" id="view-table">
       <table>
         <thead><tr>
-          <th class="col-check"><input type="checkbox" id="check-all" title="전체 선택" /></th>
-          <th class="sortable" data-sort="score" title="AI 추천도 점수 (클릭하여 정렬)">🎯 추천도</th>
-          <th class="sortable" data-sort="category" title="카테고리 (클릭하여 정렬)">카테고리</th>
-          <th class="sortable" data-sort="title" title="강의명 (클릭하여 정렬)">강의명</th>
-          <th class="sortable" data-sort="rating" title="평점 (클릭하여 정렬)">평점</th>
-          <th class="sortable" data-sort="enrollments" title="수강자 수 (클릭하여 정렬)">👥 수강</th>
-          <th class="sortable" data-sort="language" title="언어 (클릭하여 정렬)">언어</th>
-          <th title="한국어 자막 여부">🇰🇷자막</th>
-          <th class="sortable" data-sort="difficulty" title="난이도 (클릭하여 정렬)">난이도</th>
-          <th class="sortable" data-sort="duration" title="강의 시간 (클릭하여 정렬)">시간</th>
-          <th class="sortable" data-sort="instructor" title="강사명 (클릭하여 정렬)">강사</th>
-          <th class="sortable" data-sort="updated" title="업데이트 연월 (클릭하여 정렬)">업데이트</th>
+          <th class="col-check"><input type="checkbox" id="check-all" /></th>
+          <th class="sortable" data-sort="score">🎯 추천도</th>
+          <th class="sortable" data-sort="category">카테고리</th>
+          <th class="sortable" data-sort="title">강의명</th>
+          <th class="sortable" data-sort="rating">평점</th>
+          <th class="sortable" data-sort="enrollments">👥 수강</th>
+          <th class="sortable" data-sort="language">언어</th>
+          <th>🇰🇷자막</th>
+          <th class="sortable" data-sort="difficulty">난이도</th>
+          <th class="sortable" data-sort="duration">시간</th>
+          <th class="sortable" data-sort="instructor">강사</th>
+          <th class="sortable" data-sort="updated">업데이트</th>
         </tr></thead>
         <tbody id="table-body"></tbody>
       </table>
@@ -231,26 +245,27 @@
   </div>
 </div>
 
+<!-- FAB -->
 <div class="fab" id="fab">
   <span id="fab-count">🛸 0개 별 선택</span>
-  <button class="btn-fab-csv" id="fab-csv" title="선택한 강의 CSV 다운로드">📋 미션 보고서</button>
-  <button id="fab-link" title="선택한 강의 링크 복사">🔗 링크 복사</button>
-  <button id="fab-clear" title="선택 해제">✨ 해제</button>
+  <button class="btn-fab-csv" id="fab-csv">📋 미션 보고서</button>
+  <button id="fab-link">🔗 링크 복사</button>
+  <button id="fab-clear">✨ 해제</button>
 </div>
 
+<!-- 사이드 패널 -->
 <div id="side-panel-overlay">
   <div id="side-panel">
-    <button class="sp-close" id="sp-close" title="닫기">&times;</button>
+    <button class="sp-close" id="sp-close">&times;</button>
     <div id="sp-content"></div>
   </div>
 </div>
 
-<!-- ★ CSV 헤더 선택 모달 -->
+<!-- CSV 헤더 선택 모달 -->
 <div id="csv-modal-overlay" class="help-overlay">
   <div class="help-content" style="max-width:500px;">
     <button class="help-close" id="csv-modal-close">&times;</button>
     <h2>📥 CSV 다운로드 설정</h2>
-    
     <div class="help-section">
       <h3>포함할 컬럼을 선택하세요:</h3>
       <div class="csv-columns">
@@ -268,7 +283,6 @@
         <label><input type="checkbox" id="csv-col-url" checked> 강의링크</label>
       </div>
     </div>
-    
     <div class="help-section">
       <button class="admin-btn admin-btn-primary" id="csv-download-confirm">📥 다운로드</button>
       <button class="admin-btn" id="csv-select-all">전체 선택</button>
@@ -277,49 +291,45 @@
   </div>
 </div>
 
+<!-- 도움말 -->
 <div id="help-overlay" class="help-overlay">
   <div class="help-content">
     <button class="help-close" id="help-close">&times;</button>
     <h2>📖 사용 가이드</h2>
-    
     <div class="help-section">
       <h3>🧭 우주 탐험</h3>
-      <p>검색창에 키워드를 입력하면 관련 강의를 찾을 수 있습니다.</p>
       <ul>
-        <li><strong>🤖 AI 내비</strong> — AI가 입력한 키워드를 확장하여 더 많은 관련 강의를 찾아줍니다.</li>
-        <li><strong>OR / AND</strong> — OR은 키워드 중 하나라도 포함된 강의, AND는 모든 키워드가 포함된 강의만 표시합니다.</li>
+        <li><strong>🤖 AI 내비</strong> — AI가 키워드를 확장하여 관련 강의를 찾아줍니다.</li>
+        <li><strong>OR / AND</strong> — OR은 하나라도 포함, AND는 모두 포함된 강의만.</li>
         <li><strong>🔬 정밀 / 📊 보통 / 🔭 광역</strong> — 검색 감도를 조절합니다.</li>
       </ul>
     </div>
-
     <div class="help-section">
       <h3>🎯 추천도 점수</h3>
-      <p>검색 시 각 강의에 추천도 점수가 부여됩니다. 산출 방식:</p>
       <ul>
-        <li><strong>제목에 키워드 포함</strong> — +40~50점</li>
-        <li><strong>카테고리 일치</strong> — +30점</li>
-        <li><strong>주제(토픽) 일치</strong> — +20~25점</li>
-        <li><strong>소개(headline) 포함</strong> — +15점</li>
-        <li><strong>학습목표 포함</strong> — +10점</li>
-        <li><strong>설명(description) 포함</strong> — +5점 (광역 모드만)</li>
-        <li><strong>보너스</strong> — 신규 강의 +3점, 한국어 자막 +3점, 고평점(4.5+) +5점</li>
+        <li>제목 +40~50점, 카테고리 +30점, 주제 +20~25점</li>
+        <li>소개 +15점, 학습목표 +10점, 설명 +5점(광역)</li>
+        <li>보너스: 신규 +3점, 한국어자막 +3점, 고평점 +5점</li>
       </ul>
     </div>
-
     <div class="help-section">
       <h3>📊 데이터 신뢰성</h3>
-      <p><strong>⚠️ 중요:</strong> 수강신청 수는 Udemy에서 제공하는 추정치입니다. 모든 수강생 숫자에 ▲ 표시가 있는 이유입니다.</p>
+      <p>⚠️ 수강신청 수는 추정치입니다. 모든 숫자에 ▲ 표시가 있는 이유입니다.</p>
     </div>
   </div>
 </div>
 
+<!-- ★ 플로팅 버튼들 -->
 <button id="scroll-to-top" title="맨 위로">↑</button>
+<button id="translate-float-btn" class="float-btn-translate" title="페이지 번역 켜기/끄기">🌐</button>
+<div id="google_translate_element" style="display:none;position:fixed;bottom:5rem;right:1rem;z-index:600;"></div>
+
 <div id="toast-container"></div>
 
 <footer class="app-footer">
   <p>🚀 Udemy Business Course Explorer v2.0</p>
   <p>© 2026 Woongjin Thinkbig. Hugh Jung. All rights reserved.</p>
-  <p><button class="help-btn" id="btn-help" title="사용 가이드를 확인합니다">❓ 도움말</button></p>
+  <p><button class="help-btn" id="btn-help">❓ 도움말</button></p>
 </footer>
 
 <script src="js/data.js"></script>
@@ -337,21 +347,19 @@
 let translateEnabled = false;
 
 function toggleTranslate() {
-  const btn = $('#translate-toggle');
   const element = $('#google_translate_element');
-  
   if (!translateEnabled) {
-    element.style.display = 'inline-block';
-    btn.textContent = '🌐 번역기 끄기';
+    element.style.display = 'block';
     translateEnabled = true;
     if (!window.google || !window.google.translate) googleTranslateElementInit();
+    toast('🌐 번역기가 켜졌습니다.');
   } else {
     element.style.display = 'none';
-    btn.textContent = '🌐 번역기 켜기';
     translateEnabled = false;
     const frame = document.querySelector('.goog-te-banner-frame');
     if (frame) frame.style.display = 'none';
     document.body.classList.remove('translated-ltr', 'translated-rtl');
+    toast('🌐 번역기가 꺼졌습니다.');
   }
 }
 
@@ -365,7 +373,7 @@ function googleTranslateElementInit() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  $('#translate-toggle')?.addEventListener('click', toggleTranslate);
+  $('#translate-float-btn')?.addEventListener('click', toggleTranslate);
 });
 </script>
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
