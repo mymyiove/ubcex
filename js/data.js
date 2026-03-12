@@ -1,7 +1,6 @@
 // ═══════════════════════════════════════════════════════════
 // data.js — 전역 상태, NCS 기반 직무 확장, 제외 강의
 // ═══════════════════════════════════════════════════════════
-
 const S = {
   subdomain: '',
   selectedFamilies: [],
@@ -16,17 +15,14 @@ const S = {
   currentGalaxy: 'development',
   starsMode: 'rating',
 };
-
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
-
 const LANG_MAP = {
   'en':'English','ko':'한국어','ja':'日本語','zh':'中文','es':'Español',
   'fr':'Français','de':'Deutsch','pt':'Português','ru':'Русский',
   'it':'Italiano','tr':'Türkçe','ar':'العربية','id':'Bahasa','hi':'हिन्दी','pl':'Polski'
 };
 const mapLang = (c) => { if(!c) return 'N/A'; const k=c.toLowerCase().split(/[-_]/)[0]; return LANG_MAP[k]||c; };
-
 const CAT_EMOJIS = {
   'Development':'💻','IT & Software':'⚙️','Business':'💼','Finance & Accounting':'💰',
   'Marketing':'📢','Office Productivity':'📊','Personal Development':'🧠','Design':'🎨',
@@ -38,7 +34,6 @@ const CAT_EMOJIS = {
   'Hardware':'🔌','Operating Systems':'💿','Other':'📁'
 };
 const getCatEmoji = (cat) => { if(!cat) return '📁'; if(CAT_EMOJIS[cat]) return CAT_EMOJIS[cat]; for(const k in CAT_EMOJIS) { if(cat.includes(k)) return CAT_EMOJIS[k]; } return '📁'; };
-
 const CAT_COLORS = {
   'Development':'#3b82f6','IT & Software':'#6366f1','Business':'#8b5cf6',
   'Marketing':'#f59e0b','Design':'#ec4899','Finance & Accounting':'#10b981',
@@ -48,7 +43,6 @@ const CAT_COLORS = {
   'Data Science':'#06b6d4','Language Learning':'#8b5cf6','Game Development & Design':'#f43f5e'
 };
 const getCatColor = (cat) => { if(!cat) return 'var(--accent)'; for(const k in CAT_COLORS) { if(cat.includes(k)) return CAT_COLORS[k]; } return 'var(--accent)'; };
-
 const KO_EN_MAP = {
   '마케팅':['marketing'],'개발':['development','programming'],'디자인':['design'],
   '리더십':['leadership'],'데이터':['data'],'분석':['analysis','analytics'],
@@ -61,28 +55,25 @@ const KO_EN_MAP = {
   '자동화':['automation'],'생산성':['productivity'],'인공지능':['artificial intelligence','ai'],
   '머신러닝':['machine learning'],'딥러닝':['deep learning']
 };
-
 const NEW_MONTHS = 1;
 const isNew = (d) => { if(!d) return false; const u=new Date(d), t=new Date(); t.setMonth(t.getMonth()-NEW_MONTHS); return u>=t; };
-
 const formatUpdateDate = (dateStr) => {
   if (!dateStr) return '-';
   try { const date = new Date(dateStr); return `${date.getFullYear().toString().slice(-2)}.${(date.getMonth()+1).toString().padStart(2,'0')}`; }
   catch { return '-'; }
 };
 
+// ★ 개선: minScore 상향
 const SENSITIVITY_CONFIG = {
-  precise: { label: '🔬 정밀', minScore: 40, searchFields: ['title','topic','category'], scoreWeights: { title:50, category:30, topic:25, headline:0, objectives:0, description:0 } },
-  balanced: { label: '📊 보통', minScore: 15, searchFields: ['title','topic','category','headline','objectives'], scoreWeights: { title:40, category:30, topic:20, headline:15, objectives:10, description:0 } },
+  precise: { label: '🔬 정밀', minScore: 80, searchFields: ['title','topic','category'], scoreWeights: { title:50, category:30, topic:25, headline:0, objectives:0, description:0 } },
+  balanced: { label: '📊 보통', minScore: 25, searchFields: ['title','topic','category','headline','objectives'], scoreWeights: { title:40, category:30, topic:20, headline:15, objectives:10, description:0 } },
   wide: { label: '🔭 광역', minScore: 1, searchFields: ['title','topic','category','headline','objectives','description'], scoreWeights: { title:40, category:30, topic:20, headline:15, objectives:10, description:5 } }
 };
 
-// ★ 제외 강의 목록 (localStorage)
 function getExcludedCourses() {
   try { return JSON.parse(localStorage.getItem('excluded_courses') || '[]'); } catch { return []; }
 }
 
-// ★ NCS 기반 한국 기업 직무 구조 (30개+ 직무)
 const CURATION = {
   product: { name: "제품/기획", emoji: "🚀", color: "#8b5cf6", roles: [
     { id:"pm_po", name:"PM / PO (제품관리)", prompt:"PM PO product management 제품 관리 roadmap 로드맵 backlog 백로그 user story agile scrum kanban product strategy", keywords:["Product Mgt","Roadmap","Backlog","Agile","Scrum"], cats:["Business","IT & Software"] },
