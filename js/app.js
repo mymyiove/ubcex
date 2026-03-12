@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// app.js — 앱 초기화, 게이트, 워프, 관리자 모드, 병렬 chunk 로딩
+// app.js — 고정 헤더 탭 + 필터 토글 + 제외 강의 + 병렬 로딩
 // ═══════════════════════════════════════════════════════════
 
 const ADMIN_CODE = 'jhj11';
@@ -48,12 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function goStep2() {
   const sub = $('#input-subdomain').value.trim();
   if (!sub) { toast('모선 주소를 입력해주세요.', 'error'); return; }
-
-  if (sub === ADMIN_CODE) {
-    enterAdminMode();
-    return;
-  }
-
+  if (sub === ADMIN_CODE) { enterAdminMode(); return; }
   S.subdomain = sub;
   localStorage.setItem('kv_subdomain', sub);
   $('#gate-step-1').classList.remove('active');
@@ -61,11 +56,10 @@ function goStep2() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 관리자 모드
+// 관리자 모드 (간소화)
 // ═══════════════════════════════════════════════════════════
 function enterAdminMode() {
   $('#gate-page').style.display = 'none';
-
   const adminPanel = document.createElement('div');
   adminPanel.id = 'admin-panel';
   adminPanel.innerHTML = `
@@ -76,70 +70,50 @@ function enterAdminMode() {
         <button class="admin-exit-btn" id="admin-exit">🚪 나가기</button>
       </div>
       <div class="admin-status-cards">
-        <div class="admin-card"><div class="admin-card-icon">📡</div><div class="admin-card-title">동기화 상태</div><div class="admin-card-value" id="sync-status-value">확인 중...</div><div class="admin-card-sub" id="sync-status-sub"></div></div>
-        <div class="admin-card"><div class="admin-card-icon">📚</div><div class="admin-card-title">총 강의 수</div><div class="admin-card-value" id="courses-count-value">-</div><div class="admin-card-sub" id="courses-count-sub"></div></div>
-        <div class="admin-card"><div class="admin-card-icon">📦</div><div class="admin-card-title">Chunk 수</div><div class="admin-card-value" id="chunks-count-value">-</div><div class="admin-card-sub">데이터 분할 저장 단위</div></div>
-        <div class="admin-card"><div class="admin-card-icon">🔑</div><div class="admin-card-title">API 상태</div><div class="admin-card-value" id="api-status-value">확인 중...</div><div class="admin-card-sub" id="api-status-sub"></div></div>
+        <div class="admin-card"><div class="admin-card-icon">📡</div><div class="admin-card-title">동기화</div><div class="admin-card-value" id="sync-status-value">확인 중...</div><div class="admin-card-sub" id="sync-status-sub"></div></div>
+        <div class="admin-card"><div class="admin-card-icon">📚</div><div class="admin-card-title">총 강의</div><div class="admin-card-value" id="courses-count-value">-</div><div class="admin-card-sub" id="courses-count-sub"></div></div>
+        <div class="admin-card"><div class="admin-card-icon">📦</div><div class="admin-card-title">Chunk</div><div class="admin-card-value" id="chunks-count-value">-</div><div class="admin-card-sub">분할 저장 단위</div></div>
+        <div class="admin-card"><div class="admin-card-icon">🔑</div><div class="admin-card-title">API</div><div class="admin-card-value" id="api-status-value">확인 중...</div><div class="admin-card-sub" id="api-status-sub"></div></div>
       </div>
       <div class="admin-sections">
-        <div class="admin-section">
-          <h3>📡 강의 동기화</h3>
-          <p class="admin-desc">Udemy Business GraphQL API에서 강의 데이터를 가져옵니다.</p>
-          <div class="admin-btn-group">
-            <button class="admin-btn admin-btn-primary" id="btn-sync-continue">▶️ 이어서 동기화</button>
-            <button class="admin-btn admin-btn-warning" id="btn-sync-reset">🔄 전체 재동기화</button>
-            <button class="admin-btn admin-btn-danger" id="btn-sync-auto">🚀 자동 전체 동기화</button>
-          </div>
-          <div class="admin-log" id="sync-log"></div>
-        </div>
-        <div class="admin-section">
-          <h3>⭐ 큐레이터 PICK 관리</h3>
-          <p class="admin-desc">하이라이트 섹션에 표시될 추천 강의를 관리합니다.</p>
-          <div class="admin-btn-group">
-            <button class="admin-btn admin-btn-primary" id="btn-manage-picks">⭐ 큐레이터 PICK 설정</button>
-            <button class="admin-btn" id="btn-view-picks">📋 현재 PICK 보기</button>
-          </div>
-          <div class="admin-log" id="picks-log"></div>
-        </div>
-        <div class="admin-section">
-          <h3>🔍 데이터 검증</h3>
-          <p class="admin-desc">저장된 강의 데이터의 품질을 확인합니다.</p>
-          <div class="admin-btn-group">
-            <button class="admin-btn" id="btn-verify-data">📊 데이터 현황</button>
-            <button class="admin-btn" id="btn-verify-sample">📋 샘플 보기</button>
-          </div>
-          <div class="admin-log" id="verify-log"></div>
-        </div>
-        <div class="admin-section">
-          <h3>🔑 API 테스트</h3>
-          <p class="admin-desc">외부 API 연결 상태를 확인합니다.</p>
-          <div class="admin-btn-group">
-            <button class="admin-btn" id="btn-test-graphql">🔐 GraphQL 테스트</button>
-            <button class="admin-btn" id="btn-test-gemini">🤖 Gemini 테스트</button>
-          </div>
-          <div class="admin-log" id="api-log"></div>
-        </div>
-        <div class="admin-section">
-          <h3>📋 로우 데이터 조회</h3>
-          <p class="admin-desc">특정 chunk의 강의 데이터를 직접 확인합니다.</p>
-          <div class="admin-btn-group" style="align-items:center;">
-            <label style="color:var(--text-secondary);font-size:0.85rem;">Chunk:</label>
-            <input type="number" id="chunk-number" value="0" min="0" max="50" style="width:60px;padding:0.4rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);text-align:center;" />
-            <button class="admin-btn" id="btn-view-chunk">🔍 조회</button>
-          </div>
-          <div class="admin-log" id="raw-log"></div>
-        </div>
+        <div class="admin-section"><h3>📡 강의 동기화</h3><div class="admin-btn-group">
+          <button class="admin-btn admin-btn-primary" id="btn-sync-continue">▶️ 이어서</button>
+          <button class="admin-btn admin-btn-warning" id="btn-sync-reset">🔄 전체 재동기화</button>
+          <button class="admin-btn admin-btn-danger" id="btn-sync-auto">🚀 자동 전체</button>
+        </div><div class="admin-log" id="sync-log"></div></div>
+        <div class="admin-section"><h3>⭐ 큐레이터 PICK</h3><div class="admin-btn-group">
+          <button class="admin-btn admin-btn-primary" id="btn-manage-picks">⭐ PICK 설정</button>
+          <button class="admin-btn" id="btn-view-picks">📋 현재 보기</button>
+        </div><div class="admin-log" id="picks-log"></div></div>
+        <div class="admin-section"><h3>🚫 제외 강의 관리</h3><p class="admin-desc">웅진데모 전용 강의 등 제외할 강의 ID를 관리합니다.</p><div class="admin-btn-group">
+          <button class="admin-btn admin-btn-warning" id="btn-manage-excluded">🚫 제외 강의 설정</button>
+          <button class="admin-btn" id="btn-view-excluded">📋 현재 보기</button>
+        </div><div class="admin-log" id="excluded-log"></div></div>
+        <div class="admin-section"><h3>🔍 데이터 검증</h3><div class="admin-btn-group">
+          <button class="admin-btn" id="btn-verify-data">📊 현황</button>
+          <button class="admin-btn" id="btn-verify-sample">📋 샘플</button>
+        </div><div class="admin-log" id="verify-log"></div></div>
+        <div class="admin-section"><h3>🔑 API 테스트</h3><div class="admin-btn-group">
+          <button class="admin-btn" id="btn-test-graphql">🔐 GraphQL</button>
+          <button class="admin-btn" id="btn-test-gemini">🤖 Gemini</button>
+        </div><div class="admin-log" id="api-log"></div></div>
+        <div class="admin-section"><h3>📋 로우 데이터</h3><div class="admin-btn-group" style="align-items:center;">
+          <label style="color:var(--text-secondary);font-size:0.85rem;">Chunk:</label>
+          <input type="number" id="chunk-number" value="0" min="0" max="50" style="width:60px;padding:0.4rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);text-align:center;" />
+          <button class="admin-btn" id="btn-view-chunk">🔍 조회</button>
+        </div><div class="admin-log" id="raw-log"></div></div>
       </div>
     </div>
   `;
-
   document.body.appendChild(adminPanel);
   $('#admin-exit').addEventListener('click', exitAdminMode);
   $('#btn-sync-continue').addEventListener('click', () => runSync(false));
-  $('#btn-sync-reset').addEventListener('click', () => { if (confirm('⚠️ 모든 데이터를 삭제하고 처음부터 다시 동기화합니다. 계속?')) runSync(true); });
+  $('#btn-sync-reset').addEventListener('click', () => { if(confirm('전체 재동기화?')) runSync(true); });
   $('#btn-sync-auto').addEventListener('click', runAutoSync);
   $('#btn-manage-picks').addEventListener('click', manageCuratorPicksAdmin);
   $('#btn-view-picks').addEventListener('click', viewCurrentPicks);
+  $('#btn-manage-excluded').addEventListener('click', manageExcludedCourses);
+  $('#btn-view-excluded').addEventListener('click', viewExcludedCourses);
   $('#btn-verify-data').addEventListener('click', verifyData);
   $('#btn-verify-sample').addEventListener('click', verifySample);
   $('#btn-test-graphql').addEventListener('click', testGraphQL);
@@ -149,157 +123,36 @@ function enterAdminMode() {
   toast('🔧 관리자 모드에 진입했습니다.');
 }
 
-function exitAdminMode() {
-  const panel = $('#admin-panel');
-  if (panel) panel.remove();
-  $('#gate-page').style.display = '';
-  $('#input-subdomain').value = '';
-  $('#subdomain-preview').textContent = '';
-  $('#subdomain-preview').style.color = 'var(--success)';
-}
+function exitAdminMode() { const p=$('#admin-panel'); if(p) p.remove(); $('#gate-page').style.display=''; $('#input-subdomain').value=''; }
 
 async function loadAdminStatus() {
-  try {
-    const res = await fetch(`${WORKER_URL}/status`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
-    const data = await res.json();
-    $('#sync-status-value').textContent = data.isComplete ? '✅ 완료' : data.synced ? '⏳ 진행 중' : '❌ 미완료';
-    $('#sync-status-sub').textContent = data.syncedAt ? `마지막: ${new Date(data.syncedAt).toLocaleString('ko-KR')}` : '기록 없음';
-    $('#courses-count-value').textContent = (data.totalCount || 0).toLocaleString();
-    $('#courses-count-sub').textContent = data.isComplete ? '완료' : '진행 중';
-    $('#chunks-count-value').textContent = data.totalChunks || 0;
-  } catch (e) { $('#sync-status-value').textContent = '❌ 연결 실패'; }
-  try {
-    const tokenRes = await fetch(`${WORKER_URL}/test-token`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
-    const tokenData = await tokenRes.json();
-    $('#api-status-value').textContent = tokenData.success ? '✅ 정상' : '❌ 오류';
-    $('#api-status-sub').textContent = tokenData.success ? 'GraphQL 토큰 OK' : '토큰 실패';
-  } catch (e) { $('#api-status-value').textContent = '❌ 연결 실패'; }
+  try { const r=await fetch(`${WORKER_URL}/status`,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}}); const d=await r.json(); $('#sync-status-value').textContent=d.isComplete?'✅ 완료':d.synced?'⏳ 진행 중':'❌ 미완료'; $('#sync-status-sub').textContent=d.syncedAt?`마지막: ${new Date(d.syncedAt).toLocaleString('ko-KR')}`:'기록 없음'; $('#courses-count-value').textContent=(d.totalCount||0).toLocaleString(); $('#courses-count-sub').textContent=d.isComplete?'완료':'진행 중'; $('#chunks-count-value').textContent=d.totalChunks||0; } catch(e) { $('#sync-status-value').textContent='❌ 연결 실패'; }
+  try { const r=await fetch(`${WORKER_URL}/test-token`,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}}); const d=await r.json(); $('#api-status-value').textContent=d.success?'✅ 정상':'❌ 오류'; $('#api-status-sub').textContent=d.success?'GraphQL OK':'실패'; } catch(e) { $('#api-status-value').textContent='❌'; }
 }
 
-async function runSync(isReset) {
-  const log = $('#sync-log');
-  log.innerHTML = `<div class="log-entry log-info">📡 ${isReset ? '전체 재동기화' : '이어서 동기화'} 시작...</div>`;
-  try {
-    const res = await fetch(`${WORKER_URL}/sync${isReset ? '?reset=true' : ''}`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
-    const data = await res.json();
-    log.innerHTML += `<div class="log-entry ${data.success ? 'log-success' : 'log-error'}">${data.success ? '✅' : '❌'} ${data.message || data.error}</div>`;
-  } catch (e) { log.innerHTML += `<div class="log-entry log-error">❌ ${e.message}</div>`; }
-  loadAdminStatus();
-}
+async function runSync(isReset) { const l=$('#sync-log'); l.innerHTML=`<div class="log-entry log-info">📡 시작...</div>`; try { const r=await fetch(`${WORKER_URL}/sync${isReset?'?reset=true':''}`,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}}); const d=await r.json(); l.innerHTML+=`<div class="log-entry ${d.success?'log-success':'log-error'}">${d.success?'✅':'❌'} ${d.message||d.error}</div>`; } catch(e) { l.innerHTML+=`<div class="log-entry log-error">❌ ${e.message}</div>`; } loadAdminStatus(); }
 
-async function runAutoSync() {
-  const log = $('#sync-log');
-  const btn = $('#btn-sync-auto');
-  btn.disabled = true; btn.textContent = '⏳ 진행 중...';
-  log.innerHTML = `<div class="log-entry log-info">🚀 자동 전체 동기화 시작...</div>`;
-  let cycle = 1, keepGoing = true;
-  while (keepGoing) {
-    log.innerHTML += `<div class="log-entry log-info">📡 [사이클 ${cycle}] 수집 중...</div>`;
-    log.scrollTop = log.scrollHeight;
-    try {
-      const endpoint = cycle === 1 ? `${WORKER_URL}/sync?reset=true` : `${WORKER_URL}/sync`;
-      const res = await fetch(endpoint, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
-      const data = await res.json();
-      if (data.error) { log.innerHTML += `<div class="log-entry log-error">❌ ${data.error}</div>`; break; }
-      log.innerHTML += `<div class="log-entry log-success">✅ ${data.message}</div>`;
-      if (data.stoppedByTimeout) { log.innerHTML += `<div class="log-entry log-info">⏳ 2초 대기...</div>`; await new Promise(r => setTimeout(r, 2000)); cycle++; }
-      else { log.innerHTML += `<div class="log-entry log-success">🎉 완료! 총 ${data.totalCount}개</div>`; keepGoing = false; }
-    } catch (e) { log.innerHTML += `<div class="log-entry log-error">❌ ${e.message}</div>`; break; }
-    log.scrollTop = log.scrollHeight;
-  }
-  btn.disabled = false; btn.textContent = '🚀 자동 전체 동기화';
-  loadAdminStatus();
-}
+async function runAutoSync() { const l=$('#sync-log'); const b=$('#btn-sync-auto'); b.disabled=true; b.textContent='⏳...'; l.innerHTML=`<div class="log-entry log-info">🚀 자동 시작...</div>`; let c=1,go=true; while(go) { l.innerHTML+=`<div class="log-entry log-info">📡 [${c}]...</div>`; l.scrollTop=l.scrollHeight; try { const ep=c===1?`${WORKER_URL}/sync?reset=true`:`${WORKER_URL}/sync`; const r=await fetch(ep,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}}); const d=await r.json(); if(d.error){l.innerHTML+=`<div class="log-entry log-error">❌ ${d.error}</div>`;break;} l.innerHTML+=`<div class="log-entry log-success">✅ ${d.message}</div>`; if(d.stoppedByTimeout){await new Promise(r=>setTimeout(r,2000));c++;}else{l.innerHTML+=`<div class="log-entry log-success">🎉 완료! ${d.totalCount}개</div>`;go=false;} } catch(e){l.innerHTML+=`<div class="log-entry log-error">❌ ${e.message}</div>`;break;} l.scrollTop=l.scrollHeight; } b.disabled=false; b.textContent='🚀 자동 전체'; loadAdminStatus(); }
 
-function manageCuratorPicksAdmin() {
-  const currentPicks = localStorage.getItem('curator_picks');
-  const pickIds = currentPicks ? JSON.parse(currentPicks) : ['8324', '1717020', '2360128'];
-  const newPicks = prompt('큐레이터 PICK 강의 ID를 입력하세요 (쉼표로 구분):\n\n예: 8324,1717020,2360128', pickIds.join(','));
-  if (newPicks !== null) {
-    const ids = newPicks.split(',').map(id => id.trim()).filter(Boolean);
-    localStorage.setItem('curator_picks', JSON.stringify(ids));
-    const log = $('#picks-log');
-    if (log) log.innerHTML = `<div class="log-entry log-success">⭐ 큐레이터 PICK이 ${ids.length}개로 업데이트되었습니다.<br>강의 ID: ${ids.join(', ')}</div>`;
-    toast(`⭐ 큐레이터 PICK이 ${ids.length}개로 업데이트되었습니다.`);
-  }
-}
+function manageCuratorPicksAdmin() { const c=localStorage.getItem('curator_picks'); const ids=c?JSON.parse(c):['8324','1717020','2360128']; const n=prompt('큐레이터 PICK 강의 ID (쉼표 구분):',ids.join(',')); if(n!==null){const i=n.split(',').map(x=>x.trim()).filter(Boolean);localStorage.setItem('curator_picks',JSON.stringify(i));const l=$('#picks-log');if(l)l.innerHTML=`<div class="log-entry log-success">⭐ ${i.length}개 업데이트</div>`;toast(`⭐ ${i.length}개 업데이트`);} }
+function viewCurrentPicks() { const c=localStorage.getItem('curator_picks'); const ids=c?JSON.parse(c):['8324','1717020','2360128']; const l=$('#picks-log'); if(l)l.innerHTML=`<div class="log-entry log-info">${ids.map((id,i)=>`${i+1}. ID: ${id}`).join('<br>')}</div>`; }
 
-function viewCurrentPicks() {
-  const currentPicks = localStorage.getItem('curator_picks');
-  const pickIds = currentPicks ? JSON.parse(currentPicks) : ['8324', '1717020', '2360128'];
-  const log = $('#picks-log');
-  if (log) log.innerHTML = `<div class="log-entry log-info"><strong>📋 현재 큐레이터 PICK:</strong><br>${pickIds.map((id, i) => `${i+1}. 강의 ID: ${id}`).join('<br>')}</div>`;
-}
+// ★ 제외 강의 관리
+function manageExcludedCourses() { const c=localStorage.getItem('excluded_courses'); const ids=c?JSON.parse(c):[]; const n=prompt('제외할 강의 ID (쉼표 구분):\n\n웅진데모 전용 강의 등',ids.join(',')); if(n!==null){const i=n.split(',').map(x=>x.trim()).filter(Boolean);localStorage.setItem('excluded_courses',JSON.stringify(i));const l=$('#excluded-log');if(l)l.innerHTML=`<div class="log-entry log-success">🚫 ${i.length}개 제외 설정</div>`;toast(`🚫 ${i.length}개 강의가 제외 목록에 추가`);} }
+function viewExcludedCourses() { const c=localStorage.getItem('excluded_courses'); const ids=c?JSON.parse(c):[]; const l=$('#excluded-log'); if(l)l.innerHTML=`<div class="log-entry log-info">🚫 제외 강의: ${ids.length}개<br>${ids.length>0?ids.join(', '):'없음'}</div>`; }
 
-async function verifyData() {
-  const log = $('#verify-log');
-  log.innerHTML = `<div class="log-entry log-info">🔍 검증 시작...</div>`;
-  let chunk = 0, total = 0, subsCount = 0, koSubCount = 0, durCount = 0, ratingCount = 0, enrollCount = 0;
-  while (true) {
-    try {
-      const res = await fetch(`${WORKER_URL}/get-courses?chunk=${chunk}`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
-      if (!res.ok) break;
-      const data = await res.json();
-      if (!data || !Array.isArray(data) || data.length === 0) break;
-      total += data.length;
-      subsCount += data.filter(c => c.subtitles && c.subtitles !== '없음' && c.subtitles !== '').length;
-      koSubCount += data.filter(c => c.subtitles && c.subtitles.toLowerCase().includes('ko')).length;
-      durCount += data.filter(c => c.contentLength && typeof c.contentLength === 'number' && c.contentLength > 0).length;
-      ratingCount += data.filter(c => c.rating && c.rating > 0).length;
-      enrollCount += data.filter(c => c.enrollments && c.enrollments > 0).length;
-      chunk++;
-    } catch (e) { break; }
-  }
-  const pct = (n) => total > 0 ? `${(n / total * 100).toFixed(1)}%` : '0%';
-  log.innerHTML += `<div class="log-entry log-success"><strong>📊 결과</strong><br>📚 총: ${total.toLocaleString()}개 (${chunk} chunks)<br>💬 자막: ${subsCount.toLocaleString()} (${pct(subsCount)})<br>🇰🇷 한국어자막: ${koSubCount.toLocaleString()} (${pct(koSubCount)})<br>⏱️ 시간: ${durCount.toLocaleString()} (${pct(durCount)})<br>⭐ 평점: ${ratingCount.toLocaleString()} (${pct(ratingCount)})<br>👥 수강: ${enrollCount.toLocaleString()} (${pct(enrollCount)})</div>`;
-}
+async function verifyData() { const l=$('#verify-log'); l.innerHTML=`<div class="log-entry log-info">🔍 검증...</div>`; let ch=0,t=0,s=0,k=0,d=0,r=0,e=0; while(true){try{const res=await fetch(`${WORKER_URL}/get-courses?chunk=${ch}`,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}});if(!res.ok)break;const data=await res.json();if(!data||!Array.isArray(data)||data.length===0)break;t+=data.length;s+=data.filter(c=>c.subtitles&&c.subtitles!=='없음'&&c.subtitles!=='').length;k+=data.filter(c=>c.subtitles&&c.subtitles.toLowerCase().includes('ko')).length;d+=data.filter(c=>c.contentLength&&typeof c.contentLength==='number'&&c.contentLength>0).length;r+=data.filter(c=>c.rating&&c.rating>0).length;e+=data.filter(c=>c.enrollments&&c.enrollments>0).length;ch++;}catch(err){break;}} const p=(n)=>t>0?`${(n/t*100).toFixed(1)}%`:'0%'; l.innerHTML+=`<div class="log-entry log-success">📚 총: ${t.toLocaleString()} (${ch} chunks)<br>💬 자막: ${s.toLocaleString()} (${p(s)})<br>🇰🇷 한국어: ${k.toLocaleString()} (${p(k)})<br>⏱️ 시간: ${d.toLocaleString()} (${p(d)})<br>⭐ 평점: ${r.toLocaleString()} (${p(r)})<br>👥 수강: ${e.toLocaleString()} (${p(e)})</div>`; }
 
-async function verifySample() {
-  const log = $('#verify-log');
-  log.innerHTML = `<div class="log-entry log-info">📋 샘플 로드 중...</div>`;
-  try {
-    const res = await fetch(`${WORKER_URL}/get-courses?chunk=0`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
-    const data = await res.json();
-    if (!data || data.length === 0) { log.innerHTML += `<div class="log-entry log-error">❌ 데이터 없음</div>`; return; }
-    const s = data[0];
-    log.innerHTML += `<div class="log-entry"><strong>필드:</strong> ${Object.keys(s).join(', ')}<br>${Object.entries(s).map(([k, v]) => `<strong>${k}:</strong> ${typeof v === 'string' && v.length > 80 ? v.substring(0, 80) + '...' : v}`).join('<br>')}</div>`;
-  } catch (e) { log.innerHTML += `<div class="log-entry log-error">❌ ${e.message}</div>`; }
-}
+async function verifySample() { const l=$('#verify-log'); l.innerHTML=`<div class="log-entry log-info">📋 로드...</div>`; try{const r=await fetch(`${WORKER_URL}/get-courses?chunk=0`,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}});const d=await r.json();if(!d||d.length===0){l.innerHTML+=`<div class="log-entry log-error">❌ 없음</div>`;return;}const s=d[0];l.innerHTML+=`<div class="log-entry"><strong>필드:</strong> ${Object.keys(s).join(', ')}</div>`;}catch(e){l.innerHTML+=`<div class="log-entry log-error">❌ ${e.message}</div>`;} }
 
-async function testGraphQL() {
-  const log = $('#api-log');
-  log.innerHTML = `<div class="log-entry log-info">🔐 테스트 중...</div>`;
-  try {
-    const res = await fetch(`${WORKER_URL}/test-token`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
-    const data = await res.json();
-    log.innerHTML += `<div class="log-entry ${data.success ? 'log-success' : 'log-error'}">${data.success ? '✅ 토큰 성공' : '❌ 실패: ' + data.error}</div>`;
-  } catch (e) { log.innerHTML += `<div class="log-entry log-error">❌ ${e.message}</div>`; }
-}
+async function testGraphQL() { const l=$('#api-log'); l.innerHTML=`<div class="log-entry log-info">🔐 테스트...</div>`; try{const r=await fetch(`${WORKER_URL}/test-token`,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}});const d=await r.json();l.innerHTML+=`<div class="log-entry ${d.success?'log-success':'log-error'}">${d.success?'✅ 성공':'❌ '+d.error}</div>`;}catch(e){l.innerHTML+=`<div class="log-entry log-error">❌ ${e.message}</div>`;} }
 
-async function testGemini() {
-  const log = $('#api-log');
-  log.innerHTML = `<div class="log-entry log-info">🤖 테스트 중...</div>`;
-  try {
-    const res = await fetch('/api/ai-expand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: 'python' }) });
-    const data = await res.json();
-    log.innerHTML += `<div class="log-entry ${data.success ? 'log-success' : 'log-error'}">${data.success ? '✅ Gemini 성공' : '❌ ' + (data.error || '실패')}</div>`;
-  } catch (e) { log.innerHTML += `<div class="log-entry log-error">❌ ${e.message}</div>`; }
-}
+async function testGemini() { const l=$('#api-log'); l.innerHTML=`<div class="log-entry log-info">🤖 테스트...</div>`; try{const r=await fetch('/api/ai-expand',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:'python'})});const d=await r.json();l.innerHTML+=`<div class="log-entry ${d.success?'log-success':'log-error'}">${d.success?'✅ 성공':'❌ '+(d.error||'실패')}</div>`;}catch(e){l.innerHTML+=`<div class="log-entry log-error">❌ ${e.message}</div>`;} }
 
-async function viewChunk() {
-  const log = $('#raw-log');
-  const num = $('#chunk-number').value || '0';
-  log.innerHTML = `<div class="log-entry log-info">📋 Chunk ${num} 로드 중...</div>`;
-  try {
-    const res = await fetch(`${WORKER_URL}/get-courses?chunk=${num}`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
-    if (!res.ok) { log.innerHTML += `<div class="log-entry log-error">❌ Chunk ${num} 없음</div>`; return; }
-    const data = await res.json();
-    log.innerHTML += `<div class="log-entry log-success"><strong>📦 Chunk ${num}: ${data.length}개</strong><br>${data.slice(0, 5).map((c, i) => `${i + 1}. <strong>${c.title?.substring(0, 45)}</strong> | ⭐${c.rating?.toFixed(1) || '-'} | 👥${c.enrollments || '-'}▲ | 💬${c.subtitles || '없음'}`).join('<br>')}${data.length > 5 ? `<br>... 외 ${data.length - 5}개` : ''}</div>`;
-  } catch (e) { log.innerHTML += `<div class="log-entry log-error">❌ ${e.message}</div>`; }
-}
+async function viewChunk() { const l=$('#raw-log'); const n=$('#chunk-number').value||'0'; l.innerHTML=`<div class="log-entry log-info">📋 Chunk ${n}...</div>`; try{const r=await fetch(`${WORKER_URL}/get-courses?chunk=${n}`,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}});if(!r.ok){l.innerHTML+=`<div class="log-entry log-error">❌ 없음</div>`;return;}const d=await r.json();l.innerHTML+=`<div class="log-entry log-success"><strong>📦 ${d.length}개</strong><br>${d.slice(0,3).map((c,i)=>`${i+1}. ${c.title?.substring(0,40)}`).join('<br>')}</div>`;}catch(e){l.innerHTML+=`<div class="log-entry log-error">❌ ${e.message}</div>`;} }
 
 // ═══════════════════════════════════════════════════════════
-// 일반 모드 — 워프 전환 + 병렬 chunk 로딩
+// 일반 모드 — 병렬 chunk 로딩
 // ═══════════════════════════════════════════════════════════
 async function launch() {
   S.selectedFamilies = [...$$('.gate-job-card.selected')].map(c => c.dataset.family);
@@ -310,54 +163,30 @@ async function launch() {
   let dataLoaded = false;
   try {
     let totalChunks = 0;
-    try {
-      const statusRes = await fetch(`${WORKER_URL}/status`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
-      const status = await statusRes.json();
-      totalChunks = status.totalChunks || 0;
-    } catch (e) { console.warn('Worker 상태 확인 실패'); }
+    try { const r=await fetch(`${WORKER_URL}/status`,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}}); const s=await r.json(); totalChunks=s.totalChunks||0; } catch(e) {}
 
     let allCourses = [];
-
     if (totalChunks > 0) {
-      const msgEl = $('#launch-message');
-      if (msgEl) msgEl.textContent = `강의 데이터 병렬 로딩 중... (${totalChunks}개 chunk)`;
-      const chunkPromises = [];
-      for (let i = 0; i < totalChunks; i++) {
-        chunkPromises.push(
-          fetch(`${WORKER_URL}/get-courses?chunk=${i}`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } })
-          .then(res => res.ok ? res.json() : []).catch(() => [])
-        );
-      }
-      const results = await Promise.all(chunkPromises);
-      results.forEach(chunkData => { if (Array.isArray(chunkData) && chunkData.length > 0) allCourses = allCourses.concat(chunkData); });
-      if (msgEl) msgEl.textContent = `${allCourses.length.toLocaleString()}개 강의 로드 완료!`;
+      const m=$('#launch-message'); if(m) m.textContent=`병렬 로딩 중... (${totalChunks} chunks)`;
+      const promises=[]; for(let i=0;i<totalChunks;i++){promises.push(fetch(`${WORKER_URL}/get-courses?chunk=${i}`,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}}).then(r=>r.ok?r.json():[]).catch(()=>[]));} 
+      const results=await Promise.all(promises);
+      results.forEach(d=>{if(Array.isArray(d)&&d.length>0) allCourses=allCourses.concat(d);});
+      if(m) m.textContent=`${allCourses.length.toLocaleString()}개 로드 완료!`;
     } else {
-      let chunkIndex = 0;
-      while (true) {
-        try {
-          const chunkRes = await fetch(`${WORKER_URL}/get-courses?chunk=${chunkIndex}`, { headers: { 'Authorization': `Bearer ${WORKER_SECRET}` } });
-          if (!chunkRes.ok) break;
-          const chunkData = await chunkRes.json();
-          if (!chunkData || !Array.isArray(chunkData) || chunkData.length === 0) break;
-          allCourses = allCourses.concat(chunkData);
-          chunkIndex++;
-          const msgEl = $('#launch-message');
-          if (msgEl) msgEl.textContent = `강의 데이터 로딩 중... (${allCourses.length.toLocaleString()}개)`;
-          if (chunkIndex >= 50) break;
-        } catch (e) { if (chunkIndex === 0) break; break; }
-      }
+      let ci=0; while(true){try{const r=await fetch(`${WORKER_URL}/get-courses?chunk=${ci}`,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}});if(!r.ok)break;const d=await r.json();if(!d||!Array.isArray(d)||d.length===0)break;allCourses=allCourses.concat(d);ci++;if(ci>=50)break;}catch(e){break;}}
+    }
+
+    // ★ 제외 강의 필터링
+    const excluded = getExcludedCourses();
+    if (excluded.length > 0) {
+      allCourses = allCourses.filter(c => !excluded.includes(c.id));
     }
 
     if (allCourses.length > 0) { S.courses = processCourses(allCourses); dataLoaded = true; }
-  } catch (e) { console.error('데이터 로드 실패:', e); }
+  } catch (e) { console.error(e); }
 
   await loadingPromise;
-
-  if (!dataLoaded) {
-    toast('강의 데이터를 불러올 수 없습니다.', 'error');
-    warp.classList.remove('active');
-    return;
-  }
+  if (!dataLoaded) { toast('강의 데이터를 불러올 수 없습니다.', 'error'); warp.classList.remove('active'); return; }
 
   $('#launch-emoji').textContent = '🌟';
   $('#launch-message').textContent = '워프 점프!';
@@ -368,7 +197,7 @@ async function launch() {
   $('#gate-page').style.display = 'none';
   $('#app-container').style.display = 'block';
   initApp();
-  toast(`🌌 탐험가님, ${S.subdomain} 우주에 도착했습니다! ${S.courses.length.toLocaleString()}개의 별이 빛나고 있습니다.`);
+  toast(`🌌 ${S.subdomain} 우주에 도착! ${S.courses.length.toLocaleString()}개의 별`);
 }
 
 async function playLaunchSequence() {
@@ -376,171 +205,102 @@ async function playLaunchSequence() {
     const step = LAUNCH_STEPS[i];
     $('#launch-emoji').textContent = step.emoji;
     $('#launch-message').textContent = step.message;
-    $('#progress-fill').style.width = `${((i + 1) / (LAUNCH_STEPS.length + 1)) * 100}%`;
+    $('#progress-fill').style.width = `${((i+1)/(LAUNCH_STEPS.length+1))*100}%`;
     await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
   }
 }
 
 // ═══════════════════════════════════════════════════════════
-// 앱 초기화 — 모든 기능 통합
+// 앱 초기화
 // ═══════════════════════════════════════════════════════════
 function initApp() {
   $('#welcome-msg').innerHTML = S.selectedFamilies.length > 0
-    ? `${S.selectedFamilies.map(f => CURATION[f]?.emoji || '').join('')} 탐험가님, <strong>${S.subdomain}</strong> 우주에 도착했습니다!`
+    ? `${S.selectedFamilies.map(f=>CURATION[f]?.emoji||'').join('')} 탐험가님, <strong>${S.subdomain}</strong> 우주에 도착했습니다!`
     : `탐험가님, <strong>${S.subdomain}</strong> 우주에 도착했습니다!`;
 
   renderDashCards();
   initMultiSelects();
+  if (typeof initHighlight === 'function') { initHighlight(); setupHoverPause(); }
 
-  // 하이라이트 강의 초기화
-  if (typeof initHighlight === 'function') {
-    initHighlight();
-    setupHoverPause();
-  }
+  // ★ 고정 헤더 탭 이벤트
+  $$('.header-nav-btn').forEach(btn => btn.addEventListener('click', () => {
+    $$('.header-nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    switchTab(btn.dataset.tab);
+  }));
 
-  // 탭 이벤트
-  $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
-
-  // 검색
   let debounce;
   $('#search-input')?.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(applyFilters, 300); });
 
-  // 검색 모드
   $$('.scan-mode-btn[data-mode]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('.scan-mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      S.searchMode = btn.dataset.mode;
-      applyFilters();
-    });
+    btn.addEventListener('click', () => { $$('.scan-mode-btn[data-mode]').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); S.searchMode=btn.dataset.mode; applyFilters(); });
   });
 
-  // 감도 조절 버튼
   $$('.sensitivity-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('.sensitivity-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      S.sensitivity = btn.dataset.sensitivity;
-      applyFilters();
-      toast(`🎚️ 감도: ${SENSITIVITY_CONFIG[S.sensitivity]?.label}`);
-    });
+    btn.addEventListener('click', () => { $$('.sensitivity-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); S.sensitivity=btn.dataset.sensitivity; applyFilters(); toast(`🎚️ 감도: ${SENSITIVITY_CONFIG[S.sensitivity]?.label}`); });
   });
 
-  // AI 스캔
   $('#btn-ai-scan')?.addEventListener('click', handleAIScan);
   $('#btn-apply-ai')?.addEventListener('click', applyAIKeywords);
-  $('#btn-ai-select-all')?.addEventListener('click', () => $$('#ai-panel-results .ai-kw-tag').forEach(t => t.classList.add('selected')));
+  $('#btn-ai-select-all')?.addEventListener('click', () => $$('#ai-panel-results .ai-kw-tag').forEach(t=>t.classList.add('selected')));
   $('#btn-ai-close')?.addEventListener('click', () => $('#ai-panel').classList.remove('open'));
 
-  // 필터 토글
-  $('#filters-toggle')?.addEventListener('click', () => {
-    $('#filters-toggle').classList.toggle('open');
-    $('#filters-grid').classList.toggle('open');
+  // ★ 상세 필터 토글 (검색창 옆 버튼)
+  $('#btn-filter-toggle')?.addEventListener('click', () => {
+    const grid = $('#filters-grid');
+    const btn = $('#btn-filter-toggle');
+    grid.classList.toggle('open');
+    btn.classList.toggle('active');
   });
 
-  // 정렬, 표시 개수
   $('#sort-select')?.addEventListener('change', applyFilters);
-  $('#rows-select')?.addEventListener('change', () => { S.rows = parseInt($('#rows-select').value); S.page = 1; renderList(); });
+  $('#rows-select')?.addEventListener('change', () => { S.rows=parseInt($('#rows-select').value); S.page=1; renderList(); });
 
-  // ★ 기능 버튼 — btn-reset → btn-reset-inline
   $('#btn-csv')?.addEventListener('click', () => downloadCSV(false));
   $('#btn-share')?.addEventListener('click', shareLink);
   $('#btn-reset-inline')?.addEventListener('click', () => resetAll(true));
 
-  // 뷰 모드 전환
-  $$('.view-btn').forEach(btn => btn.addEventListener('click', () => {
-    $$('.view-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    S.viewMode = btn.dataset.view;
-    renderList();
-  }));
+  $$('.view-btn').forEach(btn => btn.addEventListener('click', () => { $$('.view-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); S.viewMode=btn.dataset.view; renderList(); }));
 
-  // 전체 선택 체크박스
-  $('#check-all')?.addEventListener('change', (e) => {
-    const pageIds = getPageData().map(c => c.id);
-    if (e.target.checked) pageIds.forEach(id => S.selectedIds.add(id));
-    else pageIds.forEach(id => S.selectedIds.delete(id));
-    renderList();
-    updateFAB();
-  });
+  $('#check-all')?.addEventListener('change', (e) => { const ids=getPageData().map(c=>c.id); if(e.target.checked) ids.forEach(id=>S.selectedIds.add(id)); else ids.forEach(id=>S.selectedIds.delete(id)); renderList(); updateFAB(); });
 
-  // FAB 버튼
   $('#fab-csv')?.addEventListener('click', () => downloadCSV(true));
-  $('#fab-link')?.addEventListener('click', () => {
-    const links = [...S.selectedIds].map(id => {
-      const c = S.courses.find(x => x.id === id);
-      return c ? buildCourseUrl(c) : '';
-    }).filter(Boolean);
-    navigator.clipboard.writeText(links.join('\n'));
-    toast(`🔗 ${links.length}개 별의 좌표가 복사되었습니다.`);
-  });
+  $('#fab-link')?.addEventListener('click', () => { const links=[...S.selectedIds].map(id=>{const c=S.courses.find(x=>x.id===id);return c?buildCourseUrl(c):'';}).filter(Boolean); navigator.clipboard.writeText(links.join('\n')); toast(`🔗 ${links.length}개 복사`); });
   $('#fab-clear')?.addEventListener('click', () => { S.selectedIds.clear(); renderList(); updateFAB(); });
 
-  // 사이드 패널
-  $('#side-panel-overlay')?.addEventListener('click', (e) => { if (e.target === $('#side-panel-overlay')) closeSidePanel(); });
+  $('#side-panel-overlay')?.addEventListener('click', (e) => { if(e.target===$('#side-panel-overlay')) closeSidePanel(); });
   $('#sp-close')?.addEventListener('click', closeSidePanel);
 
-  // 멀티셀렉트 외부 클릭 닫기
-  window.addEventListener('click', e => { if (!e.target.closest('.ms-wrap')) $$('.ms-panel').forEach(p => p.classList.remove('open')); });
+  window.addEventListener('click', e => { if(!e.target.closest('.ms-wrap')) $$('.ms-panel').forEach(p=>p.classList.remove('open')); });
 
-  // 미션 센터
   if (typeof initMissionCenter === 'function') initMissionCenter();
-
-  // TOP 6
   if (typeof initStars === 'function') initStars();
-
-  // URL 파라미터 적용
   applyURLParams();
-
-  // 첫 필터링
   applyFilters();
 
-  // 큐레이터 PICK 관리 (로고 3번 클릭)
+  // 큐레이터 PICK (로고 3번 클릭)
   let clickCount = 0;
-  const appTitle = $('.app-title');
-  if (appTitle) {
-    appTitle.addEventListener('click', () => {
-      clickCount++;
-      setTimeout(() => { clickCount = 0; }, 1000);
-      if (clickCount === 3) {
-        if (typeof manageCuratorPicks === 'function') manageCuratorPicks();
-        clickCount = 0;
-      }
-    });
-  }
+  const title = $('.header-title');
+  if (title) { title.addEventListener('click', () => { clickCount++; setTimeout(()=>{clickCount=0;},1000); if(clickCount===3){if(typeof manageCuratorPicks==='function')manageCuratorPicks();clickCount=0;} }); }
 
-  // 도움말 버튼
+  // 도움말
   $('#btn-help')?.addEventListener('click', () => { $('#help-overlay')?.classList.add('active'); });
   $('#help-close')?.addEventListener('click', () => { $('#help-overlay')?.classList.remove('active'); });
-  $('#help-overlay')?.addEventListener('click', (e) => { if (e.target === $('#help-overlay')) $('#help-overlay').classList.remove('active'); });
+  $('#help-overlay')?.addEventListener('click', (e) => { if(e.target===$('#help-overlay')) $('#help-overlay').classList.remove('active'); });
 
   // 키보드 단축키
   document.addEventListener('keydown', (e) => {
-    if (e.key === '/' && !e.target.matches('input, textarea, select')) {
-      e.preventDefault();
-      $('#search-input')?.focus();
-    }
-    if (e.key === 'Escape') {
-      closeSidePanel();
-      $('#help-overlay')?.classList.remove('active');
-      $('#ai-panel')?.classList.remove('open');
-    }
-    if (!e.target.matches('input, textarea, select')) {
-      if (e.key === 'ArrowLeft' && S.page > 1) { S.page--; renderList(); $('#list-section')?.scrollIntoView({ behavior: 'smooth' }); }
-      if (e.key === 'ArrowRight') {
-        const totalPages = Math.ceil(S.filtered.length / S.rows);
-        if (S.page < totalPages) { S.page++; renderList(); $('#list-section')?.scrollIntoView({ behavior: 'smooth' }); }
-      }
+    if(e.key==='/'&&!e.target.matches('input,textarea,select')){e.preventDefault();$('#search-input')?.focus();}
+    if(e.key==='Escape'){closeSidePanel();$('#help-overlay')?.classList.remove('active');$('#ai-panel')?.classList.remove('open');}
+    if(!e.target.matches('input,textarea,select')){
+      if(e.key==='ArrowLeft'&&S.page>1){S.page--;renderList();}
+      if(e.key==='ArrowRight'){const tp=Math.ceil(S.filtered.length/S.rows);if(S.page<tp){S.page++;renderList();}}
     }
   });
 }
 
-// 탭 전환
 function switchTab(tabId) {
   $$('.tab-panel').forEach(p => p.classList.remove('active'));
-  $$('.tab-btn').forEach(b => b.classList.remove('active'));
   $(`#panel-${tabId}`)?.classList.add('active');
-  $(`.tab-btn[data-tab="${tabId}"]`)?.classList.add('active');
-  const listSection = $('#list-section');
-  if (listSection) listSection.style.display = tabId === 'stars' ? 'none' : '';
+  $('#list-section').style.display = tabId === 'stars' ? 'none' : '';
 }
