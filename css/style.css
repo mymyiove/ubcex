@@ -153,7 +153,7 @@ body::after {
 .translate-toggle-btn:hover { border-color: var(--accent); color: var(--accent-light); }
 
 .dash-cards { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; margin: 1rem 0; }
-.dash-card { background: var(--bg-glass); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.8rem 1.2rem 2rem; text-align: center; min-width: 110px; transition: var(--transition); position: relative; }
+.dash-card { background: var(--bg-glass); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.8rem 1.2rem 2.2rem; text-align: center; min-width: 110px; transition: var(--transition); position: relative; }
 .dash-card.clickable { cursor: pointer; }
 .dash-card.clickable:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-glow); }
 .dash-card:not(.clickable) { cursor: default; }
@@ -161,6 +161,17 @@ body::after {
 .dash-card .value { font-size: 1.3rem; font-weight: 800; color: var(--text-bright); display: block; margin: 0.2rem 0; }
 .dash-card .label { font-size: 0.72rem; color: var(--text-muted); }
 .dash-download-btn { position: absolute; bottom: 0.3rem; left: 50%; transform: translateX(-50%); padding: 0.2rem 0.5rem; background: none; border: 1px solid var(--border); color: var(--text-muted); border-radius: var(--radius-xs); cursor: pointer; font-size: 0.65rem; transition: var(--transition); white-space: nowrap; }
+.dash-download-btn:hover { border-color: var(--accent); color: var(--accent-light); background: rgba(124, 108, 240, 0.05); }
+
+/* ═══════════════════════════════════════════════════════════
+   6.5. TAB NAVIGATION (누락된 섹션!)
+   ═══════════════════════════════════════════════════════════ */
+.tab-nav { display: flex; gap: 0.4rem; justify-content: center; margin: 0.8rem 0; flex-wrap: wrap; }
+.tab-btn { padding: 0.6rem 1.4rem; background: var(--bg-glass); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 25px; color: var(--text-secondary); cursor: pointer; font-size: 0.88rem; font-weight: 500; transition: var(--transition); }
+.tab-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+.tab-btn.active { background: var(--accent-gradient); color: white; border-color: transparent; box-shadow: var(--shadow-glow); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeSlideUp 0.4s ease; }
 
 /* ═══════════════════════════════════════════════════════════
    7. SCANNER + SENSITIVITY + 검색창 글로우 + 초기화 버튼
