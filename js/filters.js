@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// filters.js — 필터 칩 X 수정 + 체크 해제 수정 + 추천도 개선
+// filters.js — 필터 칩 근본 수정 + 추천도 고도화
 // ═══════════════════════════════════════════════════════════
 
 function initMultiSelects() {
@@ -10,6 +10,35 @@ function initMultiSelects() {
   populateMS('f-duration', [{v:'60',l:'⏱️ 1시간 미만'},{v:'120',l:'⏱️ 1-2시간'},{v:'180',l:'⏱️ 2-3시간'},{v:'240',l:'⏱️ 3-4시간'},{v:'300',l:'⏱️ 4시간 이상'}]);
   populateMS('f-score', [{v:'100',l:'🎯 100점 이상'},{v:'200',l:'🎯 200점 이상'},{v:'300',l:'🎯 300점 이상'}]);
   populateMS('f-attr', [{v:'NEW',l:'✨ 신규 강의'}]);
+  
+  // ★ 필터 칩 컨테이너에 이벤트 위임 한 번만 등록
+  const container = $('#active-filters');
+  if (container && !container._chipHandlerAttached) {
+    container.addEventListener('click', function(e) {
+      const btn = e.target.closest('.filter-chip-x');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const fid = btn.getAttribute('data-fid');
+      const val = btn.getAttribute('data-val');
+      
+      if (fid === 'search') {
+        $('#search-input').value = '';
+      } else {
+        const wrap = document.querySelector('[data-fid="' + fid + '"]');
+        if (wrap) {
+          const checkboxes = wrap.querySelectorAll('.ms-panel input[type="checkbox"]');
+          checkboxes.forEach(cb => {
+            if (cb.value === val) cb.checked = false;
+          });
+          updateMSBtn(fid);
+        }
+      }
+      applyFilters();
+    });
+    container._chipHandlerAttached = true;
+  }
 }
 
 function getUniqueSubtitles() {
@@ -23,19 +52,20 @@ function getUniqueSubtitles() {
 }
 
 function populateMS(fid, items, showEmoji=false) {
-  const wrap=$(`[data-fid="${fid}"]`); if(!wrap) return;
+  const wrap=document.querySelector('[data-fid="'+fid+'"]'); if(!wrap) return;
   const panel=wrap.querySelector('.ms-panel'); const btn=wrap.querySelector('.ms-btn');
   if(fid==='f-language'){const ko=items.filter(i=>typeof i==='string'&&(i.includes('한국어')||i.toLowerCase().includes('ko')));const en=items.filter(i=>typeof i==='string'&&i.includes('English'));const rest=items.filter(i=>typeof i==='string'&&!ko.includes(i)&&!en.includes(i));items=[...ko,...en,...rest];}
   panel.innerHTML=items.map(item=>{const v=typeof item==='object'?item.v:item;const l=typeof item==='object'?item.l:(showEmoji?`${getCatEmoji(item)} ${item}`:item);return `<div class="ms-item"><label><input type="checkbox" value="${v}"> ${l}</label></div>`;}).join('');
-  btn.onclick=e=>{e.stopPropagation();$$('.ms-panel').forEach(p=>{if(p!==panel)p.classList.remove('open');});panel.classList.toggle('open');};
-  panel.addEventListener('change',()=>{
+  btn.onclick=e=>{e.stopPropagation();document.querySelectorAll('.ms-panel').forEach(p=>{if(p!==panel)p.classList.remove('open');});panel.classList.toggle('open');};
+  // ★ 수정: change 이벤트 — 체크/해제 모두 처리
+  panel.addEventListener('change', function() {
     updateMSBtn(fid);
     applyFilters();
   });
 }
 
 function updateMSBtn(fid) {
-  const wrap=$(`[data-fid="${fid}"]`); if(!wrap) return;
+  const wrap=document.querySelector('[data-fid="'+fid+'"]'); if(!wrap) return;
   const btn=wrap.querySelector('.ms-btn');
   const checked=[...wrap.querySelectorAll('.ms-panel input[type="checkbox"]:checked')];
   const defaults={
@@ -47,61 +77,93 @@ function updateMSBtn(fid) {
   } else if(checked.length===1) {
     btn.textContent = checked[0].value;
   } else {
-    btn.textContent = `${checked[0].value} 외 ${checked.length-1}개`;
+    btn.textContent = checked[0].value + ' 외 ' + (checked.length-1) + '개';
   }
 }
 
 function getMSValues(fid) {
-  const wrap=$(`[data-fid="${fid}"]`); if(!wrap) return [];
+  const wrap=document.querySelector('[data-fid="'+fid+'"]'); if(!wrap) return [];
   return [...wrap.querySelectorAll('.ms-panel input[type="checkbox"]:checked')].map(cb=>cb.value);
 }
 
 function setMSValues(fid, values) {
-  const wrap=$(`[data-fid="${fid}"]`); if(!wrap) return;
+  const wrap=document.querySelector('[data-fid="'+fid+'"]'); if(!wrap) return;
   wrap.querySelectorAll('.ms-panel input[type="checkbox"]').forEach(cb=>{cb.checked=values.includes(cb.value);});
   updateMSBtn(fid);
 }
 
-// ═══ 추천도 스코어링 — 원본 키워드 우선 ═══
+// ═══════════════════════════════════════════════════════════
+// ★ 추천도 대수술 — 입력 키워드 번역 후 제목 매칭 최우선
+// ═══════════════════════════════════════════════════════════
+
+// ★ 핵심: 입력 키워드를 영어로 번역
+function translateKeywords(keywords) {
+  const translated = [];
+  keywords.forEach(kw => {
+    translated.push(kw); // 원본 유지
+    // 한영 매핑
+    const mapped = KO_EN_MAP[kw];
+    if (mapped) translated.push(...mapped);
+    // 역방향: 영어 → 한국어 (이미 영어면 한국어 매핑 추가)
+    Object.entries(KO_EN_MAP).forEach(([ko, enList]) => {
+      if (enList.some(en => en.toLowerCase() === kw.toLowerCase())) {
+        if (!translated.includes(ko)) translated.push(ko);
+      }
+    });
+  });
+  return [...new Set(translated)];
+}
+
 function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   const config = SENSITIVITY_CONFIG[sensitivity] || SENSITIVITY_CONFIG.balanced;
   let totalScore = 0;
+  const titleLower = (course.title || '').toLowerCase();
+  const catLower = (course.category || '').toLowerCase();
+  const topicLower = (course.topic || '').toLowerCase();
+  const headlineLower = (course.headline || '').toLowerCase();
+  const objectivesLower = (course.objectives || '').toLowerCase();
+  const descLower = (course.description || '').toLowerCase();
   
-  // ★ 원본 키워드 전체가 제목에 포함되면 대폭 보너스
   if (originalKeywords && originalKeywords.length > 0) {
-    const titleLower = (course.title || '').toLowerCase();
-    const allInTitle = originalKeywords.every(kw => titleLower.includes(kw.toLowerCase()));
-    const matchedInTitle = originalKeywords.filter(kw => titleLower.includes(kw.toLowerCase()));
+    // ★ 핵심 1: 원본 키워드를 번역한 버전도 포함
+    const translatedOriginals = translateKeywords(originalKeywords);
     
-    if (allInTitle) {
+    // ★ 핵심 2: 번역된 원본 키워드가 제목에 몇 개 매칭되는지
+    const titleMatches = translatedOriginals.filter(kw => titleLower.includes(kw.toLowerCase()));
+    const originalCount = originalKeywords.length;
+    
+    if (titleMatches.length >= originalCount * 2) {
+      // 원본 키워드의 한/영 버전이 모두 제목에 있으면 최고점
+      totalScore += 300;
+    } else if (titleMatches.length >= originalCount) {
+      // 원본 키워드 수만큼 제목에 매칭
       totalScore += 200;
-    } else if (matchedInTitle.length > 0) {
-      totalScore += matchedInTitle.length * 80;
+    } else if (titleMatches.length > 0) {
+      // 일부만 매칭
+      totalScore += titleMatches.length * 70;
     }
     
-    // 원본 키워드가 카테고리/주제/소개에 있으면 보너스
-    const catLower = (course.category || '').toLowerCase();
-    const topicLower = (course.topic || '').toLowerCase();
-    const headlineLower = (course.headline || '').toLowerCase();
-    
-    originalKeywords.forEach(kw => {
+    // ★ 핵심 3: 카테고리/주제/소개 매칭 (번역된 원본 기준)
+    translatedOriginals.forEach(kw => {
       const kwl = kw.toLowerCase();
-      if (catLower.includes(kwl)) totalScore += 50;
-      if (topicLower.includes(kwl)) totalScore += 40;
-      if (headlineLower.includes(kwl)) totalScore += 30;
+      if (catLower.includes(kwl)) totalScore += 40;
+      if (topicLower.includes(kwl)) totalScore += 30;
+      if (config.scoreWeights.headline > 0 && headlineLower.includes(kwl)) totalScore += 20;
+      if (config.scoreWeights.objectives > 0 && objectivesLower.includes(kwl)) totalScore += 10;
     });
   }
   
-  // ★ 확장 키워드는 낮은 가중치
+  // ★ 확장 키워드 (AI가 추가한 것들) — 매우 낮은 가중치
   keywords.forEach(kw => {
     const kwl = kw.toLowerCase();
-    const isOriginal = originalKeywords ? originalKeywords.some(ok => ok.toLowerCase() === kwl) : true;
-    if (isOriginal) return; // 원본은 위에서 처리
+    // 원본이나 번역된 원본이면 스킵 (위에서 처리)
+    const translatedOriginals = originalKeywords ? translateKeywords(originalKeywords) : [];
+    if (translatedOriginals.some(ok => ok.toLowerCase() === kwl)) return;
     
-    const titleLower = (course.title || '').toLowerCase();
-    if (titleLower.includes(kwl)) totalScore += Math.round(config.scoreWeights.title * 0.3);
-    if (config.scoreWeights.category > 0 && (course.category||'').toLowerCase().includes(kwl)) totalScore += Math.round(config.scoreWeights.category * 0.2);
-    if (config.scoreWeights.topic > 0 && (course.topic||'').toLowerCase().includes(kwl)) totalScore += Math.round(config.scoreWeights.topic * 0.2);
+    // 확장 키워드: 제목에 있으면 소폭 보너스
+    if (titleLower.includes(kwl)) totalScore += 12;
+    if (catLower.includes(kwl)) totalScore += 6;
+    if (topicLower.includes(kwl)) totalScore += 4;
   });
   
   // 품질 보너스
@@ -115,20 +177,23 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   return totalScore;
 }
 
-// ★ 필터링: 원본 키워드 기준
 function filterWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   const config = SENSITIVITY_CONFIG[sensitivity] || SENSITIVITY_CONFIG.balanced;
-  const filterKws = originalKeywords && originalKeywords.length > 0 ? originalKeywords : keywords;
+  
+  // ★ 원본 키워드를 번역한 버전으로 필터링
+  const filterKws = originalKeywords && originalKeywords.length > 0 
+    ? translateKeywords(originalKeywords) 
+    : keywords;
   
   let searchText = '';
   config.searchFields.forEach(field => { if(course[field]) searchText += ' ' + course[field]; });
   searchText = searchText.toLowerCase();
   
   if (S.searchMode === 'and') return filterKws.every(kw => searchText.includes(kw.toLowerCase()));
-  else return filterKws.some(kw => searchText.includes(kw.toLowerCase()));
+  // OR 모드: 번역된 원본 중 하나라도 포함
+  return filterKws.some(kw => searchText.includes(kw.toLowerCase()));
 }
 
-// ★ applyFilters
 function applyFilters() {
   const cats=getMSValues('f-category'); const diffs=getMSValues('f-difficulty'); const langs=getMSValues('f-language');
   const subs=getMSValues('f-subtitles'); const durations=getMSValues('f-duration'); const scores=getMSValues('f-score');
@@ -178,14 +243,14 @@ function applyFilters() {
   renderList();
 }
 
-// ★ 필터 칩 — 이벤트 위임
+// ★ 필터 칩 렌더링 — 이벤트는 initMultiSelects에서 위임으로 처리
 function renderActiveFilters() {
   const container=$('#active-filters');
   let html='';
   
   const add=(fid,vals,label)=>vals.forEach(v=>{
-    const safeVal = String(v).replace(/"/g, '&quot;');
-    html+=`<span class="filter-chip">${label}: ${v} <button class="filter-chip-x" data-fid="${fid}" data-val="${safeVal}">×</button></span>`;
+    const safeVal = String(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    html+='<span class="filter-chip">'+label+': '+v+' <button class="filter-chip-x" data-fid="'+fid+'" data-val="'+safeVal+'">×</button></span>';
   });
   
   add('f-category',getMSValues('f-category'),'카테고리');
@@ -197,42 +262,18 @@ function renderActiveFilters() {
   add('f-attr',getMSValues('f-attr'),'속성');
   
   const sensitivityLabel=SENSITIVITY_CONFIG[S.sensitivity||'balanced']?.label||'📊 보통';
-  if(S.sensitivity&&S.sensitivity!=='balanced') html+=`<span class="filter-chip">감도: ${sensitivityLabel}</span>`;
+  if(S.sensitivity&&S.sensitivity!=='balanced') html+='<span class="filter-chip">감도: '+sensitivityLabel+'</span>';
   
   const q=$('#search-input').value.trim();
-  if(q) html+=`<span class="filter-chip">검색: ${q.length>30?q.substring(0,30)+'...':q} (${S.searchMode.toUpperCase()}) <button class="filter-chip-x" data-fid="search">×</button></span>`;
+  if(q) html+='<span class="filter-chip">검색: '+(q.length>30?q.substring(0,30)+'...':q)+' ('+S.searchMode.toUpperCase()+') <button class="filter-chip-x" data-fid="search">×</button></span>';
   
   container.innerHTML=html;
-  
-  // ★ 이벤트 위임 — 한 번만 바인딩
-  container.onclick = function(e) {
-    const btn = e.target.closest('.filter-chip-x');
-    if (!btn) return;
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const fid = btn.getAttribute('data-fid');
-    const val = btn.getAttribute('data-val');
-    
-    if (fid === 'search') {
-      $('#search-input').value = '';
-    } else {
-      const wrap = document.querySelector(`[data-fid="${fid}"]`);
-      if (wrap) {
-        wrap.querySelectorAll('.ms-panel input[type="checkbox"]').forEach(cb => {
-          if (cb.value === val) cb.checked = false;
-        });
-        updateMSBtn(fid);
-      }
-    }
-    applyFilters();
-  };
 }
 
 function resetAll(notify=true) {
   $('#search-input').value='';
   ['f-category','f-difficulty','f-language','f-subtitles','f-duration','f-score','f-attr'].forEach(fid=>{
-    const wrap=document.querySelector(`[data-fid="${fid}"]`);
+    const wrap=document.querySelector('[data-fid="'+fid+'"]');
     if(wrap){
       wrap.querySelectorAll('.ms-panel input[type="checkbox"]:checked').forEach(cb=>cb.checked=false);
       updateMSBtn(fid);
