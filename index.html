@@ -8,6 +8,7 @@
 </head>
 <body>
 
+<!-- 게이트 페이지 -->
 <div id="gate-page">
   <div class="gate-step active" id="gate-step-1">
     <div class="gate-rocket">🚀</div>
@@ -33,6 +34,7 @@
   </div>
 </div>
 
+<!-- 워프 전환 -->
 <div class="warp-overlay" id="warp-overlay">
   <div class="launch-status">
     <div class="launch-rocket">🚀</div>
@@ -44,53 +46,28 @@
   </div>
 </div>
 
-<!-- ★ 메인 앱 — 고정 헤더 구조 -->
+<!-- 메인 앱 -->
 <div id="app-container">
-  
-  <!-- ★ 고정 헤더 -->
+
+  <!-- 고정 헤더 -->
   <header class="fixed-header" id="fixed-header">
     <div class="header-inner">
       <h1 class="header-title">🚀 Udemy Business Course Explorer</h1>
       <nav class="header-nav">
-        <button class="header-nav-btn active" data-tab="explore" title="자유롭게 강의를 탐험합니다">🧭 우주 탐험</button>
-        <button class="header-nav-btn" data-tab="mission" title="직무별 큐레이션 강의">🛸 미션 센터</button>
-        <button class="header-nav-btn" data-tab="stars" title="인기 강의 TOP">🌟 가장 밝은 별</button>
+        <button class="header-nav-btn active" data-tab="explore">🧭 우주 탐험</button>
+        <button class="header-nav-btn" data-tab="mission">🛸 미션 센터</button>
+        <button class="header-nav-btn" data-tab="stars">🌟 가장 밝은 별</button>
       </nav>
     </div>
   </header>
 
-  <!-- ★ 헤더 아래 여백 -->
   <div class="header-spacer"></div>
 
-  <!-- ★ 환영 메시지 -->
+  <!-- 환영 메시지 -->
   <p class="welcome" id="welcome-msg">탐험가님, <strong></strong> 우주에 도착했습니다!</p>
 
-  <!-- ★ 통계 섹션 — 가로형 카드 -->
-  <div class="stats-section" id="dash-cards">
-    <div class="stats-card clickable" data-idx="0" title="모든 강의 표시 (최근 3년 내 업데이트)">
-      <span class="stats-icon">🌟</span>
-      <div class="stats-info">
-        <span class="stats-value" data-target="0">0</span>
-        <span class="stats-label">전체 별 (3년 이내)</span>
-      </div>
-      <button class="stats-download-btn" data-type="all" title="전체 강의 목록 CSV 다운로드">📥 다운받기</button>
-    </div>
-    <div class="stats-card clickable" data-idx="1" title="최근 1개월 내 업데이트된 강의">
-      <span class="stats-icon">✨</span>
-      <div class="stats-info">
-        <span class="stats-value" data-target="0">0</span>
-        <span class="stats-label">신규 별 (1개월)</span>
-      </div>
-      <button class="stats-download-btn" data-type="new" title="신규 강의 목록 CSV 다운로드">📥 다운받기</button>
-    </div>
-    <div class="stats-card" data-idx="2" title="현재 필터링된 강의 수">
-      <span class="stats-icon">🔍</span>
-      <div class="stats-info">
-        <span class="stats-value" data-target="0">0</span>
-        <span class="stats-label">발견된 별</span>
-      </div>
-    </div>
-  </div>
+  <!-- 가로형 통계 카드 -->
+  <div class="stats-section" id="dash-cards"></div>
 
   <!-- 하이라이트 섹션 -->
   <div class="highlight-section">
@@ -120,18 +97,19 @@
     </div>
   </div>
 
-  <!-- ★ 탐험 탭 — 검색창 + 상세필터 한 줄 -->
+  <!-- 탐험 탭 -->
   <div class="tab-panel active" id="panel-explore">
     <div class="scanner-section">
       <div class="scanner-bar">
         <div class="scanner-input-wrap">
           <span class="scanner-icon">🔭</span>
-          <input type="text" class="scanner-input glow-enhanced" id="search-input" placeholder="어떤 별을 찾고 계신가요?" />
+          <input type="text" class="scanner-input glow-enhanced" id="search-input" placeholder="어떤 별을 찾고 계신가요?" autocomplete="off" />
+          <!-- 스마트 검색 제안 -->
+          <div class="search-suggestions" id="search-suggestions"></div>
         </div>
-        <button class="btn-ai-scan" id="btn-ai-scan" title="AI가 관련 키워드를 확장합니다">🤖 AI 내비</button>
-        <button class="btn-reset-inline" id="btn-reset-inline" title="모든 필터 초기화">✨ 초기화</button>
-        <!-- ★ 상세 필터 토글 검색창 옆으로 -->
-        <button class="btn-filter-toggle" id="btn-filter-toggle" title="상세 필터 열기/닫기">⚙️ 필터</button>
+        <button class="btn-ai-scan" id="btn-ai-scan">🤖 AI 내비</button>
+        <button class="btn-reset-inline" id="btn-reset-inline">✨ 초기화</button>
+        <button class="btn-filter-toggle" id="btn-filter-toggle">⚙️ 필터</button>
       </div>
       <div class="scanner-meta">
         <div class="scan-controls">
@@ -163,7 +141,6 @@
       </div>
     </div>
 
-    <!-- ★ 상세 필터 — 기본 숨김 -->
     <div class="filters-grid" id="filters-grid">
       <div class="f-group"><label>🌌 카테고리</label><div class="ms-wrap" data-fid="f-category"><button class="ms-btn">모든 카테고리</button><div class="ms-panel"></div></div></div>
       <div class="f-group"><label>📊 난이도</label><div class="ms-wrap" data-fid="f-difficulty"><button class="ms-btn">모든 난이도</button><div class="ms-panel"></div></div></div>
@@ -175,8 +152,8 @@
       <div class="f-group"><label>📈 정렬</label><select id="sort-select"><option value="relevance">추천도순</option><option value="rating">평점순</option><option value="enrollments">인기순</option><option value="latest">최신순</option><option value="alpha">가나다순</option></select></div>
       <div class="f-group"><label>👀 표시</label><select id="rows-select"><option value="15">15개</option><option value="25">25개</option><option value="50">50개</option></select></div>
       <div class="f-actions">
-        <button id="btn-csv" title="CSV 다운로드">📋 미션 보고서</button>
-        <button id="btn-share" title="공유 링크 생성">🔗 공유 링크</button>
+        <button id="btn-csv">📋 미션 보고서</button>
+        <button id="btn-share">🔗 공유 링크</button>
       </div>
     </div>
   </div>
@@ -200,7 +177,7 @@
   <div class="tab-panel" id="panel-stars">
     <div class="stars-section">
       <h2>🌟 가장 밝게 빛나는 별들</h2>
-      <p class="subtitle">평점과 수강신청 수 기준 TOP 강의입니다 (한글자막 강의만)</p>
+      <p class="subtitle">평점과 수강신청 수 기준 TOP 강의 (한글자막 강의만)</p>
       <div class="stars-toggle">
         <button class="scan-mode-btn active" data-stars="rating">⭐ 최고 평점</button>
         <button class="scan-mode-btn" data-stars="popular">🔥 최다 수강</button>
@@ -243,6 +220,7 @@
     <div class="compact-list" id="view-compact"></div>
     <div class="pagination" id="pagination"></div>
   </div>
+
 </div>
 
 <!-- FAB -->
@@ -261,7 +239,7 @@
   </div>
 </div>
 
-<!-- CSV 헤더 선택 모달 -->
+<!-- CSV 모달 -->
 <div id="csv-modal-overlay" class="help-overlay">
   <div class="help-content" style="max-width:500px;">
     <button class="help-close" id="csv-modal-close">&times;</button>
@@ -319,10 +297,10 @@
   </div>
 </div>
 
-<!-- ★ 플로팅 버튼들 -->
+<!-- 플로팅 버튼들 -->
 <button id="scroll-to-top" title="맨 위로">↑</button>
-<button id="translate-float-btn" class="float-btn-translate" title="페이지 번역 켜기/끄기">🌐</button>
-<div id="google_translate_element" style="display:none;position:fixed;bottom:5rem;right:1rem;z-index:600;"></div>
+<button id="translate-float-btn" class="float-btn-translate" title="페이지 번역 켜기/끄기">🌐 번역</button>
+<div id="google_translate_element" style="display:none;"></div>
 
 <div id="toast-container"></div>
 
@@ -332,6 +310,7 @@
   <p><button class="help-btn" id="btn-help">❓ 도움말</button></p>
 </footer>
 
+<!-- JS 로드 -->
 <script src="js/data.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/filters.js"></script>
@@ -343,18 +322,18 @@
 <script src="js/highlight.js"></script>
 <script src="js/app.js"></script>
 
+<!-- 번역기 -->
 <script>
 let translateEnabled = false;
-
 function toggleTranslate() {
-  const element = $('#google_translate_element');
+  const el = $('#google_translate_element');
   if (!translateEnabled) {
-    element.style.display = 'block';
+    el.style.display = 'block';
     translateEnabled = true;
     if (!window.google || !window.google.translate) googleTranslateElementInit();
     toast('🌐 번역기가 켜졌습니다.');
   } else {
-    element.style.display = 'none';
+    el.style.display = 'none';
     translateEnabled = false;
     const frame = document.querySelector('.goog-te-banner-frame');
     if (frame) frame.style.display = 'none';
@@ -362,7 +341,6 @@ function toggleTranslate() {
     toast('🌐 번역기가 꺼졌습니다.');
   }
 }
-
 function googleTranslateElementInit() {
   new google.translate.TranslateElement({
     pageLanguage: 'en',
@@ -371,9 +349,8 @@ function googleTranslateElementInit() {
     autoDisplay: false
   }, 'google_translate_element');
 }
-
 document.addEventListener('DOMContentLoaded', () => {
-  $('#translate-float-btn')?.addEventListener('click', toggleTranslate);
+  document.getElementById('translate-float-btn')?.addEventListener('click', toggleTranslate);
 });
 </script>
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
