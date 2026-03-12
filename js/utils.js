@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// utils.js — 토스트, CSV, 공유링크, URL 빌더, 중복 제거
+// utils.js — 토스트, CSV, 공유링크, 제외 강의 필터링
 // ═══════════════════════════════════════════════════════════
 
 function toast(msg, type='success') {
@@ -19,12 +19,10 @@ function parseDuration(value) {
   if (!value) return 0;
   if (typeof value === 'number') return value;
   const str = String(value);
-  const hours = str.match(/(\d+)h/);
-  const minutes = str.match(/(\d+)m/);
-  const seconds = str.match(/(\d+)s/);
-  return (hours ? parseInt(hours[1]) * 60 : 0) + 
-         (minutes ? parseInt(minutes[1]) : 0) + 
-         (seconds ? Math.round(parseInt(seconds[1]) / 60) : 0);
+  const h = str.match(/(\d+)h/);
+  const m = str.match(/(\d+)m/);
+  const s = str.match(/(\d+)s/);
+  return (h ? parseInt(h[1]) * 60 : 0) + (m ? parseInt(m[1]) : 0) + (s ? Math.round(parseInt(s[1]) / 60) : 0);
 }
 
 function formatDuration(minutes) {
@@ -36,31 +34,28 @@ function formatDuration(minutes) {
   return `${m}분`;
 }
 
-// ★ 한국어 자막 여부 체크
 function hasKoreanSub(course) {
   if (!course.subtitles || course.subtitles === '없음') return false;
   const s = course.subtitles.toLowerCase();
   return s.includes('ko') || s.includes('korean') || s.includes('한국어');
 }
 
-// ★ 데이터 전처리 + 중복 제거
+// ★ 데이터 전처리 + 중복 제거 + 제외 강의 필터링
 function processCourses(raw) {
-  // 1. ID 기반 중복 제거
   const seen = new Set();
+  const excluded = getExcludedCourses();
+  
   const unique = raw.filter(c => {
     if (seen.has(c.id)) return false;
+    if (excluded.includes(c.id)) return false;
     seen.add(c.id);
     return true;
   });
 
   return unique.map(c => {
     let subtitles = '없음';
-    if (c.subtitles && c.subtitles !== '없음' && c.subtitles !== '') {
-      subtitles = c.subtitles;
-    } else if (c.captions && Array.isArray(c.captions)) {
-      const locs = c.captions.map(cap => cap.locale || cap).filter(Boolean);
-      if (locs.length > 0) subtitles = locs.join(', ');
-    }
+    if (c.subtitles && c.subtitles !== '없음' && c.subtitles !== '') subtitles = c.subtitles;
+    else if (c.captions && Array.isArray(c.captions)) { const l = c.captions.map(cap => cap.locale || cap).filter(Boolean); if (l.length > 0) subtitles = l.join(', '); }
 
     let contentLength = parseDuration(c.contentLength);
     if (contentLength === 0) contentLength = parseDuration(c.duration);
@@ -68,8 +63,8 @@ function processCourses(raw) {
     return {
       ...c,
       language: mapLang(c.language),
-      subtitles: subtitles,
-      contentLength: contentLength,
+      subtitles,
+      contentLength,
       isNew: isNew(c.lastUpdated),
       _search: `${c.title} ${c.headline} ${c.description} ${c.objectives} ${c.category} ${c.topic} ${c.instructor} ${subtitles}`.toLowerCase(),
     };
@@ -84,19 +79,19 @@ function getUnique(field, split=false) {
     else vals.add(c[field]);
   });
   const arr = [...vals];
-  // 한국어 관련 항목 최상단
-  const koItems = arr.filter(a => a.includes('한국어') || a.toLowerCase().includes('ko'));
-  const enItems = arr.filter(a => (a.includes('English') || a === 'English') && !koItems.includes(a));
-  const rest = arr.filter(a => !koItems.includes(a) && !enItems.includes(a)).sort();
-  return [...koItems, ...enItems, ...rest];
+  const pri = ['한국어','English','Korean'];
+  return arr.sort((a,b) => {
+    const ai=pri.indexOf(a), bi=pri.indexOf(b);
+    if(ai!==-1&&bi!==-1) return ai-bi;
+    if(ai!==-1) return -1;
+    if(bi!==-1) return 1;
+    return a.localeCompare(b);
+  });
 }
 
 function expandKeywordsLocal(keywords) {
   const expanded = [...keywords];
-  keywords.forEach(kw => {
-    const mapped = KO_EN_MAP[kw];
-    if (mapped) expanded.push(...mapped);
-  });
+  keywords.forEach(kw => { const mapped = KO_EN_MAP[kw]; if (mapped) expanded.push(...mapped); });
   return [...new Set(expanded)];
 }
 
@@ -121,52 +116,22 @@ function downloadCSV(selectedOnly = false) {
   const searchKeywords = $('#search-input').value.trim();
   const filterInfo = [];
   if (searchKeywords) filterInfo.push(`검색어_${searchKeywords}`);
-  const cats = getMSValues('f-category');
-  if (cats.length > 0) filterInfo.push(`카테고리_${cats.join('-')}`);
   const filterSuffix = filterInfo.length > 0 ? `_${filterInfo.join('_')}` : '';
-  const timestamp = new Date().toLocaleString('ko-KR');
 
-  const headers = ['강의ID','강의명','카테고리','주제','난이도','언어','한국어자막','강사','소개','학습목표','평점','수강신청수','강의시간(분)','추천도점수','신규여부','최종업데이트','강의링크'];
+  const headers = ['강의ID','강의명','카테고리','주제','난이도','언어','한국어자막','강사','소개','학습목표','평점','수강신청수','강의시간(분)','추천도점수','업데이트','강의링크'];
   const rows = data.map(c => {
     const url = buildCourseUrl(c);
-    return [
-      c.id,
-      `"${(c.title||'').replace(/"/g,'""')}"`,
-      `"${c.category||''}"`,
-      `"${c.topic||''}"`,
-      c.difficulty,
-      c.language,
-      hasKoreanSub(c) ? 'Y' : 'N',
-      `"${(c.instructor||'').replace(/"/g,'""')}"`,
-      `"${(c.headline||'').replace(/"/g,'""')}"`,
-      `"${(c.objectives||'').replace(/"/g,'""')}"`,
-      c.rating||0,
-      c.enrollments||0,
-      c.contentLength||0,
-      c._score||0,
-      c.isNew?'신규':'',
-      c.lastUpdated||'',
-      url
-    ].join(',');
+    return [c.id,`"${(c.title||'').replace(/"/g,'""')}"`,`"${c.category||''}"`,`"${c.topic||''}"`,c.difficulty,c.language,hasKoreanSub(c)?'Y':'N',`"${(c.instructor||'').replace(/"/g,'""')}"`,`"${(c.headline||'').replace(/"/g,'""')}"`,`"${(c.objectives||'').replace(/"/g,'""')}"`,c.rating||0,c.enrollments||0,c.contentLength||0,c._score||0,c.lastUpdated||'',url].join(',');
   });
 
-  const csvMeta = [
-    `# Udemy Business 강의 큐레이션 보고서`,
-    `# 생성일시: ${timestamp}`,
-    `# 학습장: ${S.subdomain}.udemy.com`,
-    searchKeywords ? `# 검색 키워드: ${searchKeywords}` : '',
-    `# 총 강의 수: ${data.length}개`,
-    ''
-  ].filter(Boolean).join('\n');
-
-  const csv = '\uFEFF' + csvMeta + headers.join(',') + '\n' + rows.join('\n');
+  const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `Mission_Report_${S.subdomain}${filterSuffix}_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
-  toast(`📋 미션 보고서: ${data.length}개 별의 좌표가 기록되었습니다.`);
+  toast(`📋 ${data.length}개 강의 다운로드 완료`);
 }
 
 function shareLink() {
@@ -179,24 +144,14 @@ function shareLink() {
   const cats = getMSValues('f-category');
   if(cats.length) params.set('cat', cats.join(','));
   const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-  navigator.clipboard.writeText(url).then(() => {
-    toast('🔗 공유 링크가 복사되었습니다!');
-  }).catch(() => { prompt('링크를 복사하세요:', url); });
+  navigator.clipboard.writeText(url).then(() => { toast('🔗 공유 링크 복사 완료!'); }).catch(() => { prompt('링크:', url); });
 }
 
 function applyURLParams() {
   const params = new URLSearchParams(window.location.search);
   if(params.has('q')) $('#search-input').value = params.get('q');
-  if(params.has('mode')) {
-    S.searchMode = params.get('mode');
-    $$('.scan-mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
-    $(`.scan-mode-btn[data-mode="${S.searchMode}"]`)?.classList.add('active');
-  }
-  if(params.has('sens')) {
-    S.sensitivity = params.get('sens');
-    $$('.sensitivity-btn').forEach(b => b.classList.remove('active'));
-    $(`.sensitivity-btn[data-sensitivity="${S.sensitivity}"]`)?.classList.add('active');
-  }
+  if(params.has('mode')) { S.searchMode = params.get('mode'); $$('.scan-mode-btn[data-mode]').forEach(b=>b.classList.remove('active')); $(`.scan-mode-btn[data-mode="${S.searchMode}"]`)?.classList.add('active'); }
+  if(params.has('sens')) { S.sensitivity = params.get('sens'); $$('.sensitivity-btn').forEach(b=>b.classList.remove('active')); $(`.sensitivity-btn[data-sensitivity="${S.sensitivity}"]`)?.classList.add('active'); }
   if(params.has('cat')) setMSValues('f-category', params.get('cat').split(','));
 }
 
