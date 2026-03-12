@@ -20,6 +20,7 @@ function sortByColumn(column) {
       case 'rating': return dir * ((a.rating||0) - (b.rating||0));
       case 'enrollments': return dir * ((a.enrollments||0) - (b.enrollments||0));
       case 'language': return dir * (a.language||'').localeCompare(b.language||'');
+      case 'korean_sub': return dir * ((hasKoreanSub(a)?1:0) - (hasKoreanSub(b)?1:0));
       case 'difficulty': return dir * (a.difficulty||'').localeCompare(b.difficulty||'');
       case 'duration': return dir * ((a.contentLength||0) - (b.contentLength||0));
       case 'instructor': return dir * (a.instructor||'').localeCompare(b.instructor||'');
