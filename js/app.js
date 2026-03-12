@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// app.js — 고정 헤더 탭 + 필터 토글 + 제외 강의 + 병렬 로딩
+// app.js — 고정 헤더 탭 + 스마트 검색 + 필터 토글 + 제외 강의
 // ═══════════════════════════════════════════════════════════
 
 const ADMIN_CODE = 'jhj11';
@@ -56,13 +56,13 @@ function goStep2() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 관리자 모드 (간소화)
+// 관리자 모드
 // ═══════════════════════════════════════════════════════════
 function enterAdminMode() {
   $('#gate-page').style.display = 'none';
-  const adminPanel = document.createElement('div');
-  adminPanel.id = 'admin-panel';
-  adminPanel.innerHTML = `
+  const ap = document.createElement('div');
+  ap.id = 'admin-panel';
+  ap.innerHTML = `
     <div class="admin-container">
       <div class="admin-header">
         <h1>🔧 관리자 콘솔</h1>
@@ -72,7 +72,7 @@ function enterAdminMode() {
       <div class="admin-status-cards">
         <div class="admin-card"><div class="admin-card-icon">📡</div><div class="admin-card-title">동기화</div><div class="admin-card-value" id="sync-status-value">확인 중...</div><div class="admin-card-sub" id="sync-status-sub"></div></div>
         <div class="admin-card"><div class="admin-card-icon">📚</div><div class="admin-card-title">총 강의</div><div class="admin-card-value" id="courses-count-value">-</div><div class="admin-card-sub" id="courses-count-sub"></div></div>
-        <div class="admin-card"><div class="admin-card-icon">📦</div><div class="admin-card-title">Chunk</div><div class="admin-card-value" id="chunks-count-value">-</div><div class="admin-card-sub">분할 저장 단위</div></div>
+        <div class="admin-card"><div class="admin-card-icon">📦</div><div class="admin-card-title">Chunk</div><div class="admin-card-value" id="chunks-count-value">-</div><div class="admin-card-sub">분할 저장</div></div>
         <div class="admin-card"><div class="admin-card-icon">🔑</div><div class="admin-card-title">API</div><div class="admin-card-value" id="api-status-value">확인 중...</div><div class="admin-card-sub" id="api-status-sub"></div></div>
       </div>
       <div class="admin-sections">
@@ -103,9 +103,8 @@ function enterAdminMode() {
           <button class="admin-btn" id="btn-view-chunk">🔍 조회</button>
         </div><div class="admin-log" id="raw-log"></div></div>
       </div>
-    </div>
-  `;
-  document.body.appendChild(adminPanel);
+    </div>`;
+  document.body.appendChild(ap);
   $('#admin-exit').addEventListener('click', exitAdminMode);
   $('#btn-sync-continue').addEventListener('click', () => runSync(false));
   $('#btn-sync-reset').addEventListener('click', () => { if(confirm('전체 재동기화?')) runSync(true); });
@@ -136,10 +135,8 @@ async function runAutoSync() { const l=$('#sync-log'); const b=$('#btn-sync-auto
 
 function manageCuratorPicksAdmin() { const c=localStorage.getItem('curator_picks'); const ids=c?JSON.parse(c):['8324','1717020','2360128']; const n=prompt('큐레이터 PICK 강의 ID (쉼표 구분):',ids.join(',')); if(n!==null){const i=n.split(',').map(x=>x.trim()).filter(Boolean);localStorage.setItem('curator_picks',JSON.stringify(i));const l=$('#picks-log');if(l)l.innerHTML=`<div class="log-entry log-success">⭐ ${i.length}개 업데이트</div>`;toast(`⭐ ${i.length}개 업데이트`);} }
 function viewCurrentPicks() { const c=localStorage.getItem('curator_picks'); const ids=c?JSON.parse(c):['8324','1717020','2360128']; const l=$('#picks-log'); if(l)l.innerHTML=`<div class="log-entry log-info">${ids.map((id,i)=>`${i+1}. ID: ${id}`).join('<br>')}</div>`; }
-
-// ★ 제외 강의 관리
-function manageExcludedCourses() { const c=localStorage.getItem('excluded_courses'); const ids=c?JSON.parse(c):[]; const n=prompt('제외할 강의 ID (쉼표 구분):\n\n웅진데모 전용 강의 등',ids.join(',')); if(n!==null){const i=n.split(',').map(x=>x.trim()).filter(Boolean);localStorage.setItem('excluded_courses',JSON.stringify(i));const l=$('#excluded-log');if(l)l.innerHTML=`<div class="log-entry log-success">🚫 ${i.length}개 제외 설정</div>`;toast(`🚫 ${i.length}개 강의가 제외 목록에 추가`);} }
-function viewExcludedCourses() { const c=localStorage.getItem('excluded_courses'); const ids=c?JSON.parse(c):[]; const l=$('#excluded-log'); if(l)l.innerHTML=`<div class="log-entry log-info">🚫 제외 강의: ${ids.length}개<br>${ids.length>0?ids.join(', '):'없음'}</div>`; }
+function manageExcludedCourses() { const c=localStorage.getItem('excluded_courses'); const ids=c?JSON.parse(c):[]; const n=prompt('제외할 강의 ID (쉼표 구분):',ids.join(',')); if(n!==null){const i=n.split(',').map(x=>x.trim()).filter(Boolean);localStorage.setItem('excluded_courses',JSON.stringify(i));const l=$('#excluded-log');if(l)l.innerHTML=`<div class="log-entry log-success">🚫 ${i.length}개 제외 설정</div>`;toast(`🚫 ${i.length}개 제외`);} }
+function viewExcludedCourses() { const c=localStorage.getItem('excluded_courses'); const ids=c?JSON.parse(c):[]; const l=$('#excluded-log'); if(l)l.innerHTML=`<div class="log-entry log-info">🚫 제외: ${ids.length}개<br>${ids.length>0?ids.join(', '):'없음'}</div>`; }
 
 async function verifyData() { const l=$('#verify-log'); l.innerHTML=`<div class="log-entry log-info">🔍 검증...</div>`; let ch=0,t=0,s=0,k=0,d=0,r=0,e=0; while(true){try{const res=await fetch(`${WORKER_URL}/get-courses?chunk=${ch}`,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}});if(!res.ok)break;const data=await res.json();if(!data||!Array.isArray(data)||data.length===0)break;t+=data.length;s+=data.filter(c=>c.subtitles&&c.subtitles!=='없음'&&c.subtitles!=='').length;k+=data.filter(c=>c.subtitles&&c.subtitles.toLowerCase().includes('ko')).length;d+=data.filter(c=>c.contentLength&&typeof c.contentLength==='number'&&c.contentLength>0).length;r+=data.filter(c=>c.rating&&c.rating>0).length;e+=data.filter(c=>c.enrollments&&c.enrollments>0).length;ch++;}catch(err){break;}} const p=(n)=>t>0?`${(n/t*100).toFixed(1)}%`:'0%'; l.innerHTML+=`<div class="log-entry log-success">📚 총: ${t.toLocaleString()} (${ch} chunks)<br>💬 자막: ${s.toLocaleString()} (${p(s)})<br>🇰🇷 한국어: ${k.toLocaleString()} (${p(k)})<br>⏱️ 시간: ${d.toLocaleString()} (${p(d)})<br>⭐ 평점: ${r.toLocaleString()} (${p(r)})<br>👥 수강: ${e.toLocaleString()} (${p(e)})</div>`; }
 
@@ -176,11 +173,9 @@ async function launch() {
       let ci=0; while(true){try{const r=await fetch(`${WORKER_URL}/get-courses?chunk=${ci}`,{headers:{'Authorization':`Bearer ${WORKER_SECRET}`}});if(!r.ok)break;const d=await r.json();if(!d||!Array.isArray(d)||d.length===0)break;allCourses=allCourses.concat(d);ci++;if(ci>=50)break;}catch(e){break;}}
     }
 
-    // ★ 제외 강의 필터링
+    // 제외 강의 필터링
     const excluded = getExcludedCourses();
-    if (excluded.length > 0) {
-      allCourses = allCourses.filter(c => !excluded.includes(c.id));
-    }
+    if (excluded.length > 0) allCourses = allCourses.filter(c => !excluded.includes(c.id));
 
     if (allCourses.length > 0) { S.courses = processCourses(allCourses); dataLoaded = true; }
   } catch (e) { console.error(e); }
@@ -211,7 +206,7 @@ async function playLaunchSequence() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 앱 초기화
+// 앱 초기화 — 모든 기능 통합
 // ═══════════════════════════════════════════════════════════
 function initApp() {
   $('#welcome-msg').innerHTML = S.selectedFamilies.length > 0
@@ -229,17 +224,38 @@ function initApp() {
     switchTab(btn.dataset.tab);
   }));
 
-  let debounce;
-  $('#search-input')?.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(applyFilters, 300); });
+  // ★ 스마트 검색 제안 + 필터링
+  let debounce, suggestionDebounce;
+  $('#search-input')?.addEventListener('input', () => {
+    clearTimeout(debounce);
+    clearTimeout(suggestionDebounce);
+    debounce = setTimeout(applyFilters, 300);
+    suggestionDebounce = setTimeout(() => showSearchSuggestions($('#search-input').value.trim()), 200);
+  });
 
+  $('#search-input')?.addEventListener('focus', () => {
+    const val = $('#search-input').value.trim();
+    if (val.length >= 2) showSearchSuggestions(val);
+  });
+
+  // 검색창 외부 클릭 시 제안 닫기
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.scanner-input-wrap')) {
+      $('#search-suggestions')?.classList.remove('open');
+    }
+  });
+
+  // 검색 모드
   $$('.scan-mode-btn[data-mode]').forEach(btn => {
     btn.addEventListener('click', () => { $$('.scan-mode-btn[data-mode]').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); S.searchMode=btn.dataset.mode; applyFilters(); });
   });
 
+  // 감도 조절
   $$('.sensitivity-btn').forEach(btn => {
     btn.addEventListener('click', () => { $$('.sensitivity-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); S.sensitivity=btn.dataset.sensitivity; applyFilters(); toast(`🎚️ 감도: ${SENSITIVITY_CONFIG[S.sensitivity]?.label}`); });
   });
 
+  // AI 스캔
   $('#btn-ai-scan')?.addEventListener('click', handleAIScan);
   $('#btn-apply-ai')?.addEventListener('click', applyAIKeywords);
   $('#btn-ai-select-all')?.addEventListener('click', () => $$('#ai-panel-results .ai-kw-tag').forEach(t=>t.classList.add('selected')));
@@ -253,29 +269,41 @@ function initApp() {
     btn.classList.toggle('active');
   });
 
+  // 정렬, 표시
   $('#sort-select')?.addEventListener('change', applyFilters);
   $('#rows-select')?.addEventListener('change', () => { S.rows=parseInt($('#rows-select').value); S.page=1; renderList(); });
 
+  // 기능 버튼
   $('#btn-csv')?.addEventListener('click', () => downloadCSV(false));
   $('#btn-share')?.addEventListener('click', shareLink);
   $('#btn-reset-inline')?.addEventListener('click', () => resetAll(true));
 
+  // 뷰 모드
   $$('.view-btn').forEach(btn => btn.addEventListener('click', () => { $$('.view-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); S.viewMode=btn.dataset.view; renderList(); }));
 
+  // 전체 선택
   $('#check-all')?.addEventListener('change', (e) => { const ids=getPageData().map(c=>c.id); if(e.target.checked) ids.forEach(id=>S.selectedIds.add(id)); else ids.forEach(id=>S.selectedIds.delete(id)); renderList(); updateFAB(); });
 
+  // FAB
   $('#fab-csv')?.addEventListener('click', () => downloadCSV(true));
   $('#fab-link')?.addEventListener('click', () => { const links=[...S.selectedIds].map(id=>{const c=S.courses.find(x=>x.id===id);return c?buildCourseUrl(c):'';}).filter(Boolean); navigator.clipboard.writeText(links.join('\n')); toast(`🔗 ${links.length}개 복사`); });
   $('#fab-clear')?.addEventListener('click', () => { S.selectedIds.clear(); renderList(); updateFAB(); });
 
+  // 사이드 패널
   $('#side-panel-overlay')?.addEventListener('click', (e) => { if(e.target===$('#side-panel-overlay')) closeSidePanel(); });
   $('#sp-close')?.addEventListener('click', closeSidePanel);
 
+  // 멀티셀렉트 외부 클릭
   window.addEventListener('click', e => { if(!e.target.closest('.ms-wrap')) $$('.ms-panel').forEach(p=>p.classList.remove('open')); });
 
+  // 미션 센터 + TOP 6
   if (typeof initMissionCenter === 'function') initMissionCenter();
   if (typeof initStars === 'function') initStars();
+
+  // URL 파라미터
   applyURLParams();
+
+  // 첫 필터링
   applyFilters();
 
   // 큐레이터 PICK (로고 3번 클릭)
@@ -291,7 +319,7 @@ function initApp() {
   // 키보드 단축키
   document.addEventListener('keydown', (e) => {
     if(e.key==='/'&&!e.target.matches('input,textarea,select')){e.preventDefault();$('#search-input')?.focus();}
-    if(e.key==='Escape'){closeSidePanel();$('#help-overlay')?.classList.remove('active');$('#ai-panel')?.classList.remove('open');}
+    if(e.key==='Escape'){closeSidePanel();$('#help-overlay')?.classList.remove('active');$('#ai-panel')?.classList.remove('open');$('#search-suggestions')?.classList.remove('open');}
     if(!e.target.matches('input,textarea,select')){
       if(e.key==='ArrowLeft'&&S.page>1){S.page--;renderList();}
       if(e.key==='ArrowRight'){const tp=Math.ceil(S.filtered.length/S.rows);if(S.page<tp){S.page++;renderList();}}
@@ -299,8 +327,120 @@ function initApp() {
   });
 }
 
+// 탭 전환
 function switchTab(tabId) {
   $$('.tab-panel').forEach(p => p.classList.remove('active'));
   $(`#panel-${tabId}`)?.classList.add('active');
-  $('#list-section').style.display = tabId === 'stars' ? 'none' : '';
+  const listSection = $('#list-section');
+  if (listSection) listSection.style.display = tabId === 'stars' ? 'none' : '';
+}
+
+// ═══════════════════════════════════════════════════════════
+// 스마트 검색 제안
+// ═══════════════════════════════════════════════════════════
+function showSearchSuggestions(query) {
+  const container = $('#search-suggestions');
+  if (!container) return;
+  
+  if (query.length < 2) { container.classList.remove('open'); return; }
+
+  const queryLower = query.toLowerCase();
+  
+  // 1. 인기 강의 매칭 (제목에 포함)
+  const titleMatches = S.courses
+    .filter(c => c.title?.toLowerCase().includes(queryLower))
+    .sort((a, b) => (b.enrollments || 0) - (a.enrollments || 0))
+    .slice(0, 3);
+
+  // 2. 카테고리 매칭
+  const catMatches = [...new Set(S.courses
+    .filter(c => c.category?.toLowerCase().includes(queryLower))
+    .map(c => c.category?.split(',')[0]?.trim())
+  )].filter(Boolean).slice(0, 2);
+
+  // 3. 주제 매칭
+  const topicMatches = [...new Set(S.courses
+    .filter(c => c.topic?.toLowerCase().includes(queryLower))
+    .map(c => c.topic)
+  )].filter(Boolean).slice(0, 2);
+
+  // 4. 한영 매핑 제안
+  const koEnSuggestions = [];
+  Object.entries(KO_EN_MAP).forEach(([ko, enList]) => {
+    if (ko.includes(queryLower) || enList.some(en => en.includes(queryLower))) {
+      koEnSuggestions.push({ ko, en: enList[0] });
+    }
+  });
+
+  let html = '';
+
+  if (titleMatches.length > 0) {
+    html += `<div class="suggestion-category">🔥 인기 강의</div>`;
+    html += titleMatches.map(c => `
+      <div class="suggestion-item" data-course-id="${c.id}">
+        <span class="suggestion-icon">📖</span>
+        <span class="suggestion-text">${c.title.length > 50 ? c.title.substring(0,50)+'...' : c.title}</span>
+        <span class="suggestion-badge">⭐${c.rating?.toFixed(1)||'-'}</span>
+      </div>
+    `).join('');
+  }
+
+  if (catMatches.length > 0) {
+    html += `<div class="suggestion-category">🌌 카테고리</div>`;
+    html += catMatches.map(cat => `
+      <div class="suggestion-item" data-category="${cat}">
+        <span class="suggestion-icon">${getCatEmoji(cat)}</span>
+        <span class="suggestion-text">${cat}</span>
+        <span class="suggestion-badge">카테고리 필터</span>
+      </div>
+    `).join('');
+  }
+
+  if (topicMatches.length > 0) {
+    html += `<div class="suggestion-category">💡 주제</div>`;
+    html += topicMatches.map(topic => `
+      <div class="suggestion-item" data-topic="${topic}">
+        <span class="suggestion-icon">🏷️</span>
+        <span class="suggestion-text">${topic}</span>
+        <span class="suggestion-badge">주제 검색</span>
+      </div>
+    `).join('');
+  }
+
+  if (koEnSuggestions.length > 0) {
+    html += `<div class="suggestion-category">🌐 번역 제안</div>`;
+    html += koEnSuggestions.slice(0, 2).map(s => `
+      <div class="suggestion-item" data-keyword="${s.en}">
+        <span class="suggestion-icon">🔄</span>
+        <span class="suggestion-text">${s.ko} → ${s.en}</span>
+        <span class="suggestion-badge">영어 키워드</span>
+      </div>
+    `).join('');
+  }
+
+  if (html === '') { container.classList.remove('open'); return; }
+
+  container.innerHTML = html;
+  container.classList.add('open');
+
+  // 제안 클릭 이벤트
+  container.querySelectorAll('.suggestion-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (item.dataset.courseId) {
+        const course = S.courses.find(c => c.id === item.dataset.courseId);
+        if (course) openSidePanel(course);
+      } else if (item.dataset.category) {
+        setMSValues('f-category', [item.dataset.category]);
+        applyFilters();
+      } else if (item.dataset.topic) {
+        $('#search-input').value = item.dataset.topic;
+        applyFilters();
+      } else if (item.dataset.keyword) {
+        const current = $('#search-input').value.trim();
+        $('#search-input').value = current ? `${current}, ${item.dataset.keyword}` : item.dataset.keyword;
+        applyFilters();
+      }
+      container.classList.remove('open');
+    });
+  });
 }
