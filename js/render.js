@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// render.js — 대시보드 복원 + CSV 헤더 선택 + 업데이트 컬럼
+// render.js — 대시보드 라벨 수정 (3년 이내, 1개월)
 // ═══════════════════════════════════════════════════════════
 
 let currentSortColumn = null;
@@ -208,15 +208,15 @@ function updateFAB() {
   }
 }
 
-// ★ 대시보드 카드 — 기존 구조 복원 + 다운로드 버튼 카드 안에
+// ★ 대시보드 카드 — 라벨에 기간 표시
 function renderDashCards() {
   const total = S.courses.length;
   const newCount = S.courses.filter(c => c.isNew).length;
   const filteredCount = S.filtered.length;
 
   const cards = [
-    { icon: '🌟', value: total, label: '전체 별', action: () => { resetAll(); }, tooltip: '모든 강의 표시', download: 'all' },
-    { icon: '✨', value: newCount, label: '신규 별', action: () => { setMSValues('f-attr', ['NEW']); applyFilters(); }, tooltip: '최근 1개월 내 업데이트', download: 'new' },
+    { icon: '🌟', value: total, label: '전체 별 (3년 이내)', action: () => { resetAll(); }, tooltip: '최근 3년 내 업데이트된 모든 강의', download: 'all' },
+    { icon: '✨', value: newCount, label: '신규 별 (1개월)', action: () => { setMSValues('f-attr', ['NEW']); applyFilters(); }, tooltip: '최근 1개월 내 업데이트된 강의', download: 'new' },
     { icon: '🔍', value: filteredCount, label: '발견된 별', action: null, tooltip: '현재 필터링된 강의 수', download: null },
   ];
 
@@ -243,7 +243,6 @@ function renderDashCards() {
     }
   });
 
-  // ★ 다운로드 버튼 이벤트
   container.querySelectorAll('.dash-download-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -252,7 +251,6 @@ function renderDashCards() {
     });
   });
 
-  // ★ CSV 모달 이벤트
   $('#csv-modal-close')?.addEventListener('click', () => $('#csv-modal-overlay').classList.remove('active'));
   $('#csv-download-confirm')?.addEventListener('click', downloadWithSelectedColumns);
   $('#csv-select-all')?.addEventListener('click', () => {
@@ -267,7 +265,6 @@ function renderDashCards() {
   });
 }
 
-// ★ 선택된 컬럼으로 CSV 다운로드
 function downloadWithSelectedColumns() {
   const data = csvDownloadType === 'all' ? S.courses : 
                csvDownloadType === 'new' ? S.courses.filter(c => c.isNew) : 
