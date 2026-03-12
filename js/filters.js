@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// filters.js — 추천도 대수술 + 필터 칩 수정 + 체크 해제 수정
+// filters.js — 필터 칩 X 수정 + 체크 해제 수정 + 추천도 개선
 // ═══════════════════════════════════════════════════════════
 
 function initMultiSelects() {
@@ -28,14 +28,12 @@ function populateMS(fid, items, showEmoji=false) {
   if(fid==='f-language'){const ko=items.filter(i=>typeof i==='string'&&(i.includes('한국어')||i.toLowerCase().includes('ko')));const en=items.filter(i=>typeof i==='string'&&i.includes('English'));const rest=items.filter(i=>typeof i==='string'&&!ko.includes(i)&&!en.includes(i));items=[...ko,...en,...rest];}
   panel.innerHTML=items.map(item=>{const v=typeof item==='object'?item.v:item;const l=typeof item==='object'?item.l:(showEmoji?`${getCatEmoji(item)} ${item}`:item);return `<div class="ms-item"><label><input type="checkbox" value="${v}"> ${l}</label></div>`;}).join('');
   btn.onclick=e=>{e.stopPropagation();$$('.ms-panel').forEach(p=>{if(p!==panel)p.classList.remove('open');});panel.classList.toggle('open');};
-  // ★ 수정 #2: change 이벤트에서 확실하게 updateMSBtn 호출
   panel.addEventListener('change',()=>{
     updateMSBtn(fid);
     applyFilters();
   });
 }
 
-// ★ 수정 #2: 체크 해제 시 기본 텍스트로 확실히 복원
 function updateMSBtn(fid) {
   const wrap=$(`[data-fid="${fid}"]`); if(!wrap) return;
   const btn=wrap.querySelector('.ms-btn');
@@ -45,11 +43,11 @@ function updateMSBtn(fid) {
     'f-subtitles':'모든 자막','f-duration':'모든 시간','f-score':'모든 점수','f-attr':'모든 강의'
   };
   if(checked.length===0) {
-    btn.textContent=defaults[fid]||'선택';
+    btn.textContent = defaults[fid] || '선택';
   } else if(checked.length===1) {
-    btn.textContent=checked[0].value;
+    btn.textContent = checked[0].value;
   } else {
-    btn.textContent=`${checked[0].value} 외 ${checked.length-1}개`;
+    btn.textContent = `${checked[0].value} 외 ${checked.length-1}개`;
   }
 }
 
@@ -64,28 +62,24 @@ function setMSValues(fid, values) {
   updateMSBtn(fid);
 }
 
-// ═══════════════════════════════════════════════════════════
-// ★ 추천도 대수술 — 원본 키워드 우선 + 복합 매칭 보너스
-// ═══════════════════════════════════════════════════════════
-
+// ═══ 추천도 스코어링 — 원본 키워드 우선 ═══
 function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   const config = SENSITIVITY_CONFIG[sensitivity] || SENSITIVITY_CONFIG.balanced;
   let totalScore = 0;
   
-  // ★ 핵심 1: 원본 키워드 전체가 제목에 포함되면 대폭 보너스
+  // ★ 원본 키워드 전체가 제목에 포함되면 대폭 보너스
   if (originalKeywords && originalKeywords.length > 0) {
     const titleLower = (course.title || '').toLowerCase();
-    const allOriginalInTitle = originalKeywords.every(kw => titleLower.includes(kw.toLowerCase()));
-    const someOriginalInTitle = originalKeywords.some(kw => titleLower.includes(kw.toLowerCase()));
+    const allInTitle = originalKeywords.every(kw => titleLower.includes(kw.toLowerCase()));
+    const matchedInTitle = originalKeywords.filter(kw => titleLower.includes(kw.toLowerCase()));
     
-    if (allOriginalInTitle) {
-      totalScore += 200; // 원본 키워드 전부 제목에 있으면 +200
-    } else if (someOriginalInTitle) {
-      const matchCount = originalKeywords.filter(kw => titleLower.includes(kw.toLowerCase())).length;
-      totalScore += matchCount * 80; // 일부만 있으면 개당 +80
+    if (allInTitle) {
+      totalScore += 200;
+    } else if (matchedInTitle.length > 0) {
+      totalScore += matchedInTitle.length * 80;
     }
     
-    // ★ 핵심 2: 원본 키워드가 카테고리/주제에 있으면 보너스
+    // 원본 키워드가 카테고리/주제/소개에 있으면 보너스
     const catLower = (course.category || '').toLowerCase();
     const topicLower = (course.topic || '').toLowerCase();
     const headlineLower = (course.headline || '').toLowerCase();
@@ -98,32 +92,16 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
     });
   }
   
-  // ★ 핵심 3: 확장 키워드는 낮은 가중치로 보너스만
+  // ★ 확장 키워드는 낮은 가중치
   keywords.forEach(kw => {
     const kwl = kw.toLowerCase();
     const isOriginal = originalKeywords ? originalKeywords.some(ok => ok.toLowerCase() === kwl) : true;
+    if (isOriginal) return; // 원본은 위에서 처리
     
-    // 원본 키워드는 위에서 이미 처리했으므로 스킵
-    if (isOriginal) return;
-    
-    // 확장 키워드: 제목 매칭만 소폭 보너스
     const titleLower = (course.title || '').toLowerCase();
-    const hasSpaces = kw.includes(' ');
-    
-    if (hasSpaces) {
-      if (titleLower.includes(kwl)) totalScore += Math.round(config.scoreWeights.title * 0.3);
-    } else {
-      const wordRegex = new RegExp(`\\b${kwl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-      if (wordRegex.test(course.title || '')) totalScore += Math.round(config.scoreWeights.title * 0.3);
-      else if (titleLower.includes(kwl)) totalScore += Math.round(config.scoreWeights.title * 0.15);
-    }
-    
-    // 확장 키워드: 카테고리/주제는 아주 소폭
-    if (config.scoreWeights.category > 0 && (course.category||'').toLowerCase().includes(kwl)) 
-      totalScore += Math.round(config.scoreWeights.category * 0.2);
-    if (config.scoreWeights.topic > 0 && (course.topic||'').toLowerCase().includes(kwl)) 
-      totalScore += Math.round(config.scoreWeights.topic * 0.2);
-    // headline, objectives, description은 확장 키워드로는 점수 안 줌
+    if (titleLower.includes(kwl)) totalScore += Math.round(config.scoreWeights.title * 0.3);
+    if (config.scoreWeights.category > 0 && (course.category||'').toLowerCase().includes(kwl)) totalScore += Math.round(config.scoreWeights.category * 0.2);
+    if (config.scoreWeights.topic > 0 && (course.topic||'').toLowerCase().includes(kwl)) totalScore += Math.round(config.scoreWeights.topic * 0.2);
   });
   
   // 품질 보너스
@@ -137,26 +115,20 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   return totalScore;
 }
 
-// ★ 필터링: 원본 키워드 기준으로 필터 (확장은 스코어링에만 사용)
+// ★ 필터링: 원본 키워드 기준
 function filterWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   const config = SENSITIVITY_CONFIG[sensitivity] || SENSITIVITY_CONFIG.balanced;
-  
-  // ★ 핵심: 원본 키워드 기준으로 필터링
   const filterKws = originalKeywords && originalKeywords.length > 0 ? originalKeywords : keywords;
   
   let searchText = '';
   config.searchFields.forEach(field => { if(course[field]) searchText += ' ' + course[field]; });
   searchText = searchText.toLowerCase();
   
-  if (S.searchMode === 'and') {
-    return filterKws.every(kw => searchText.includes(kw.toLowerCase()));
-  } else {
-    // OR/AI 모드: 원본 키워드 중 하나라도 포함
-    return filterKws.some(kw => searchText.includes(kw.toLowerCase()));
-  }
+  if (S.searchMode === 'and') return filterKws.every(kw => searchText.includes(kw.toLowerCase()));
+  else return filterKws.some(kw => searchText.includes(kw.toLowerCase()));
 }
 
-// ★ applyFilters — 원본 키워드 별도 보관
+// ★ applyFilters
 function applyFilters() {
   const cats=getMSValues('f-category'); const diffs=getMSValues('f-difficulty'); const langs=getMSValues('f-language');
   const subs=getMSValues('f-subtitles'); const durations=getMSValues('f-duration'); const scores=getMSValues('f-score');
@@ -170,18 +142,14 @@ function applyFilters() {
   if(subs.length>0) filtered=filtered.filter(c=>{if(!c.subtitles||c.subtitles==='없음')return false;return subs.some(sub=>c.subtitles.toLowerCase().includes(sub.toLowerCase()));});
   if(attrs.includes('NEW')) filtered=filtered.filter(c=>c.isNew);
   if(durations.length>0) {
-    filtered=filtered.filter(c=>{const m=c.contentLength||0;return durations.some(d=>{const t=parseInt(d);if(d==='60')return m<60;if(d==='120')return m>=60&&m<120;if(d==='180')return m>=120&&m<180;if(d==='240')return m>=180&&m<240;if(d==='300')return m>=240;return false;});});
+    filtered=filtered.filter(c=>{const m=c.contentLength||0;return durations.some(d=>{if(d==='60')return m<60;if(d==='120')return m>=60&&m<120;if(d==='180')return m>=120&&m<180;if(d==='240')return m>=180&&m<240;if(d==='300')return m>=240;return false;});});
   }
   
   if(searchText) {
-    // ★ 원본 키워드 추출 (쉼표 구분)
     let originalKeywords = searchText.split(/,/).map(k=>k.trim().toLowerCase()).filter(k=>k.length>0);
-    // 확장 키워드
     let keywords = expandKeywordsLocal(originalKeywords);
     
-    // ★ 필터링: 원본 키워드 기준
     filtered = filtered.filter(c => filterWithSensitivity(c, keywords, sensitivity, originalKeywords));
-    // ★ 스코어링: 원본 우선 + 확장 보너스
     filtered.forEach(c => { c._score = scoreWithSensitivity(c, keywords, sensitivity, originalKeywords); });
     
     const config = SENSITIVITY_CONFIG[sensitivity];
@@ -210,14 +178,13 @@ function applyFilters() {
   renderList();
 }
 
-// ★ 수정 #1: 필터 칩 X — 이벤트 위임 방식으로 변경
+// ★ 필터 칩 — 이벤트 위임
 function renderActiveFilters() {
-  const container=$('#active-filters'); 
+  const container=$('#active-filters');
   let html='';
   
   const add=(fid,vals,label)=>vals.forEach(v=>{
-    // ★ data 속성에 안전하게 값 저장
-    const safeVal = v.replace(/"/g, '&quot;');
+    const safeVal = String(v).replace(/"/g, '&quot;');
     html+=`<span class="filter-chip">${label}: ${v} <button class="filter-chip-x" data-fid="${fid}" data-val="${safeVal}">×</button></span>`;
   });
   
@@ -233,28 +200,26 @@ function renderActiveFilters() {
   if(S.sensitivity&&S.sensitivity!=='balanced') html+=`<span class="filter-chip">감도: ${sensitivityLabel}</span>`;
   
   const q=$('#search-input').value.trim();
-  if(q) html+=`<span class="filter-chip">검색: ${q.length > 30 ? q.substring(0,30)+'...' : q} (${S.searchMode.toUpperCase()}) <button class="filter-chip-x" data-fid="search">×</button></span>`;
+  if(q) html+=`<span class="filter-chip">검색: ${q.length>30?q.substring(0,30)+'...':q} (${S.searchMode.toUpperCase()}) <button class="filter-chip-x" data-fid="search">×</button></span>`;
   
   container.innerHTML=html;
   
-  // ★ 수정 #1: 이벤트 위임 — container에 한 번만 바인딩
+  // ★ 이벤트 위임 — 한 번만 바인딩
   container.onclick = function(e) {
     const btn = e.target.closest('.filter-chip-x');
     if (!btn) return;
     e.preventDefault();
     e.stopPropagation();
     
-    const fid = btn.dataset.fid;
-    const val = btn.dataset.val;
+    const fid = btn.getAttribute('data-fid');
+    const val = btn.getAttribute('data-val');
     
     if (fid === 'search') {
       $('#search-input').value = '';
     } else {
-      const wrap = $(`[data-fid="${fid}"]`);
+      const wrap = document.querySelector(`[data-fid="${fid}"]`);
       if (wrap) {
-        // ★ 수정: 정확한 값으로 체크박스 찾기
-        const checkboxes = wrap.querySelectorAll('.ms-panel input[type="checkbox"]');
-        checkboxes.forEach(cb => {
+        wrap.querySelectorAll('.ms-panel input[type="checkbox"]').forEach(cb => {
           if (cb.value === val) cb.checked = false;
         });
         updateMSBtn(fid);
@@ -267,7 +232,7 @@ function renderActiveFilters() {
 function resetAll(notify=true) {
   $('#search-input').value='';
   ['f-category','f-difficulty','f-language','f-subtitles','f-duration','f-score','f-attr'].forEach(fid=>{
-    const wrap=$(`[data-fid="${fid}"]`);
+    const wrap=document.querySelector(`[data-fid="${fid}"]`);
     if(wrap){
       wrap.querySelectorAll('.ms-panel input[type="checkbox"]:checked').forEach(cb=>cb.checked=false);
       updateMSBtn(fid);
