@@ -65,8 +65,8 @@ const formatUpdateDate = (dateStr) => {
 
 // ★ 개선: minScore 상향
 const SENSITIVITY_CONFIG = {
-  precise: { label: '🔬 정밀', minScore: 80, searchFields: ['title','topic','category'], scoreWeights: { title:50, category:30, topic:25, headline:0, objectives:0, description:0 } },
-  balanced: { label: '📊 보통', minScore: 25, searchFields: ['title','topic','category','headline','objectives'], scoreWeights: { title:40, category:30, topic:20, headline:15, objectives:10, description:0 } },
+  precise: { label: '🔬 정밀', minScore: 50, searchFields: ['title','topic','category'], scoreWeights: { title:50, category:30, topic:25, headline:0, objectives:0, description:0 } },
+  balanced: { label: '📊 보통', minScore: 15, searchFields: ['title','topic','category','headline','objectives'], scoreWeights: { title:40, category:30, topic:20, headline:15, objectives:10, description:0 } },
   wide: { label: '🔭 광역', minScore: 1, searchFields: ['title','topic','category','headline','objectives','description'], scoreWeights: { title:40, category:30, topic:20, headline:15, objectives:10, description:5 } }
 };
 
