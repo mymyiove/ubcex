@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// filters.js — 필터 칩 수정 + 추천도 고도화 + AND 우선 스코어링
+// filters.js — AI 필터 업그레이드 + 띄어쓰기=쉼표 + AND 우선
 // ═══════════════════════════════════════════════════════════
 
 function initMultiSelects() {
@@ -11,11 +11,10 @@ function initMultiSelects() {
   populateMS('f-score', [{v:'100',l:'🎯 100점 이상'},{v:'200',l:'🎯 200점 이상'},{v:'300',l:'🎯 300점 이상'}]);
   populateMS('f-attr', [{v:'NEW',l:'✨ 신규 강의'}]);
 
-  // ★ 필터 칩 컨테이너에 이벤트 위임 한 번만 등록
-  const container = $('#active-filters');
+  var container = $('#active-filters');
   if (container && !container._chipHandlerAttached) {
     container.addEventListener('click', function(e) {
-      const btn = e.target.closest('.filter-chip-x');
+      var btn = e.target.closest('.filter-chip-x');
       if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
@@ -26,8 +25,7 @@ function initMultiSelects() {
       } else {
         var wrap = document.querySelector('[data-fid="' + fid + '"]');
         if (wrap) {
-          var checkboxes = wrap.querySelectorAll('.ms-panel input[type="checkbox"]');
-          checkboxes.forEach(function(cb) {
+          wrap.querySelectorAll('.ms-panel input[type="checkbox"]').forEach(function(cb) {
             if (cb.value === val) cb.checked = false;
           });
           updateMSBtn(fid);
@@ -43,10 +41,7 @@ function getUniqueSubtitles() {
   var vals = new Set();
   S.courses.forEach(function(c) {
     if (!c.subtitles || c.subtitles === '없음') return;
-    c.subtitles.split(',').forEach(function(s) {
-      var t = s.trim();
-      if (t) vals.add(t);
-    });
+    c.subtitles.split(',').forEach(function(s) { var t = s.trim(); if (t) vals.add(t); });
   });
   var arr = [...vals];
   var ko = arr.filter(function(a) { return a.toLowerCase().includes('ko'); });
@@ -73,15 +68,10 @@ function populateMS(fid, items, showEmoji) {
   }).join('');
   btn.onclick = function(e) {
     e.stopPropagation();
-    document.querySelectorAll('.ms-panel').forEach(function(p) {
-      if (p !== panel) p.classList.remove('open');
-    });
+    document.querySelectorAll('.ms-panel').forEach(function(p) { if (p !== panel) p.classList.remove('open'); });
     panel.classList.toggle('open');
   };
-  panel.addEventListener('change', function() {
-    updateMSBtn(fid);
-    applyFilters();
-  });
+  panel.addEventListener('change', function() { updateMSBtn(fid); applyFilters(); });
 }
 
 function updateMSBtn(fid) {
@@ -89,22 +79,10 @@ function updateMSBtn(fid) {
   if (!wrap) return;
   var btn = wrap.querySelector('.ms-btn');
   var checked = [...wrap.querySelectorAll('.ms-panel input[type="checkbox"]:checked')];
-  var defaults = {
-    'f-category': '모든 카테고리',
-    'f-difficulty': '모든 난이도',
-    'f-language': '모든 언어',
-    'f-subtitles': '모든 자막',
-    'f-duration': '모든 시간',
-    'f-score': '모든 점수',
-    'f-attr': '모든 강의'
-  };
-  if (checked.length === 0) {
-    btn.textContent = defaults[fid] || '선택';
-  } else if (checked.length === 1) {
-    btn.textContent = checked[0].value;
-  } else {
-    btn.textContent = checked[0].value + ' 외 ' + (checked.length - 1) + '개';
-  }
+  var defaults = { 'f-category':'모든 카테고리','f-difficulty':'모든 난이도','f-language':'모든 언어','f-subtitles':'모든 자막','f-duration':'모든 시간','f-score':'모든 점수','f-attr':'모든 강의' };
+  if (checked.length === 0) btn.textContent = defaults[fid] || '선택';
+  else if (checked.length === 1) btn.textContent = checked[0].value;
+  else btn.textContent = checked[0].value + ' 외 ' + (checked.length - 1) + '개';
 }
 
 function getMSValues(fid) {
@@ -116,26 +94,23 @@ function getMSValues(fid) {
 function setMSValues(fid, values) {
   var wrap = document.querySelector('[data-fid="' + fid + '"]');
   if (!wrap) return;
-  wrap.querySelectorAll('.ms-panel input[type="checkbox"]').forEach(function(cb) {
-    cb.checked = values.includes(cb.value);
-  });
+  wrap.querySelectorAll('.ms-panel input[type="checkbox"]').forEach(function(cb) { cb.checked = values.includes(cb.value); });
   updateMSBtn(fid);
 }
 
 // ═══════════════════════════════════════════════════════════
-// ★ 키워드 번역 (한→영, 영→한)
+// 키워드 번역 (한↔영 양방향)
 // ═══════════════════════════════════════════════════════════
 function translateKeywords(keywords) {
   var translated = [];
   keywords.forEach(function(kw) {
     translated.push(kw);
+    // 한→영
     var mapped = KO_EN_MAP[kw];
-    if (mapped) {
-      mapped.forEach(function(m) { translated.push(m); });
-    }
+    if (mapped) mapped.forEach(function(m) { translated.push(m); });
+    // 영→한
     Object.entries(KO_EN_MAP).forEach(function(entry) {
-      var ko = entry[0];
-      var enList = entry[1];
+      var ko = entry[0], enList = entry[1];
       if (enList.some(function(en) { return en.toLowerCase() === kw.toLowerCase(); })) {
         if (!translated.includes(ko)) translated.push(ko);
       }
@@ -145,7 +120,7 @@ function translateKeywords(keywords) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ★ 추천도 스코어링 — AND 우선 + 제목 최우선 + 확장 보너스
+// ★ 스코어링 — 제목 ALL 매칭 최우선 + AND 보너스
 // ═══════════════════════════════════════════════════════════
 function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   var config = SENSITIVITY_CONFIG[sensitivity] || SENSITIVITY_CONFIG.balanced;
@@ -156,45 +131,43 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   var headlineLower = (course.headline || '').toLowerCase();
   var objectivesLower = (course.objectives || '').toLowerCase();
   var descLower = (course.description || '').toLowerCase();
-  var allText = titleLower + ' ' + catLower + ' ' + topicLower + ' ' + headlineLower + ' ' + objectivesLower + ' ' + descLower;
+  var allText = [titleLower, catLower, topicLower, headlineLower, objectivesLower, descLower].join(' ');
 
   if (originalKeywords && originalKeywords.length > 0) {
-    var translatedOriginals = translateKeywords(originalKeywords);
     var originalCount = originalKeywords.length;
 
-    // ═══ 핵심 1: 제목에 원본 키워드 ALL 매칭 → 최고점 ═══
-    var titleMatches = translatedOriginals.filter(function(kw) {
-      return titleLower.includes(kw.toLowerCase());
+    // ★ 각 원본 키워드별 제목 매칭 체크 (번역 포함)
+    var titleMatchCount = 0;
+    originalKeywords.forEach(function(kw) {
+      var kwTranslated = translateKeywords([kw]);
+      var matched = kwTranslated.some(function(t) { return titleLower.includes(t.toLowerCase()); });
+      if (matched) titleMatchCount++;
     });
 
-    if (titleMatches.length >= originalCount * 2) {
-      // 한/영 버전 모두 제목에 있음
+    // ★ 핵심 1: 원본 키워드 ALL 제목 매칭 → 최고점
+    if (titleMatchCount >= originalCount && originalCount >= 2) {
       totalScore += 500;
-    } else if (titleMatches.length >= originalCount) {
-      // 원본 키워드 수만큼 제목에 매칭
+    } else if (titleMatchCount >= originalCount) {
       totalScore += 350;
-    } else if (titleMatches.length > 0) {
-      // 일부만 제목에 있음
-      totalScore += titleMatches.length * 80;
+    } else if (titleMatchCount > 0) {
+      totalScore += titleMatchCount * 100;
     }
 
-    // ═══ 핵심 2: 전체 텍스트에 ALL 매칭 보너스 ═══
-    if (titleMatches.length < originalCount) {
-      var origInAllText = originalKeywords.every(function(kw) {
-        var kwTranslated = translateKeywords([kw]);
-        return kwTranslated.some(function(t) {
-          return allText.includes(t.toLowerCase());
-        });
-      });
+    // ★ 핵심 2: 전체 텍스트 ALL 매칭 보너스
+    var allTextMatchCount = 0;
+    originalKeywords.forEach(function(kw) {
+      var kwTranslated = translateKeywords([kw]);
+      var matched = kwTranslated.some(function(t) { return allText.includes(t.toLowerCase()); });
+      if (matched) allTextMatchCount++;
+    });
 
-      if (origInAllText && titleMatches.length === 0) {
-        totalScore += 150;
-      } else if (origInAllText) {
-        totalScore += 100;
-      }
+    if (allTextMatchCount >= originalCount && titleMatchCount < originalCount) {
+      if (titleMatchCount === 0) totalScore += 120;
+      else totalScore += 80;
     }
 
-    // ═══ 핵심 3: 개별 원본 키워드 위치별 점수 ═══
+    // ★ 핵심 3: 개별 원본 키워드 위치별 점수
+    var translatedOriginals = translateKeywords(originalKeywords);
     translatedOriginals.forEach(function(kw) {
       var kwl = kw.toLowerCase();
       if (catLower.includes(kwl)) totalScore += 40;
@@ -204,15 +177,14 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
     });
   }
 
-  // ═══ 핵심 4: 확장 키워드 — 낮은 가중치 보너스 ═══
+  // ★ 핵심 4: 확장 키워드 — 매우 낮은 보너스
   var transOrig = originalKeywords ? translateKeywords(originalKeywords) : [];
   keywords.forEach(function(kw) {
     var kwl = kw.toLowerCase();
     if (transOrig.some(function(ok) { return ok.toLowerCase() === kwl; })) return;
-
-    if (titleLower.includes(kwl)) totalScore += 12;
-    if (catLower.includes(kwl)) totalScore += 6;
-    if (topicLower.includes(kwl)) totalScore += 4;
+    if (titleLower.includes(kwl)) totalScore += 8;
+    if (catLower.includes(kwl)) totalScore += 4;
+    if (topicLower.includes(kwl)) totalScore += 3;
   });
 
   // 품질 보너스
@@ -227,7 +199,7 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ★ 필터링 — 원본 키워드(번역 포함) 기준
+// ★ 필터링 — 핵심 필드에서만 매칭 (description 남발 방지)
 // ═══════════════════════════════════════════════════════════
 function filterWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   var config = SENSITIVITY_CONFIG[sensitivity] || SENSITIVITY_CONFIG.balanced;
@@ -235,21 +207,38 @@ function filterWithSensitivity(course, keywords, sensitivity, originalKeywords) 
     ? translateKeywords(originalKeywords)
     : keywords;
 
-  var searchText = '';
-  config.searchFields.forEach(function(field) {
-    if (course[field]) searchText += ' ' + course[field];
-  });
-  searchText = searchText.toLowerCase();
+  // ★ 핵심 필드 = 제목 + 카테고리 + 주제 + 소개
+  var coreText = [
+    course.title || '',
+    course.category || '',
+    course.topic || '',
+    course.headline || ''
+  ].join(' ').toLowerCase();
+
+  // 감도별 검색 범위
+  var searchText = coreText;
+  if (sensitivity === 'wide') {
+    searchText += ' ' + (course.objectives || '') + ' ' + (course.description || '');
+    searchText = searchText.toLowerCase();
+  } else if (sensitivity === 'balanced') {
+    searchText += ' ' + (course.objectives || '');
+    searchText = searchText.toLowerCase();
+  }
 
   if (S.searchMode === 'and') {
-    return filterKws.every(function(kw) { return searchText.includes(kw.toLowerCase()); });
+    // AND: 원본 키워드 전부 포함 (번역 포함)
+    return originalKeywords.every(function(kw) {
+      var kwTranslated = translateKeywords([kw]);
+      return kwTranslated.some(function(t) { return searchText.includes(t.toLowerCase()); });
+    });
   } else {
-    return filterKws.some(function(kw) { return searchText.includes(kw.toLowerCase()); });
+    // OR/AI: 핵심 필드에서 매칭
+    return filterKws.some(function(kw) { return coreText.includes(kw.toLowerCase()); });
   }
 }
 
 // ═══════════════════════════════════════════════════════════
-// ★ applyFilters — 원본 키워드 별도 보관
+// ★ applyFilters — 띄어쓰기 = 쉼표 처리
 // ═══════════════════════════════════════════════════════════
 function applyFilters() {
   var cats = getMSValues('f-category');
@@ -284,14 +273,16 @@ function applyFilters() {
   }
 
   if (searchText) {
-    // ★ 원본 키워드 추출 (쉼표 구분)
-    var originalKeywords = searchText.split(/,/).map(function(k) { return k.trim().toLowerCase(); }).filter(function(k) { return k.length > 0; });
-    // 확장 키워드
+    // ★ 띄어쓰기 = 쉼표 처리: "AI 영업" → ["ai", "영업"]
+    var originalKeywords = searchText.split(/[,\s]+/).map(function(k) {
+      return k.trim().toLowerCase();
+    }).filter(function(k) {
+      return k.length > 0;
+    });
+
     var keywords = expandKeywordsLocal(originalKeywords);
 
-    // ★ 필터링: 원본 키워드(번역 포함) 기준
     filtered = filtered.filter(function(c) { return filterWithSensitivity(c, keywords, sensitivity, originalKeywords); });
-    // ★ 스코어링: AND 우선 + 제목 최우선
     filtered.forEach(function(c) { c._score = scoreWithSensitivity(c, keywords, sensitivity, originalKeywords); });
 
     var config = SENSITIVITY_CONFIG[sensitivity];
@@ -321,19 +312,17 @@ function applyFilters() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ★ 필터 칩 렌더링 — 이벤트는 initMultiSelects에서 위임
+// 필터 칩 렌더링
 // ═══════════════════════════════════════════════════════════
 function renderActiveFilters() {
   var container = $('#active-filters');
   var html = '';
-
   function add(fid, vals, label) {
     vals.forEach(function(v) {
       var safeVal = String(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       html += '<span class="filter-chip">' + label + ': ' + v + ' <button class="filter-chip-x" data-fid="' + fid + '" data-val="' + safeVal + '">×</button></span>';
     });
   }
-
   add('f-category', getMSValues('f-category'), '카테고리');
   add('f-difficulty', getMSValues('f-difficulty'), '난이도');
   add('f-language', getMSValues('f-language'), '언어');
@@ -341,17 +330,10 @@ function renderActiveFilters() {
   add('f-duration', getMSValues('f-duration'), '시간');
   add('f-score', getMSValues('f-score'), '추천도');
   add('f-attr', getMSValues('f-attr'), '속성');
-
-  var sensitivityLabel = SENSITIVITY_CONFIG[S.sensitivity || 'balanced']?.label || '📊 보통';
-  if (S.sensitivity && S.sensitivity !== 'balanced') {
-    html += '<span class="filter-chip">감도: ' + sensitivityLabel + '</span>';
-  }
-
+  var sensitivityLabel = (SENSITIVITY_CONFIG[S.sensitivity || 'balanced'] || {}).label || '📊 보통';
+  if (S.sensitivity && S.sensitivity !== 'balanced') html += '<span class="filter-chip">감도: ' + sensitivityLabel + '</span>';
   var q = $('#search-input').value.trim();
-  if (q) {
-    html += '<span class="filter-chip">검색: ' + (q.length > 30 ? q.substring(0, 30) + '...' : q) + ' (' + S.searchMode.toUpperCase() + ') <button class="filter-chip-x" data-fid="search">×</button></span>';
-  }
-
+  if (q) html += '<span class="filter-chip">검색: ' + (q.length > 30 ? q.substring(0, 30) + '...' : q) + ' (' + S.searchMode.toUpperCase() + ') <button class="filter-chip-x" data-fid="search">×</button></span>';
   container.innerHTML = html;
 }
 
@@ -361,7 +343,7 @@ function renderActiveFilters() {
 function resetAll(notify) {
   if (notify === undefined) notify = true;
   $('#search-input').value = '';
-  ['f-category', 'f-difficulty', 'f-language', 'f-subtitles', 'f-duration', 'f-score', 'f-attr'].forEach(function(fid) {
+  ['f-category','f-difficulty','f-language','f-subtitles','f-duration','f-score','f-attr'].forEach(function(fid) {
     var wrap = document.querySelector('[data-fid="' + fid + '"]');
     if (wrap) {
       wrap.querySelectorAll('.ms-panel input[type="checkbox"]:checked').forEach(function(cb) { cb.checked = false; });
@@ -372,16 +354,18 @@ function resetAll(notify) {
   S.searchMode = 'ai';
   S.sensitivity = 'balanced';
   $$('.scan-mode-btn[data-mode]').forEach(function(b) { b.classList.remove('active'); });
-  $('.scan-mode-btn[data-mode="ai"]')?.classList.add('active');
+  var aiBtn = $('.scan-mode-btn[data-mode="ai"]');
+  if (aiBtn) aiBtn.classList.add('active');
   $$('.sensitivity-btn').forEach(function(b) { b.classList.remove('active'); });
-  $('.sensitivity-btn[data-sensitivity="balanced"]')?.classList.add('active');
-  $('#ai-panel')?.classList.remove('open');
-  $('#filters-grid')?.classList.remove('open');
-  $('#btn-filter-toggle')?.classList.remove('active');
+  var balBtn = $('.sensitivity-btn[data-sensitivity="balanced"]');
+  if (balBtn) balBtn.classList.add('active');
+  var aiPanel = $('#ai-panel');
+  if (aiPanel) aiPanel.classList.remove('open');
+  var filtersGrid = $('#filters-grid');
+  if (filtersGrid) filtersGrid.classList.remove('open');
+  var filterToggle = $('#btn-filter-toggle');
+  if (filterToggle) filterToggle.classList.remove('active');
   S.selectedIds.clear();
   updateFAB();
-  if (notify) {
-    applyFilters();
-    toast('✨ 스캐너 초기화');
-  }
+  if (notify) { applyFilters(); toast('✨ 스캐너 초기화'); }
 }
