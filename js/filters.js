@@ -1,9 +1,6 @@
 // ═══════════════════════════════════════════════════════════
-// filters.js — 전체 선택/해제 + 필터 OR/AND + AI 모드 삭제
+// filters.js — 필터 OR/AND 연동 + 기본값 AND + 전체 선택
 // ═══════════════════════════════════════════════════════════
-
-// ★ 필터 조합 모드 (OR: 하나라도 매칭, AND: 모두 매칭)
-var filterCombineMode = 'or';
 
 function initMultiSelects() {
   populateMS('f-category', getUnique('category', true), true);
@@ -14,7 +11,6 @@ function initMultiSelects() {
   populateMS('f-score', [{v:'100',l:'🎯 100점 이상'},{v:'200',l:'🎯 200점 이상'},{v:'300',l:'🎯 300점 이상'}]);
   populateMS('f-attr', [{v:'NEW',l:'✨ 신규 강의'}]);
 
-  // ★ 필터 칩 이벤트 위임
   var container = $('#active-filters');
   if (container && !container._chipHandlerAttached) {
     container.addEventListener('click', function(e) {
@@ -32,7 +28,6 @@ function initMultiSelects() {
           wrap.querySelectorAll('.ms-panel input[type="checkbox"]').forEach(function(cb) {
             if (cb.value === val) cb.checked = false;
           });
-          // 전체 선택 체크박스 동기화
           syncSelectAll(fid);
           updateMSBtn(fid);
         }
@@ -68,9 +63,7 @@ function populateMS(fid, items, showEmoji) {
     items = [...ko, ...en, ...rest];
   }
 
-  // ★ 전체 선택 체크박스를 맨 위에 추가
   var selectAllHtml = '<div class="ms-select-all"><label><input type="checkbox" data-select-all="' + fid + '" checked> ✅ 전체 선택</label></div>';
-
   var itemsHtml = items.map(function(item) {
     var v = typeof item === 'object' ? item.v : item;
     var l = typeof item === 'object' ? item.l : (showEmoji ? getCatEmoji(item) + ' ' + item : item);
@@ -85,41 +78,30 @@ function populateMS(fid, items, showEmoji) {
     panel.classList.toggle('open');
   };
 
-  // ★ 전체 선택 체크박스 이벤트
   var selectAllCb = panel.querySelector('[data-select-all="' + fid + '"]');
   if (selectAllCb) {
     selectAllCb.addEventListener('change', function() {
       var itemCbs = panel.querySelectorAll('.ms-item input[type="checkbox"]');
-      if (selectAllCb.checked) {
-        // 전체 선택 = 모든 체크 해제 (전체 = 필터 없음)
-        itemCbs.forEach(function(cb) { cb.checked = false; });
-      } else {
-        // 전체 해제 = 아무것도 선택 안 함 (결과 0개)
-        itemCbs.forEach(function(cb) { cb.checked = false; });
-      }
+      itemCbs.forEach(function(cb) { cb.checked = false; });
       updateMSBtn(fid);
       applyFilters();
     });
   }
 
-  // 개별 체크박스 변경 시
   panel.addEventListener('change', function(e) {
-    if (e.target.dataset.selectAll) return; // 전체 선택 자체는 위에서 처리
+    if (e.target.dataset.selectAll) return;
     syncSelectAll(fid);
     updateMSBtn(fid);
     applyFilters();
   });
 }
 
-// ★ 전체 선택 체크박스 동기화
 function syncSelectAll(fid) {
   var wrap = document.querySelector('[data-fid="' + fid + '"]');
   if (!wrap) return;
   var selectAllCb = wrap.querySelector('[data-select-all="' + fid + '"]');
   if (!selectAllCb) return;
-  var itemCbs = wrap.querySelectorAll('.ms-item input[type="checkbox"]');
   var checkedCount = wrap.querySelectorAll('.ms-item input[type="checkbox"]:checked').length;
-  // 아무것도 선택 안 됨 = 전체 (필터 없음)
   selectAllCb.checked = (checkedCount === 0);
 }
 
@@ -186,8 +168,7 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
     var titleMatchCount = 0;
     originalKeywords.forEach(function(kw) {
       var kwTranslated = translateKeywords([kw]);
-      var matched = kwTranslated.some(function(t) { return titleLower.includes(t.toLowerCase()); });
-      if (matched) titleMatchCount++;
+      if (kwTranslated.some(function(t) { return titleLower.includes(t.toLowerCase()); })) titleMatchCount++;
     });
 
     if (titleMatchCount >= originalCount && originalCount >= 2) totalScore += 500;
@@ -197,12 +178,10 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
     var allTextMatchCount = 0;
     originalKeywords.forEach(function(kw) {
       var kwTranslated = translateKeywords([kw]);
-      var matched = kwTranslated.some(function(t) { return allText.includes(t.toLowerCase()); });
-      if (matched) allTextMatchCount++;
+      if (kwTranslated.some(function(t) { return allText.includes(t.toLowerCase()); })) allTextMatchCount++;
     });
     if (allTextMatchCount >= originalCount && titleMatchCount < originalCount) {
-      if (titleMatchCount === 0) totalScore += 120;
-      else totalScore += 80;
+      totalScore += (titleMatchCount === 0) ? 120 : 80;
     }
 
     var translatedOriginals = translateKeywords(originalKeywords);
@@ -234,31 +213,33 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 필터링
+// ★ 필터링 — 검색 모드(AND/OR)에 따라 + 필터도 동일 모드 적용
 // ═══════════════════════════════════════════════════════════
 function filterWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   var config = SENSITIVITY_CONFIG[sensitivity] || SENSITIVITY_CONFIG.balanced;
   var filterKws = originalKeywords && originalKeywords.length > 0
     ? translateKeywords(originalKeywords) : keywords;
 
-  var coreText = [course.title||'', course.category||'', course.topic||'', course.headline||''].join(' ').toLowerCase();
+  var coreText = [course.title || '', course.category || '', course.topic || '', course.headline || ''].join(' ').toLowerCase();
   var searchText = coreText;
-  if (sensitivity === 'wide') searchText += ' ' + (course.objectives||'') + ' ' + (course.description||'');
-  else if (sensitivity === 'balanced') searchText += ' ' + (course.objectives||'');
+  if (sensitivity === 'wide') searchText += ' ' + (course.objectives || '') + ' ' + (course.description || '');
+  else if (sensitivity === 'balanced') searchText += ' ' + (course.objectives || '');
   searchText = searchText.toLowerCase();
 
   if (S.searchMode === 'and') {
+    // AND: 모든 원본 키워드가 포함 (번역 포함)
     return originalKeywords.every(function(kw) {
       var kwTranslated = translateKeywords([kw]);
       return kwTranslated.some(function(t) { return searchText.includes(t.toLowerCase()); });
     });
   } else {
+    // OR: 하나라도 핵심 필드에 포함
     return filterKws.some(function(kw) { return coreText.includes(kw.toLowerCase()); });
   }
 }
 
 // ═══════════════════════════════════════════════════════════
-// applyFilters
+// ★ applyFilters — 필터도 검색 모드(AND/OR)에 따라 적용
 // ═══════════════════════════════════════════════════════════
 function applyFilters() {
   var cats = getMSValues('f-category');
@@ -273,11 +254,33 @@ function applyFilters() {
   var sensitivity = S.sensitivity || 'balanced';
   var filtered = [...S.courses];
 
-  if (cats.length > 0) filtered = filtered.filter(function(c) { return cats.some(function(cat) { return c.category && c.category.includes(cat); }); });
-  if (diffs.length > 0) filtered = filtered.filter(function(c) { return diffs.some(function(d) { return c.difficulty && c.difficulty.toUpperCase() === d.toUpperCase(); }); });
-  if (langs.length > 0) filtered = filtered.filter(function(c) { return langs.includes(c.language); });
-  if (subs.length > 0) filtered = filtered.filter(function(c) { if (!c.subtitles || c.subtitles === '없음') return false; return subs.some(function(sub) { return c.subtitles.toLowerCase().includes(sub.toLowerCase()); }); });
-  if (attrs.includes('NEW')) filtered = filtered.filter(function(c) { return c.isNew; });
+  // ★ 필터 적용 — 검색 모드에 따라 OR/AND
+  // AND 모드: 모든 필터 조건을 동시에 만족해야 함 (기본)
+  // OR 모드: 필터 조건 중 하나라도 만족하면 통과
+  if (S.searchMode === 'and' || !S.searchMode) {
+    // AND: 각 필터가 독립적으로 AND 적용 (기존 동작)
+    if (cats.length > 0) filtered = filtered.filter(function(c) { return cats.some(function(cat) { return c.category && c.category.includes(cat); }); });
+    if (diffs.length > 0) filtered = filtered.filter(function(c) { return diffs.some(function(d) { return c.difficulty && c.difficulty.toUpperCase() === d.toUpperCase(); }); });
+    if (langs.length > 0) filtered = filtered.filter(function(c) { return langs.includes(c.language); });
+    if (subs.length > 0) filtered = filtered.filter(function(c) { if (!c.subtitles || c.subtitles === '없음') return false; return subs.some(function(sub) { return c.subtitles.toLowerCase().includes(sub.toLowerCase()); }); });
+    if (attrs.includes('NEW')) filtered = filtered.filter(function(c) { return c.isNew; });
+  } else {
+    // OR: 선택된 필터 중 하나라도 만족하면 통과
+    var hasAnyFilter = cats.length > 0 || diffs.length > 0 || langs.length > 0 || subs.length > 0 || attrs.length > 0;
+    if (hasAnyFilter) {
+      filtered = filtered.filter(function(c) {
+        var matchCat = cats.length === 0 || cats.some(function(cat) { return c.category && c.category.includes(cat); });
+        var matchDiff = diffs.length === 0 || diffs.some(function(d) { return c.difficulty && c.difficulty.toUpperCase() === d.toUpperCase(); });
+        var matchLang = langs.length === 0 || langs.includes(c.language);
+        var matchSub = subs.length === 0 || (c.subtitles && c.subtitles !== '없음' && subs.some(function(sub) { return c.subtitles.toLowerCase().includes(sub.toLowerCase()); }));
+        var matchAttr = !attrs.includes('NEW') || c.isNew;
+        // OR: 선택된 필터 중 하나라도 true
+        return matchCat || matchDiff || matchLang || matchSub || matchAttr;
+      });
+    }
+  }
+
+  // 시간 필터는 항상 AND (시간은 범위 필터라 OR이 의미 없음)
   if (durations.length > 0) {
     filtered = filtered.filter(function(c) {
       var m = c.contentLength || 0;
@@ -302,11 +305,11 @@ function applyFilters() {
   }
 
   switch (sort) {
-    case 'relevance': filtered.sort(function(a, b) { return (b._score||0) - (a._score||0); }); break;
-    case 'rating': filtered.sort(function(a, b) { return (b.rating||0) - (a.rating||0); }); break;
-    case 'enrollments': filtered.sort(function(a, b) { return (b.enrollments||0) - (a.enrollments||0); }); break;
-    case 'latest': filtered.sort(function(a, b) { var da=a.lastUpdated?new Date(a.lastUpdated):new Date(0); var db=b.lastUpdated?new Date(b.lastUpdated):new Date(0); return db-da; }); break;
-    case 'alpha': filtered.sort(function(a, b) { return (a.title||'').localeCompare(b.title||''); }); break;
+    case 'relevance': filtered.sort(function(a, b) { return (b._score || 0) - (a._score || 0); }); break;
+    case 'rating': filtered.sort(function(a, b) { return (b.rating || 0) - (a.rating || 0); }); break;
+    case 'enrollments': filtered.sort(function(a, b) { return (b.enrollments || 0) - (a.enrollments || 0); }); break;
+    case 'latest': filtered.sort(function(a, b) { var da = a.lastUpdated ? new Date(a.lastUpdated) : new Date(0); var db = b.lastUpdated ? new Date(b.lastUpdated) : new Date(0); return db - da; }); break;
+    case 'alpha': filtered.sort(function(a, b) { return (a.title || '').localeCompare(b.title || ''); }); break;
   }
 
   S.filtered = filtered;
@@ -334,10 +337,14 @@ function renderActiveFilters() {
   add('f-duration', getMSValues('f-duration'), '시간');
   add('f-score', getMSValues('f-score'), '추천도');
   add('f-attr', getMSValues('f-attr'), '속성');
+
+  // ★ 검색 모드 표시
+  html += '<span class="filter-chip" style="background:rgba(124,108,240,0.25);">모드: ' + S.searchMode.toUpperCase() + '</span>';
+
   var sensitivityLabel = (SENSITIVITY_CONFIG[S.sensitivity || 'balanced'] || {}).label || '📊 보통';
   if (S.sensitivity && S.sensitivity !== 'balanced') html += '<span class="filter-chip">감도: ' + sensitivityLabel + '</span>';
   var q = $('#search-input').value.trim();
-  if (q) html += '<span class="filter-chip">검색: ' + (q.length > 30 ? q.substring(0, 30) + '...' : q) + ' (' + S.searchMode.toUpperCase() + ') <button class="filter-chip-x" data-fid="search">×</button></span>';
+  if (q) html += '<span class="filter-chip">검색: ' + (q.length > 30 ? q.substring(0, 30) + '...' : q) + ' <button class="filter-chip-x" data-fid="search">×</button></span>';
   container.innerHTML = html;
 }
 
@@ -353,11 +360,12 @@ function resetAll(notify) {
     }
   });
   $('#sort-select').value = 'relevance';
-  S.searchMode = 'or';
+  // ★ 기본값 AND
+  S.searchMode = 'and';
   S.sensitivity = 'balanced';
   $$('.scan-mode-btn[data-mode]').forEach(function(b) { b.classList.remove('active'); });
-  var orBtn = $('.scan-mode-btn[data-mode="or"]');
-  if (orBtn) orBtn.classList.add('active');
+  var andBtn = $('.scan-mode-btn[data-mode="and"]');
+  if (andBtn) andBtn.classList.add('active');
   $$('.sensitivity-btn').forEach(function(b) { b.classList.remove('active'); });
   var balBtn = $('.sensitivity-btn[data-sensitivity="balanced"]');
   if (balBtn) balBtn.classList.add('active');
