@@ -8,7 +8,7 @@ const S = {
   filtered: [],
   page: 1,
   rows: 15,
-  searchMode: 'ai',
+  searchMode: 'and',
   sensitivity: 'balanced',
   viewMode: 'table',
   selectedIds: new Set(),
