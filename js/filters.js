@@ -360,6 +360,8 @@ function applyFilters() {
     });
   } else {
     for (var i = 0; i < filtered.length; i++) filtered[i]._score = 0;
+    // ★ 검색어 없을 때 기본 정렬: 수강자 수 내림차순
+    filtered.sort(function(a, b) { return (b.enrollments || 0) - (a.enrollments || 0); });
   }
 
   switch (sort) {
