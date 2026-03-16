@@ -366,7 +366,7 @@ function initApp() {
     : '탐험가님, <strong>' + S.subdomain + '</strong> 우주에 도착했습니다!';
 
   // ★ 기본 검색 모드: OR (AI 모드 삭제)
-  S.searchMode = 'or';
+  S.searchMode = 'and';
 
   renderDashCards();
   initMultiSelects();
