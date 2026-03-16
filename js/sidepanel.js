@@ -54,7 +54,7 @@ function openSidePanel(course) {
 
     ${course.headline ? `<div class="sp-section sp-translatable"><h4>📝 강의 소개</h4><p>${course.headline}</p></div>` : ''}
     ${course.objectives ? `<div class="sp-section sp-translatable"><h4>🎯 학습 목표</h4>${course.objectives.split('|').map(o => o.trim()).filter(Boolean).map(o => `<div>${o}</div>`).join('')}</div>` : ''}
-    ${course.description ? `<div class="sp-section sp-translatable"><h4>📄 상세 설명</h4><div>${course.description.substring(0, 1000)}${course.description.length > 1000 ? '...' : ''}</div></div>` : ''}
+    ${course.description ? '<div class="sp-section sp-translatable"><h4>📄 상세 설명</h4><div>' + course.description + '</div></div>' : ''}
     ${course.instructor ? `<div class="sp-section"><h4>👩‍🏫 강사</h4><p>${course.instructor}</p></div>` : ''}
     ${course.topic ? `<div class="sp-section"><h4>💡 주제</h4><p>${course.topic}</p></div>` : ''}
     
