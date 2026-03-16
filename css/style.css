@@ -649,3 +649,50 @@ body.translated-ltr #side-panel { top: 105px !important; height: calc(100vh - 10
   color: var(--accent-light);
   box-shadow: var(--shadow-glow);
 }
+
+/* ★ 전체 선택 토글 */
+.ms-select-all {
+  padding: 0.4rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-nebula);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.ms-select-all label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--accent-light);
+  font-weight: 600;
+}
+.ms-select-all input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+}
+
+/* ★ 필터 OR/AND 토글 */
+.filter-mode-toggle {
+  display: flex;
+  gap: 0.2rem;
+  margin-bottom: 0.5rem;
+  justify-content: flex-end;
+}
+.filter-mode-btn {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border);
+  background: var(--bg-glass);
+  color: var(--text-secondary);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: var(--transition);
+}
+.filter-mode-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
