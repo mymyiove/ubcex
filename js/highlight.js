@@ -65,9 +65,19 @@ function initHighlight() {
   var josa = getJobNameWithJosa(S.selectedFamilies);
   var ph = $('#popular-header-text');
   var ch = $('#curator-header-text');
-  if (ph) ph.textContent = josa ? '🔥 ' + josa + ' 최신 인기 별' : '🔥 최신 인기 별';
-  if (ch) ch.textContent = josa ? "⭐ " + josa + " 항해사's PICK" : "⭐ 항해사's PICK";
-
+  var jobNames = '';
+  if (S.selectedFamilies && S.selectedFamilies.length > 0) {
+    var names = [];
+    for (var i = 0; i < S.selectedFamilies.length; i++) {
+      var fam = CURATION[S.selectedFamilies[i]];
+      if (fam) names.push(fam.emoji + fam.name);
+    }
+    jobNames = names.join(', ');
+  }
+  if (ph) ph.textContent = jobNames ? '🔥 ' + jobNames + ' 최신 인기 별' : '🔥 최신 인기 별';
+  if (ch) ch.textContent = "⭐ 항해사's PICK";
+  
+    
   renderHighlightCarousels();
   startAutoRotation();
 
