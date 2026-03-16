@@ -146,7 +146,7 @@ function renderDashCards() {
   const filteredCount = S.filtered.length;
 
   const cards = [
-    { icon:'🌟', value:total, label:'전체 별 (3년 이내)', action:()=>{resetAll();}, download:'all' },
+    { icon:'🌟', value:total, label:'전체 별', action:()=>{resetAll();}, download:'all' },
     { icon:'✨', value:newCount, label:'신규 별 (1개월)', action:()=>{setMSValues('f-attr',['NEW']);applyFilters();}, download:'new' },
     { icon:'🔍', value:filteredCount, label:'발견된 별', action:null, download:null },
   ];
