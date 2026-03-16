@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// filters.js — 완전 재작성: 필터 + 칩 X + 전체 선택 + AND/OR
+// filters.js — 완전 재설계: 직접 바인딩 방식
 // ═══════════════════════════════════════════════════════════
 
 function initMultiSelects() {
@@ -10,49 +10,6 @@ function initMultiSelects() {
   populateMS('f-duration', [{v:'60',l:'⏱️ 1시간 미만'},{v:'120',l:'⏱️ 1-2시간'},{v:'180',l:'⏱️ 2-3시간'},{v:'240',l:'⏱️ 3-4시간'},{v:'300',l:'⏱️ 4시간 이상'}]);
   populateMS('f-score', [{v:'100',l:'🎯 100점 이상'},{v:'200',l:'🎯 200점 이상'},{v:'300',l:'🎯 300점 이상'}]);
   populateMS('f-attr', [{v:'NEW',l:'✨ 신규 강의'}]);
-  initChipHandler();
-}
-
-// ★ 필터 칩 X 이벤트 — 최초 1회만 등록
-function initChipHandler() {
-  var container = document.getElementById('active-filters');
-  if (!container || container._bound) return;
-  container._bound = true;
-  container.addEventListener('click', function(e) {
-    var x = e.target;
-    // 버튼 자체 또는 부모가 .filter-chip-x인지 확인
-    while (x && x !== container) {
-      if (x.classList && x.classList.contains('filter-chip-x')) {
-        e.preventDefault();
-        e.stopPropagation();
-        var fid = x.getAttribute('data-fid');
-        var val = x.getAttribute('data-val');
-        if (fid === 'search') {
-          document.getElementById('search-input').value = '';
-        } else if (fid && val) {
-          uncheckFilterValue(fid, val);
-        }
-        applyFilters();
-        return;
-      }
-      x = x.parentNode;
-    }
-  });
-}
-
-// ★ 특정 필터의 특정 값만 체크 해제
-function uncheckFilterValue(fid, val) {
-  var wrap = document.querySelector('[data-fid="' + fid + '"]');
-  if (!wrap) return;
-  var cbs = wrap.querySelectorAll('.ms-item input[type="checkbox"]');
-  for (var i = 0; i < cbs.length; i++) {
-    if (cbs[i].value === val) {
-      cbs[i].checked = false;
-      break;
-    }
-  }
-  syncSelectAll(fid);
-  updateMSBtn(fid);
 }
 
 function getUniqueSubtitles() {
@@ -62,9 +19,9 @@ function getUniqueSubtitles() {
     c.subtitles.split(',').forEach(function(s) { var t = s.trim(); if (t) vals.add(t); });
   });
   var arr = Array.from(vals);
-  var ko = arr.filter(function(a) { return a.toLowerCase().includes('ko'); });
-  var en = arr.filter(function(a) { return a.toLowerCase().includes('en') && !a.toLowerCase().includes('ko'); });
-  var rest = arr.filter(function(a) { return !a.toLowerCase().includes('ko') && !a.toLowerCase().includes('en'); });
+  var ko = arr.filter(function(a) { return a.toLowerCase().indexOf('ko') !== -1; });
+  var en = arr.filter(function(a) { return a.toLowerCase().indexOf('en') !== -1 && a.toLowerCase().indexOf('ko') === -1; });
+  var rest = arr.filter(function(a) { return a.toLowerCase().indexOf('ko') === -1 && a.toLowerCase().indexOf('en') === -1; });
   return ko.concat(en).concat(rest.sort());
 }
 
@@ -75,75 +32,68 @@ function populateMS(fid, items, showEmoji) {
   var btn = wrap.querySelector('.ms-btn');
 
   if (fid === 'f-language') {
-    var ko = items.filter(function(i) { return typeof i === 'string' && (i.includes('한국어') || i.toLowerCase().includes('ko')); });
-    var en = items.filter(function(i) { return typeof i === 'string' && i.includes('English'); });
+    var ko = items.filter(function(i) { return typeof i === 'string' && (i.indexOf('한국어') !== -1 || i.toLowerCase().indexOf('ko') !== -1); });
+    var en = items.filter(function(i) { return typeof i === 'string' && i.indexOf('English') !== -1; });
     var rest = items.filter(function(i) { return typeof i === 'string' && ko.indexOf(i) === -1 && en.indexOf(i) === -1; });
     items = ko.concat(en).concat(rest);
   }
 
-  var html = '<div class="ms-select-all"><label><input type="checkbox" data-select-all="' + fid + '" checked> ✅ 전체</label></div>';
+  // HTML 생성
+  var html = '<div class="ms-select-all"><label><input type="checkbox" data-sa="' + fid + '" checked> ✅ 전체</label></div>';
   for (var i = 0; i < items.length; i++) {
     var item = items[i];
     var v = typeof item === 'object' ? item.v : item;
     var l = typeof item === 'object' ? item.l : (showEmoji ? getCatEmoji(item) + ' ' + item : item);
-    html += '<div class="ms-item"><label><input type="checkbox" value="' + v + '"> ' + l + '</label></div>';
+    html += '<div class="ms-item"><label><input type="checkbox" data-fid="' + fid + '" value="' + v + '"> ' + l + '</label></div>';
   }
   panel.innerHTML = html;
 
   // 버튼 클릭 → 패널 토글
-  btn.addEventListener('click', function(e) {
+  btn.onclick = function(e) {
     e.stopPropagation();
     // 다른 패널 닫기
-    document.querySelectorAll('.ms-panel.open').forEach(function(p) {
-      if (p !== panel) p.classList.remove('open');
-    });
+    var allPanels = document.querySelectorAll('.ms-panel');
+    for (var j = 0; j < allPanels.length; j++) {
+      if (allPanels[j] !== panel) allPanels[j].classList.remove('open');
+    }
     panel.classList.toggle('open');
-  });
+  };
 
   // 전체 선택 체크박스
-  var selectAllCb = panel.querySelector('[data-select-all="' + fid + '"]');
-  if (selectAllCb) {
-    selectAllCb.addEventListener('click', function(e) {
+  var saCheckbox = panel.querySelector('[data-sa="' + fid + '"]');
+  if (saCheckbox) {
+    saCheckbox.onclick = function(e) {
       e.stopPropagation();
-      var itemCbs = panel.querySelectorAll('.ms-item input[type="checkbox"]');
-      if (selectAllCb.checked) {
-        // 전체 선택 → 개별 전부 해제 (필터 없음 = 전체)
-        for (var j = 0; j < itemCbs.length; j++) itemCbs[j].checked = false;
-      } else {
-        // 전체 해제 → 개별도 전부 해제
-        for (var j = 0; j < itemCbs.length; j++) itemCbs[j].checked = false;
-      }
+      // 전체 선택 → 개별 전부 해제
+      var itemCbs = panel.querySelectorAll('input[data-fid="' + fid + '"]');
+      for (var j = 0; j < itemCbs.length; j++) itemCbs[j].checked = false;
+      saCheckbox.checked = true;
       updateMSBtn(fid);
       applyFilters();
-    });
+    };
   }
 
-  // 개별 체크박스 변경
-  var msItems = panel.querySelectorAll('.ms-item input[type="checkbox"]');
-  for (var j = 0; j < msItems.length; j++) {
-    msItems[j].addEventListener('click', function(e) {
-      e.stopPropagation(); // 패널 닫힘 방지
-      syncSelectAll(fid);
-      updateMSBtn(fid);
-      applyFilters();
-    });
+  // 개별 체크박스
+  var itemCbs = panel.querySelectorAll('input[data-fid="' + fid + '"]');
+  for (var j = 0; j < itemCbs.length; j++) {
+    (function(cb) {
+      cb.onclick = function(e) {
+        e.stopPropagation();
+        // 개별 항목 변경 → 전체 선택 동기화
+        var checked = panel.querySelectorAll('input[data-fid="' + fid + '"]:checked');
+        if (saCheckbox) saCheckbox.checked = (checked.length === 0);
+        updateMSBtn(fid);
+        applyFilters();
+      };
+    })(itemCbs[j]);
   }
-}
-
-function syncSelectAll(fid) {
-  var wrap = document.querySelector('[data-fid="' + fid + '"]');
-  if (!wrap) return;
-  var selectAllCb = wrap.querySelector('[data-select-all="' + fid + '"]');
-  if (!selectAllCb) return;
-  var checkedCount = wrap.querySelectorAll('.ms-item input[type="checkbox"]:checked').length;
-  selectAllCb.checked = (checkedCount === 0);
 }
 
 function updateMSBtn(fid) {
   var wrap = document.querySelector('[data-fid="' + fid + '"]');
   if (!wrap) return;
   var btn = wrap.querySelector('.ms-btn');
-  var checked = wrap.querySelectorAll('.ms-item input[type="checkbox"]:checked');
+  var checked = wrap.querySelectorAll('input[data-fid="' + fid + '"]:checked');
   var arr = [];
   for (var i = 0; i < checked.length; i++) arr.push(checked[i].value);
 
@@ -152,19 +102,15 @@ function updateMSBtn(fid) {
     'f-subtitles':'모든 자막', 'f-duration':'모든 시간', 'f-score':'모든 점수', 'f-attr':'모든 강의'
   };
 
-  if (arr.length === 0) {
-    btn.textContent = defaults[fid] || '전체';
-  } else if (arr.length === 1) {
-    btn.textContent = arr[0];
-  } else {
-    btn.textContent = arr[0] + ' 외 ' + (arr.length - 1) + '개';
-  }
+  if (arr.length === 0) btn.textContent = defaults[fid] || '전체';
+  else if (arr.length === 1) btn.textContent = arr[0];
+  else btn.textContent = arr[0] + ' 외 ' + (arr.length - 1) + '개';
 }
 
 function getMSValues(fid) {
   var wrap = document.querySelector('[data-fid="' + fid + '"]');
   if (!wrap) return [];
-  var checked = wrap.querySelectorAll('.ms-item input[type="checkbox"]:checked');
+  var checked = wrap.querySelectorAll('input[data-fid="' + fid + '"]:checked');
   var arr = [];
   for (var i = 0; i < checked.length; i++) arr.push(checked[i].value);
   return arr;
@@ -173,12 +119,26 @@ function getMSValues(fid) {
 function setMSValues(fid, values) {
   var wrap = document.querySelector('[data-fid="' + fid + '"]');
   if (!wrap) return;
-  var cbs = wrap.querySelectorAll('.ms-item input[type="checkbox"]');
-  for (var i = 0; i < cbs.length; i++) {
-    cbs[i].checked = (values.indexOf(cbs[i].value) !== -1);
-  }
-  syncSelectAll(fid);
+  var cbs = wrap.querySelectorAll('input[data-fid="' + fid + '"]');
+  for (var i = 0; i < cbs.length; i++) cbs[i].checked = (values.indexOf(cbs[i].value) !== -1);
+  var saCheckbox = wrap.querySelector('[data-sa="' + fid + '"]');
+  if (saCheckbox) saCheckbox.checked = (values.length === 0);
   updateMSBtn(fid);
+}
+
+// ★ 특정 필터의 특정 값 해제
+function removeFilterValue(fid, val) {
+  var wrap = document.querySelector('[data-fid="' + fid + '"]');
+  if (!wrap) return;
+  var cbs = wrap.querySelectorAll('input[data-fid="' + fid + '"]');
+  for (var i = 0; i < cbs.length; i++) {
+    if (cbs[i].value === val) { cbs[i].checked = false; break; }
+  }
+  var saCheckbox = wrap.querySelector('[data-sa="' + fid + '"]');
+  var checked = wrap.querySelectorAll('input[data-fid="' + fid + '"]:checked');
+  if (saCheckbox) saCheckbox.checked = (checked.length === 0);
+  updateMSBtn(fid);
+  applyFilters();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -190,14 +150,11 @@ function translateKeywords(keywords) {
     var kw = keywords[i];
     translated.push(kw);
     var mapped = KO_EN_MAP[kw];
-    if (mapped) { for (var j = 0; j < mapped.length; j++) translated.push(mapped[j]); }
+    if (mapped) for (var j = 0; j < mapped.length; j++) translated.push(mapped[j]);
     var entries = Object.entries(KO_EN_MAP);
     for (var j = 0; j < entries.length; j++) {
-      var ko = entries[j][0], enList = entries[j][1];
-      for (var k = 0; k < enList.length; k++) {
-        if (enList[k].toLowerCase() === kw.toLowerCase() && translated.indexOf(ko) === -1) {
-          translated.push(ko);
-        }
+      for (var k = 0; k < entries[j][1].length; k++) {
+        if (entries[j][1][k].toLowerCase() === kw.toLowerCase() && translated.indexOf(entries[j][0]) === -1) translated.push(entries[j][0]);
       }
     }
   }
@@ -205,7 +162,7 @@ function translateKeywords(keywords) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 스코어링
+// 스코어링 — 한국어 키워드 보너스 추가
 // ═══════════════════════════════════════════════════════════
 function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   var config = SENSITIVITY_CONFIG[sensitivity] || SENSITIVITY_CONFIG.balanced;
@@ -251,8 +208,19 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
       if (config.scoreWeights.headline > 0 && headlineLower.indexOf(kwl) !== -1) totalScore += 20;
       if (config.scoreWeights.objectives > 0 && objectivesLower.indexOf(kwl) !== -1) totalScore += 10;
     }
+
+    // ★ #4: 한국어 키워드 원본이 직접 매칭되면 추가 보너스
+    for (var i = 0; i < originalKeywords.length; i++) {
+      var origKw = originalKeywords[i].toLowerCase();
+      // 한국어인지 체크
+      if (/[가-힣]/.test(origKw)) {
+        if (titleLower.indexOf(origKw) !== -1) totalScore += 50; // 한국어 제목 매칭 보너스
+        if (headlineLower.indexOf(origKw) !== -1) totalScore += 20;
+      }
+    }
   }
 
+  // 확장 키워드 보너스
   var transOrig = originalKeywords ? translateKeywords(originalKeywords) : [];
   for (var i = 0; i < keywords.length; i++) {
     var kwl = keywords[i].toLowerCase();
@@ -270,6 +238,16 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   else if (course.rating >= 4.0) totalScore += 2;
   if (course.enrollments >= 10000) totalScore += 3;
   else if (course.enrollments >= 1000) totalScore += 1;
+
+  // ★ #4: 한국어 자막 있으면 한국어 검색 시 보너스
+  if (originalKeywords) {
+    var hasKoreanQuery = false;
+    for (var i = 0; i < originalKeywords.length; i++) {
+      if (/[가-힣]/.test(originalKeywords[i])) { hasKoreanQuery = true; break; }
+    }
+    if (hasKoreanQuery && hasKoreanSub(course)) totalScore += 10;
+  }
+
   return totalScore;
 }
 
@@ -279,10 +257,10 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
 function filterWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   var config = SENSITIVITY_CONFIG[sensitivity] || SENSITIVITY_CONFIG.balanced;
   var filterKws = (originalKeywords && originalKeywords.length > 0) ? translateKeywords(originalKeywords) : keywords;
-  var coreText = ((course.title || '') + ' ' + (course.category || '') + ' ' + (course.topic || '') + ' ' + (course.headline || '')).toLowerCase();
+  var coreText = ((course.title||'') + ' ' + (course.category||'') + ' ' + (course.topic||'') + ' ' + (course.headline||'')).toLowerCase();
   var searchText = coreText;
-  if (sensitivity === 'wide') searchText += ' ' + (course.objectives || '') + ' ' + (course.description || '');
-  else if (sensitivity === 'balanced') searchText += ' ' + (course.objectives || '');
+  if (sensitivity === 'wide') searchText += ' ' + (course.objectives||'') + ' ' + (course.description||'');
+  else if (sensitivity === 'balanced') searchText += ' ' + (course.objectives||'');
   searchText = searchText.toLowerCase();
 
   if (S.searchMode === 'and') {
@@ -304,7 +282,7 @@ function filterWithSensitivity(course, keywords, sensitivity, originalKeywords) 
 }
 
 // ═══════════════════════════════════════════════════════════
-// applyFilters
+// applyFilters — 모든 필터 동시 적용
 // ═══════════════════════════════════════════════════════════
 function applyFilters() {
   var cats = getMSValues('f-category');
@@ -319,42 +297,49 @@ function applyFilters() {
   var sensitivity = S.sensitivity || 'balanced';
   var filtered = S.courses.slice();
 
-  // ★ 필터 적용 — 빈 배열 = 전체 선택 = 필터 안 걸림
-  if (S.searchMode === 'and' || !S.searchMode) {
-    if (cats.length > 0) filtered = filtered.filter(function(c) { for (var i=0;i<cats.length;i++) { if (c.category && c.category.indexOf(cats[i]) !== -1) return true; } return false; });
-    if (diffs.length > 0) filtered = filtered.filter(function(c) { for (var i=0;i<diffs.length;i++) { if (c.difficulty && c.difficulty.toUpperCase() === diffs[i].toUpperCase()) return true; } return false; });
-    if (langs.length > 0) filtered = filtered.filter(function(c) { return langs.indexOf(c.language) !== -1; });
-    if (subs.length > 0) filtered = filtered.filter(function(c) { if (!c.subtitles || c.subtitles === '없음') return false; for (var i=0;i<subs.length;i++) { if (c.subtitles.toLowerCase().indexOf(subs[i].toLowerCase()) !== -1) return true; } return false; });
-    if (attrs.indexOf('NEW') !== -1) filtered = filtered.filter(function(c) { return c.isNew; });
-  } else {
-    var hasFilter = cats.length > 0 || diffs.length > 0 || langs.length > 0 || subs.length > 0 || attrs.length > 0;
-    if (hasFilter) {
-      filtered = filtered.filter(function(c) {
-        if (cats.length > 0) { for (var i=0;i<cats.length;i++) { if (c.category && c.category.indexOf(cats[i]) !== -1) return true; } }
-        if (diffs.length > 0) { for (var i=0;i<diffs.length;i++) { if (c.difficulty && c.difficulty.toUpperCase() === diffs[i].toUpperCase()) return true; } }
-        if (langs.length > 0 && langs.indexOf(c.language) !== -1) return true;
-        if (subs.length > 0 && c.subtitles && c.subtitles !== '없음') { for (var i=0;i<subs.length;i++) { if (c.subtitles.toLowerCase().indexOf(subs[i].toLowerCase()) !== -1) return true; } }
-        if (attrs.indexOf('NEW') !== -1 && c.isNew) return true;
-        return false;
-      });
-    }
+  // ★ 모든 필터를 AND로 적용 (각 필터 내부는 OR)
+  // 빈 배열 = 전체 선택 = 필터 안 걸림
+  if (cats.length > 0) {
+    filtered = filtered.filter(function(c) {
+      for (var i = 0; i < cats.length; i++) { if (c.category && c.category.indexOf(cats[i]) !== -1) return true; }
+      return false;
+    });
   }
-
+  if (diffs.length > 0) {
+    filtered = filtered.filter(function(c) {
+      for (var i = 0; i < diffs.length; i++) { if (c.difficulty && c.difficulty.toUpperCase() === diffs[i].toUpperCase()) return true; }
+      return false;
+    });
+  }
+  if (langs.length > 0) {
+    filtered = filtered.filter(function(c) { return langs.indexOf(c.language) !== -1; });
+  }
+  if (subs.length > 0) {
+    filtered = filtered.filter(function(c) {
+      if (!c.subtitles || c.subtitles === '없음') return false;
+      for (var i = 0; i < subs.length; i++) { if (c.subtitles.toLowerCase().indexOf(subs[i].toLowerCase()) !== -1) return true; }
+      return false;
+    });
+  }
+  if (attrs.indexOf('NEW') !== -1) {
+    filtered = filtered.filter(function(c) { return c.isNew; });
+  }
   if (durations.length > 0) {
     filtered = filtered.filter(function(c) {
       var m = c.contentLength || 0;
-      for (var i=0;i<durations.length;i++) {
+      for (var i = 0; i < durations.length; i++) {
         var d = durations[i];
-        if (d==='60' && m<60) return true;
-        if (d==='120' && m>=60 && m<120) return true;
-        if (d==='180' && m>=120 && m<180) return true;
-        if (d==='240' && m>=180 && m<240) return true;
-        if (d==='300' && m>=240) return true;
+        if (d === '60' && m < 60) return true;
+        if (d === '120' && m >= 60 && m < 120) return true;
+        if (d === '180' && m >= 120 && m < 180) return true;
+        if (d === '240' && m >= 180 && m < 240) return true;
+        if (d === '300' && m >= 240) return true;
       }
       return false;
     });
   }
 
+  // 키워드 검색
   if (searchText) {
     var originalKeywords = [];
     var parts = searchText.split(/[,\s]+/);
@@ -369,7 +354,10 @@ function applyFilters() {
     }
     var config = SENSITIVITY_CONFIG[sensitivity];
     if (config.minScore > 0) filtered = filtered.filter(function(c) { return c._score >= config.minScore; });
-    if (scores.length > 0) filtered = filtered.filter(function(c) { for (var i=0;i<scores.length;i++) { if (c._score >= parseInt(scores[i])) return true; } return false; });
+    if (scores.length > 0) filtered = filtered.filter(function(c) {
+      for (var i = 0; i < scores.length; i++) { if (c._score >= parseInt(scores[i])) return true; }
+      return false;
+    });
   } else {
     for (var i = 0; i < filtered.length; i++) filtered[i]._score = 0;
   }
@@ -392,42 +380,82 @@ function applyFilters() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 필터 칩 렌더링
+// ★ 필터 칩 — 직접 onclick 바인딩 (이벤트 위임 X)
 // ═══════════════════════════════════════════════════════════
 function renderActiveFilters() {
   var container = document.getElementById('active-filters');
   if (!container) return;
-  var html = '';
 
-  function addChips(fid, vals, label) {
-    for (var i = 0; i < vals.length; i++) {
-      var v = vals[i];
-      var safe = v.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-      html += '<span class="filter-chip">' + label + ': ' + v + ' <button class="filter-chip-x" data-fid="' + fid + '" data-val="' + safe + '">×</button></span>';
+  // 빈 div로 초기화
+  while (container.firstChild) container.removeChild(container.firstChild);
+
+  function addChip(fid, val, label) {
+    var span = document.createElement('span');
+    span.className = 'filter-chip';
+    span.textContent = label + ': ' + val + ' ';
+    var xBtn = document.createElement('button');
+    xBtn.className = 'filter-chip-x';
+    xBtn.textContent = '×';
+    xBtn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      removeFilterValue(fid, val);
+    };
+    span.appendChild(xBtn);
+    container.appendChild(span);
+  }
+
+  var fids = [
+    { fid: 'f-category', label: '카테고리' },
+    { fid: 'f-difficulty', label: '난이도' },
+    { fid: 'f-language', label: '언어' },
+    { fid: 'f-subtitles', label: '자막' },
+    { fid: 'f-duration', label: '시간' },
+    { fid: 'f-score', label: '추천도' },
+    { fid: 'f-attr', label: '속성' }
+  ];
+
+  for (var i = 0; i < fids.length; i++) {
+    var vals = getMSValues(fids[i].fid);
+    for (var j = 0; j < vals.length; j++) {
+      addChip(fids[i].fid, vals[j], fids[i].label);
     }
   }
 
-  addChips('f-category', getMSValues('f-category'), '카테고리');
-  addChips('f-difficulty', getMSValues('f-difficulty'), '난이도');
-  addChips('f-language', getMSValues('f-language'), '언어');
-  addChips('f-subtitles', getMSValues('f-subtitles'), '자막');
-  addChips('f-duration', getMSValues('f-duration'), '시간');
-  addChips('f-score', getMSValues('f-score'), '추천도');
-  addChips('f-attr', getMSValues('f-attr'), '속성');
+  // 모드 칩
+  var modeChip = document.createElement('span');
+  modeChip.className = 'filter-chip';
+  modeChip.style.background = 'rgba(124,108,240,0.25)';
+  modeChip.textContent = '모드: ' + (S.searchMode || 'and').toUpperCase();
+  container.appendChild(modeChip);
 
-  html += '<span class="filter-chip" style="background:rgba(124,108,240,0.25);">모드: ' + (S.searchMode || 'and').toUpperCase() + '</span>';
-
+  // 감도 칩
   var sl = SENSITIVITY_CONFIG[S.sensitivity || 'balanced'];
   if (S.sensitivity && S.sensitivity !== 'balanced' && sl) {
-    html += '<span class="filter-chip">감도: ' + sl.label + '</span>';
+    var sensChip = document.createElement('span');
+    sensChip.className = 'filter-chip';
+    sensChip.textContent = '감도: ' + sl.label;
+    container.appendChild(sensChip);
   }
 
+  // 검색어 칩
   var q = document.getElementById('search-input').value.trim();
   if (q) {
-    html += '<span class="filter-chip">검색: ' + (q.length > 30 ? q.substring(0,30) + '...' : q) + ' <button class="filter-chip-x" data-fid="search" data-val="">×</button></span>';
+    var searchChip = document.createElement('span');
+    searchChip.className = 'filter-chip';
+    searchChip.textContent = '검색: ' + (q.length > 30 ? q.substring(0, 30) + '...' : q) + ' ';
+    var searchX = document.createElement('button');
+    searchX.className = 'filter-chip-x';
+    searchX.textContent = '×';
+    searchX.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById('search-input').value = '';
+      applyFilters();
+    };
+    searchChip.appendChild(searchX);
+    container.appendChild(searchChip);
   }
-
-  container.innerHTML = html;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -440,9 +468,9 @@ function resetAll(notify) {
   for (var i = 0; i < fids.length; i++) {
     var wrap = document.querySelector('[data-fid="' + fids[i] + '"]');
     if (!wrap) continue;
-    var cbs = wrap.querySelectorAll('.ms-item input[type="checkbox"]:checked');
+    var cbs = wrap.querySelectorAll('input[data-fid="' + fids[i] + '"]:checked');
     for (var j = 0; j < cbs.length; j++) cbs[j].checked = false;
-    var sa = wrap.querySelector('[data-select-all="' + fids[i] + '"]');
+    var sa = wrap.querySelector('[data-sa="' + fids[i] + '"]');
     if (sa) sa.checked = true;
     updateMSBtn(fids[i]);
   }
@@ -462,7 +490,6 @@ function resetAll(notify) {
   var ap = document.getElementById('ai-panel'); if (ap) ap.classList.remove('open');
   var fg = document.getElementById('filters-grid'); if (fg) fg.classList.remove('open');
   var ft = document.getElementById('btn-filter-toggle'); if (ft) ft.classList.remove('active');
-  S.selectedIds.clear();
-  updateFAB();
+  S.selectedIds.clear(); updateFAB();
   if (notify) { applyFilters(); toast('✨ 스캐너 초기화'); }
 }
