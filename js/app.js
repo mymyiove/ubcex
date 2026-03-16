@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// app.js — 메인 앱
+// app.js — 메인 앱 (직무 클릭 즉시 출발 + 기본 검색 적용)
 // ═══════════════════════════════════════════════════════════
 
 var ADMIN_CODE = 'jhj11';
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('btn-step1-next').addEventListener('click', goStep2);
   document.getElementById('input-subdomain').addEventListener('keyup', function(e) { if (e.key === 'Enter') goStep2(); });
 
-  // 게이트 직무 카드
+  // ★ 게이트 직무 카드 — 클릭 시 바로 출발
   var grid = document.getElementById('gate-job-grid');
   var curationEntries = Object.entries(CURATION);
   for (var i = 0; i < curationEntries.length; i++) {
@@ -41,13 +41,16 @@ document.addEventListener('DOMContentLoaded', function() {
       card.className = 'gate-job-card';
       card.dataset.family = id;
       card.innerHTML = '<span class="emoji">' + data.emoji + '</span><span class="label">' + data.name + '</span>';
-      card.addEventListener('click', function() { card.classList.toggle('selected'); });
+      card.addEventListener('click', function() {
+        card.classList.add('selected');
+        launch();
+      });
       grid.appendChild(card);
     })(curationEntries[i][0], curationEntries[i][1]);
   }
 
+  // ★ "자유롭게 우주 여행 출발!" = 직무 선택 없이 출발
   document.getElementById('btn-launch').addEventListener('click', launch);
-  document.getElementById('btn-skip').addEventListener('click', launch);
 
   // 스크롤 버튼
   window.addEventListener('scroll', function() {
@@ -218,7 +221,7 @@ function initApp() {
   if (typeof initHighlight === 'function') { initHighlight(); setupHoverPause(); }
   if (typeof initMissionCenter === 'function') initMissionCenter();
 
-  // 게이트 직무 → 미션센터 은하 자동 선택
+  // ★ 게이트 직무 → 미션센터 은하 자동 선택
   if (S.selectedFamilies.length > 0) {
     setTimeout(function() {
       var firstFamily = S.selectedFamilies[0];
@@ -402,6 +405,28 @@ function initApp() {
 
   // URL 파라미터
   applyURLParams();
+
+  // ★ 선택 직무가 있으면 해당 직무 카테고리로 기본 필터 적용
+  if (S.selectedFamilies.length > 0 && !document.getElementById('search-input').value.trim()) {
+    var jobCats = [];
+    for (var fi = 0; fi < S.selectedFamilies.length; fi++) {
+      var famData = CURATION[S.selectedFamilies[fi]];
+      if (famData && famData.roles) {
+        for (var ri = 0; ri < famData.roles.length; ri++) {
+          if (famData.roles[ri].cats) {
+            for (var ci = 0; ci < famData.roles[ri].cats.length; ci++) {
+              if (jobCats.indexOf(famData.roles[ri].cats[ci]) === -1) {
+                jobCats.push(famData.roles[ri].cats[ci]);
+              }
+            }
+          }
+        }
+      }
+    }
+    if (jobCats.length > 0) {
+      setMSValues('f-category', jobCats);
+    }
+  }
 
   // 첫 필터링
   applyFilters();
