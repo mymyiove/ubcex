@@ -630,3 +630,22 @@ body.translated-ltr #side-panel { top: 105px !important; height: calc(100vh - 10
 ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-light); }
 ::selection { background: rgba(124, 108, 240, 0.3); color: var(--text-bright); }
+
+/* ★ 검색 버튼 */
+.btn-search {
+  padding: 0 1rem;
+  flex-shrink: 0;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.btn-search:hover {
+  border-color: var(--accent);
+  color: var(--accent-light);
+  box-shadow: var(--shadow-glow);
+}
