@@ -93,7 +93,7 @@ function renderList() {
     tableHtml += '<tr style="--row-cat-color:' + color + '">' +
       '<td class="col-check"><input type="checkbox" data-id="' + c.id + '" ' + checked + '></td>' +
       '<td class="td-score">' + score + '</td>' +
-      '<td><span class="cat-badge" style="border-color:' + color + '">' + getCatEmoji(cat) + '</span></td>' +
+      '<td><span class="cat-badge" style="border-color:' + color + '" title="' + cat + '">' + getCatEmoji(cat) + '</span></td>'
       '<td class="td-title"><a class="course-link" data-id="' + c.id + '">' + c.title + '</a></td>' +
       '<td>' + rating + '</td>' +
       '<td>' + enroll + '</td>' +
