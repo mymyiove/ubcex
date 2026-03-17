@@ -767,3 +767,46 @@ button[title]:hover::after {
   transition: opacity 0.3s ease;
 }
 .tips-text.fade { opacity: 0; }
+
+
+/* ★ 팁 배너 — 우주선 콘솔 느낌 */
+.tips-banner {
+  max-width: var(--content-max);
+  margin: 0 auto 1.2rem;
+  padding: 0.8rem 1.5rem;
+  background: rgba(124, 108, 240, 0.06);
+  border: 1px solid var(--border-accent);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  min-height: 48px;
+}
+.tips-icon { font-size: 1.2rem; flex-shrink: 0; }
+.tips-text {
+  flex: 1;
+  font-family: 'Consolas', 'Courier New', monospace;
+  letter-spacing: 0.02em;
+  transition: opacity 0.4s ease;
+}
+.tips-text.fade { opacity: 0; }
+/* ★ 깜빡이는 커서 */
+.tips-text::after {
+  content: '▌';
+  color: var(--accent-light);
+  animation: cursorBlink 1s step-end infinite;
+  margin-left: 2px;
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ★ 로딩 오버레이 */
+#loading-overlay.active {
+  display: flex !important;
+}
