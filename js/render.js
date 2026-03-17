@@ -1,6 +1,5 @@
 // ═══════════════════════════════════════════════════════════
 // render.js — 통계 카드 + 테이블/카드/컴팩트 렌더링
-// 발견된 별 다운로드 + 수강자 K표시 + 스마트 결과 제한
 // ═══════════════════════════════════════════════════════════
 var currentSortColumn = null;
 var currentSortDirection = 'desc';
@@ -16,6 +15,11 @@ function formatEnrollments(n) {
   }
   var rounded = Math.round(n / 100) * 100;
   return rounded.toLocaleString() + '▲';
+}
+
+function safeCatTitle(cat) {
+  if (!cat) return '';
+  return cat.replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/&/g, '&amp;');
 }
 
 function getPageData() { return S.filtered.slice((S.page - 1) * S.rows, S.page * S.rows); }
@@ -93,7 +97,7 @@ function renderList() {
     tableHtml += '<tr style="--row-cat-color:' + color + '">' +
       '<td class="col-check"><input type="checkbox" data-id="' + c.id + '" ' + checked + '></td>' +
       '<td class="td-score">' + score + '</td>' +
-      '<td><span class="cat-badge" style="border-color:' + color + '" title="' + cat + '">' + getCatEmoji(cat) + '</span></td>'
+      '<td><span class="cat-badge" style="border-color:' + color + '" title="' + safeCatTitle(cat) + '">' + getCatEmoji(cat) + '</span></td>' +
       '<td class="td-title"><a class="course-link" data-id="' + c.id + '">' + c.title + '</a></td>' +
       '<td>' + rating + '</td>' +
       '<td>' + enroll + '</td>' +
@@ -118,7 +122,7 @@ function renderList() {
     cardHtml += '<div class="course-card" style="animation-delay:' + (i * 0.05) + 's">' +
       '<div class="card-cat-stripe" style="background:' + color + '"></div>' +
       '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-      '<span class="cat-badge" style="border-color:' + color + '">' + getCatEmoji(cat) + ' ' + cat + '</span>' +
+      '<span class="cat-badge" style="border-color:' + color + '" title="' + safeCatTitle(cat) + '">' + getCatEmoji(cat) + ' ' + cat + '</span>' +
       (c._score > 0 ? '<span class="score-badge score-high">' + c._score + '점</span>' : '') +
       '</div>' +
       '<h4><a class="course-link" data-id="' + c.id + '">' + c.title + '</a></h4>' +
@@ -252,7 +256,7 @@ function updateFAB() {
   }
 }
 
-// ═══ 가로형 통계 카드 — 발견된 별에도 다운로드 ═══
+// ═══ 가로형 통계 카드 ═══
 function renderDashCards() {
   var total = S.courses.length;
   var newCount = S.courses.filter(function(c) { return c.isNew; }).length;
@@ -324,12 +328,12 @@ function renderDashCards() {
   });
 }
 
-// ★ CSV 다운로드 — filtered 타입 추가
+// ★ CSV 다운로드 — 파일명에 검색어/필터 포함
 function downloadWithSelectedColumns() {
   var data;
   if (csvDownloadType === 'all') data = S.courses;
   else if (csvDownloadType === 'new') data = S.courses.filter(function(c) { return c.isNew; });
-  else if (csvDownloadType === 'filtered') data = S._fullFiltered || S.filtered; // ★ 전체 필터링 결과
+  else if (csvDownloadType === 'filtered') data = S._fullFiltered || S.filtered;
   else data = S.filtered;
 
   if (data.length === 0) { toast('데이터 없음', 'warning'); return; }
@@ -376,19 +380,18 @@ function downloadWithSelectedColumns() {
     rows.push(row.join(','));
   }
 
-  var label = csvDownloadType === 'all' ? '전체' : csvDownloadType === 'new' ? '신규' : '필터링';
-  
   // ★ 파일명에 검색어 + 필터 정보 추가
+  var label = csvDownloadType === 'all' ? '전체' : csvDownloadType === 'new' ? '신규' : '필터링';
   var filenameParts = [label];
+
   var searchQuery = document.getElementById('search-input').value.trim();
   if (searchQuery) {
-    // 파일명에 사용 불가한 문자 제거 + 30자 제한
     var safeQuery = searchQuery.replace(/[\\/:*?"<>|,]/g, '_').substring(0, 30);
     filenameParts.push(safeQuery);
   }
   var activeCats = getMSValues('f-category');
   if (activeCats.length > 0 && activeCats.length <= 3) {
-    filenameParts.push(activeCats.join('_').substring(0, 30));
+    filenameParts.push(activeCats.join('_').replace(/[\\/:*?"<>|]/g, '_').substring(0, 30));
   }
   var activeLangs = getMSValues('f-language');
   if (activeLangs.length > 0 && activeLangs.length <= 2) {
@@ -398,17 +401,15 @@ function downloadWithSelectedColumns() {
   if (activeUpdated.length > 0) {
     filenameParts.push(activeUpdated[0]);
   }
-  
+
   var filename = filenameParts.join('_') + '_' + S.subdomain + '_' + new Date().toISOString().slice(0, 10) + '.csv';
-  // 파일명 총 길이 제한 (100자)
   if (filename.length > 100) filename = filename.substring(0, 96) + '.csv';
-  
+
   var csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = filename;
-  
   a.click();
   URL.revokeObjectURL(a.href);
   document.getElementById('csv-modal-overlay').classList.remove('active');
