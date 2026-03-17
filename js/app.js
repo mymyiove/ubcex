@@ -186,11 +186,11 @@ function initApp() {
   var searchInput = document.getElementById('search-input');
   var debounceTimer;
   if (searchInput) {
+    // ★ 자동 검색 제거 — 검색 제안만 표시
     searchInput.addEventListener('input', function() {
       clearTimeout(debounceTimer);
-      S.showAllResults = false;
-      debounceTimer = setTimeout(applyFilters, 400);
-      setTimeout(function() { showSearchSuggestions(searchInput.value.trim()); }, 250);
+      // 검색 제안만 표시 (자동 검색 안 함)
+      debounceTimer = setTimeout(function() { showSearchSuggestions(searchInput.value.trim()); }, 250);
     });
     searchInput.addEventListener('focus', function() {
       if (searchInput.value.trim().length >= 2) showSearchSuggestions(searchInput.value.trim());
