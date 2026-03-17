@@ -57,9 +57,16 @@ function initHighlight() {
     return db - da;
   }).slice(0, 6);
 
-  var savedPicks = localStorage.getItem('curator_picks');
-  var pickIds = savedPicks ? JSON.parse(savedPicks) : DEFAULT_CURATOR_PICKS;
-  curatorPicks = pickIds.map(function(id) { return S.courses.find(function(c) { return c.id === id; }); }).filter(Boolean);
+  // ★ 항해사's PICK → 전체 강의 중 수강생 + 평점 기준 상위 5개 자동 선택
+  curatorPicks = S.courses
+    .filter(function(c) { return c.rating >= 4.5 && c.enrollments >= 5000; })
+    .sort(function(a, b) {
+      // 평점 × 수강생 가중치로 정렬
+      var scoreA = (a.rating || 0) * Math.log10(Math.max(a.enrollments || 1, 1));
+      var scoreB = (b.rating || 0) * Math.log10(Math.max(b.enrollments || 1, 1));
+      return scoreB - scoreA;
+    })
+    .slice(0, 5);
 
   // ★ 헤더 텍스트 — 자연스러운 조사
   var josa = getJobNameWithJosa(S.selectedFamilies);
