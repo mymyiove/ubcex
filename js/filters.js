@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// filters.js — 구문별 AND + 업데이트 필터 + 속성 삭제
+// filters.js — 시간 감쇠 + 키워드 핵심 구분 + 구문별 AND
 // ═══════════════════════════════════════════════════════════
 
 function initMultiSelects() {
@@ -9,7 +9,6 @@ function initMultiSelects() {
   populateMS('f-subtitles', getUniqueSubtitles());
   populateMS('f-duration', [{v:'60',l:'⏱️ 1시간 미만'},{v:'120',l:'⏱️ 1-2시간'},{v:'180',l:'⏱️ 2-3시간'},{v:'240',l:'⏱️ 3-4시간'},{v:'300',l:'⏱️ 4시간 이상'}]);
   populateMS('f-score', [{v:'100',l:'🎯 100점 이상'},{v:'200',l:'🎯 200점 이상'},{v:'300',l:'🎯 300점 이상'}]);
-  // ★ 속성 삭제 → 업데이트 필터 추가
   populateMS('f-updated', [
     {v:'1m', l:'📅 1개월 이내'},
     {v:'3m', l:'📅 3개월 이내'},
@@ -17,13 +16,6 @@ function initMultiSelects() {
     {v:'2y', l:'📅 2년 이내'},
     {v:'3y', l:'📅 3년 이내'}
   ]);
-  initChipHandler();
-}
-
-function initChipHandler() {
-  var container = document.getElementById('active-filters');
-  if (!container || container._bound) return;
-  container._bound = true;
 }
 
 function getUniqueSubtitles() {
@@ -168,7 +160,7 @@ function translateKeywords(keywords) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ★ 구문 매칭 — 구문 내 모든 단어가 텍스트에 있는지 (AND)
+// 구문 매칭 — 구문 내 모든 단어가 텍스트에 있는지 (AND)
 // ═══════════════════════════════════════════════════════════
 function phraseMatchesText(phrase, text) {
   var words = phrase.trim().split(/\s+/);
@@ -186,7 +178,7 @@ function phraseMatchesText(phrase, text) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ★ 업데이트 날짜 필터 헬퍼
+// 업데이트 날짜 필터 헬퍼
 // ═══════════════════════════════════════════════════════════
 function getUpdateCutoffDate(filterValue) {
   var now = new Date();
@@ -201,7 +193,26 @@ function getUpdateCutoffDate(filterValue) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 스코어링
+// ★ 키워드 핵심 구분: 마지막 키워드가 핵심어
+// "AI 영업" → "영업"이 핵심(1.0), "AI"는 수식어(0.75)
+// ═══════════════════════════════════════════════════════════
+function getKeywordWeights(originalKeywords) {
+  if (!originalKeywords || originalKeywords.length === 0) return {};
+  if (originalKeywords.length === 1) {
+    var w = {};
+    w[originalKeywords[0]] = 1.0;
+    return w;
+  }
+  var weights = {};
+  var total = originalKeywords.length;
+  for (var i = 0; i < total; i++) {
+    weights[originalKeywords[i]] = 0.5 + (0.5 * (i + 1) / total);
+  }
+  return weights;
+}
+
+// ═══════════════════════════════════════════════════════════
+// 스코어링 — 시간 감쇠 + 키워드 핵심 구분
 // ═══════════════════════════════════════════════════════════
 function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   var config = SENSITIVITY_CONFIG[sensitivity] || SENSITIVITY_CONFIG.balanced;
@@ -216,18 +227,31 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
 
   if (originalKeywords && originalKeywords.length > 0) {
     var originalCount = originalKeywords.length;
+    var kwWeights = getKeywordWeights(originalKeywords);
 
-    // ★ 구문별 제목 매칭
+    // 구문별 제목 매칭
     var titleMatchCount = 0;
+    var titleMatchWeightSum = 0;
     for (var i = 0; i < originalKeywords.length; i++) {
-      if (phraseMatchesText(originalKeywords[i], titleLower)) titleMatchCount++;
+      if (phraseMatchesText(originalKeywords[i], titleLower)) {
+        titleMatchCount++;
+        titleMatchWeightSum += (kwWeights[originalKeywords[i]] || 1.0);
+      }
     }
 
-    if (titleMatchCount >= originalCount && originalCount >= 2) totalScore += 500;
-    else if (titleMatchCount >= originalCount) totalScore += 350;
-    else if (titleMatchCount > 0) totalScore += titleMatchCount * 100;
+    if (titleMatchCount >= originalCount && originalCount >= 2) {
+      totalScore += Math.round(500 * (titleMatchWeightSum / originalCount));
+    } else if (titleMatchCount >= originalCount) {
+      totalScore += 350;
+    } else if (titleMatchCount > 0) {
+      for (var i = 0; i < originalKeywords.length; i++) {
+        if (phraseMatchesText(originalKeywords[i], titleLower)) {
+          totalScore += Math.round(100 * (kwWeights[originalKeywords[i]] || 1.0));
+        }
+      }
+    }
 
-    // ★ 구문별 전체 텍스트 매칭
+    // 전체 텍스트 매칭
     var allTextMatchCount = 0;
     for (var i = 0; i < originalKeywords.length; i++) {
       if (phraseMatchesText(originalKeywords[i], allText)) allTextMatchCount++;
@@ -236,14 +260,18 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
       totalScore += (titleMatchCount === 0) ? 120 : 80;
     }
 
-    // 개별 위치별 점수
-    var translatedOriginals = translateKeywords(originalKeywords);
-    for (var i = 0; i < translatedOriginals.length; i++) {
-      var kwl = translatedOriginals[i].toLowerCase();
-      if (catLower.indexOf(kwl) !== -1) totalScore += 40;
-      if (topicLower.indexOf(kwl) !== -1) totalScore += 30;
-      if (config.scoreWeights.headline > 0 && headlineLower.indexOf(kwl) !== -1) totalScore += 20;
-      if (config.scoreWeights.objectives > 0 && objectivesLower.indexOf(kwl) !== -1) totalScore += 10;
+    // 개별 위치별 점수 (가중치 반영)
+    for (var i = 0; i < originalKeywords.length; i++) {
+      var kw = originalKeywords[i];
+      var weight = kwWeights[kw] || 1.0;
+      var translated = translateKeywords([kw]);
+      for (var j = 0; j < translated.length; j++) {
+        var kwl = translated[j].toLowerCase();
+        if (catLower.indexOf(kwl) !== -1) totalScore += Math.round(40 * weight);
+        if (topicLower.indexOf(kwl) !== -1) totalScore += Math.round(30 * weight);
+        if (config.scoreWeights.headline > 0 && headlineLower.indexOf(kwl) !== -1) totalScore += Math.round(20 * weight);
+        if (config.scoreWeights.objectives > 0 && objectivesLower.indexOf(kwl) !== -1) totalScore += Math.round(10 * weight);
+      }
     }
 
     // 한국어 키워드 보너스
@@ -270,6 +298,7 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
     if (topicLower.indexOf(kwl) !== -1) totalScore += 3;
   }
 
+  // 품질 보너스
   if (course.isNew) totalScore += 3;
   if (hasKoreanSub(course)) totalScore += 3;
   if (course.rating >= 4.5) totalScore += 5;
@@ -277,6 +306,7 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   if (course.enrollments >= 10000) totalScore += 3;
   else if (course.enrollments >= 1000) totalScore += 1;
 
+  // 한국어 검색 + 한국어 자막 보너스
   if (originalKeywords) {
     var hasKoreanQuery = false;
     for (var i = 0; i < originalKeywords.length; i++) {
@@ -285,11 +315,20 @@ function scoreWithSensitivity(course, keywords, sensitivity, originalKeywords) {
     if (hasKoreanQuery && hasKoreanSub(course)) totalScore += 10;
   }
 
+  // ★ 시간 감쇠
+  if (course.lastUpdated) {
+    var monthsAgo = (Date.now() - new Date(course.lastUpdated).getTime()) / (1000 * 60 * 60 * 24 * 30);
+    if (monthsAgo <= 1) totalScore = Math.round(totalScore * 1.3);
+    else if (monthsAgo <= 3) totalScore = Math.round(totalScore * 1.2);
+    else if (monthsAgo <= 12) totalScore = Math.round(totalScore * 1.1);
+    else if (monthsAgo > 36) totalScore = Math.round(totalScore * 0.8);
+  }
+
   return totalScore;
 }
 
 // ═══════════════════════════════════════════════════════════
-// ★ 필터링 — 구문별 AND
+// 필터링 — 구문별 AND
 // ═══════════════════════════════════════════════════════════
 function filterWithSensitivity(course, keywords, sensitivity, originalKeywords) {
   var config = SENSITIVITY_CONFIG[sensitivity] || SENSITIVITY_CONFIG.balanced;
@@ -313,7 +352,7 @@ function filterWithSensitivity(course, keywords, sensitivity, originalKeywords) 
 }
 
 // ═══════════════════════════════════════════════════════════
-// ★ applyFilters — 업데이트 필터 + 구문 분리
+// applyFilters
 // ═══════════════════════════════════════════════════════════
 function applyFilters() {
   var cats = getMSValues('f-category');
@@ -328,25 +367,21 @@ function applyFilters() {
   var sensitivity = S.sensitivity || 'balanced';
   var filtered = S.courses.slice();
 
-  // 카테고리
   if (cats.length > 0) {
     filtered = filtered.filter(function(c) {
       for (var i = 0; i < cats.length; i++) { if (c.category && c.category.indexOf(cats[i]) !== -1) return true; }
       return false;
     });
   }
-  // 난이도
   if (diffs.length > 0) {
     filtered = filtered.filter(function(c) {
       for (var i = 0; i < diffs.length; i++) { if (c.difficulty && c.difficulty.toUpperCase() === diffs[i].toUpperCase()) return true; }
       return false;
     });
   }
-  // 언어
   if (langs.length > 0) {
     filtered = filtered.filter(function(c) { return langs.indexOf(c.language) !== -1; });
   }
-  // 자막
   if (subs.length > 0) {
     filtered = filtered.filter(function(c) {
       if (!c.subtitles || c.subtitles === '없음') return false;
@@ -354,7 +389,6 @@ function applyFilters() {
       return false;
     });
   }
-  // 시간
   if (durations.length > 0) {
     filtered = filtered.filter(function(c) {
       var m = c.contentLength || 0;
@@ -371,13 +405,10 @@ function applyFilters() {
   }
   // ★ 업데이트 필터
   if (updatedFilters.length > 0) {
-    // 가장 넓은 범위의 필터 적용 (예: 3년 이내 + 1년 이내 → 3년 이내)
     var earliestCutoff = null;
     for (var i = 0; i < updatedFilters.length; i++) {
       var cutoff = getUpdateCutoffDate(updatedFilters[i]);
-      if (cutoff && (!earliestCutoff || cutoff < earliestCutoff)) {
-        earliestCutoff = cutoff;
-      }
+      if (cutoff && (!earliestCutoff || cutoff < earliestCutoff)) earliestCutoff = cutoff;
     }
     if (earliestCutoff) {
       filtered = filtered.filter(function(c) {
@@ -417,6 +448,7 @@ function applyFilters() {
     });
   } else {
     for (var i = 0; i < filtered.length; i++) filtered[i]._score = 0;
+    // 검색어 없을 때 기본 정렬: 수강자 수 내림차순
     filtered.sort(function(a, b) { return (b.enrollments || 0) - (a.enrollments || 0); });
   }
 
@@ -520,7 +552,6 @@ function renderActiveFilters() {
 function resetAll(notify) {
   if (notify === undefined) notify = true;
   document.getElementById('search-input').value = '';
-  // ★ f-attr 삭제 → f-updated 추가
   var fids = ['f-category','f-difficulty','f-language','f-subtitles','f-duration','f-score','f-updated'];
   for (var i = 0; i < fids.length; i++) {
     var wrap = document.querySelector('[data-fid="' + fids[i] + '"]');
