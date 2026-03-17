@@ -570,3 +570,34 @@ function showSearchSuggestions(query) {
     })(items[i]);
   }
 }
+
+// initApp() 함수 맨 끝, 키보드 단축키 바인딩 뒤에 추가:
+
+  // ★ 활용팁 롤링 배너
+  var tips = [
+    '🔍 띄어쓰기는 AND 검색! "AI 영업" → AI와 영업이 모두 포함된 강의만 표시됩니다.',
+    '🤖 AI 내비로 키워드를 확장해보세요! 단, 5개 미만이 최적의 품질을 보장합니다.',
+    '🎚️ 검색 결과가 너무 적으면 감도를 🔭 광역으로, 너무 많으면 🔬 정밀로 조절하세요.',
+    '📋 강의를 체크하고 📋 미션 보고서로 CSV 다운로드할 수 있어요!',
+    '🇰🇷 한국어로 검색하면 자동으로 영어 번역도 함께 검색됩니다.',
+    '⌨️ / 키를 누르면 검색창으로 바로 이동! Esc로 패널을 닫을 수 있어요.',
+    '🛸 미션 센터에서 직무별 맞춤 강의를 탐색해보세요!',
+    '⭐ 강의 제목을 클릭하면 상세 정보 + 한국어 번역을 볼 수 있어요.',
+    '🔗 공유 링크로 동료에게 검색 조건을 공유할 수 있습니다.',
+    '📅 업데이트 필터로 최신 강의만 골라볼 수 있어요!',
+    '🚀 로고를 3번 빠르게 클릭하면 항해사 PICK을 관리할 수 있어요!',
+    '📊 AND 모드는 정확한 결과, OR 모드는 더 많은 결과를 보여줍니다.',
+  ];
+  var tipIndex = 0;
+  var tipsText = document.getElementById('tips-text');
+  if (tipsText) {
+    tipsText.textContent = tips[0];
+    setInterval(function() {
+      tipsText.classList.add('fade');
+      setTimeout(function() {
+        tipIndex = (tipIndex + 1) % tips.length;
+        tipsText.textContent = tips[tipIndex];
+        tipsText.classList.remove('fade');
+      }, 300);
+    }, 6000);
+  }
