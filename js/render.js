@@ -19,7 +19,8 @@ function formatEnrollments(n) {
 
 function safeCatTitle(cat) {
   if (!cat) return '';
-  return cat.replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/&/g, '&amp;');
+  // ★ & 를 가장 먼저 처리해야 함!
+  return cat.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function getPageData() { return S.filtered.slice((S.page - 1) * S.rows, S.page * S.rows); }
