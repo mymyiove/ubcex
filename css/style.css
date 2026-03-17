@@ -615,5 +615,3 @@ button[title]:hover::after {
   padding-right: 1.2rem !important;
 }
 
-/* ★ 게이트에서 돌아가기 버튼 숨기기 */
-#gate-page ~ .app-footer #btn-back-gate { display: none; }
