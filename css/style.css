@@ -619,7 +619,7 @@ button[title]:hover::after {
 #gate-page {
   min-height: auto !important;
   padding-bottom: 1rem !important;
-  padding-top: 5rem !important;   
+  padding-top: 10rem !important;   
 }
 
 /* ★ 게이트에서 돌아가기 버튼 숨기기 */
