@@ -357,11 +357,13 @@ function initApp() {
   var backGateBtn = document.getElementById('btn-back-gate');
   if (backGateBtn) {
     backGateBtn.addEventListener('click', function() {
-      if (confirm('게이트 페이지로 돌아가시겠습니까?\n현재 검색 상태가 초기화됩니다.')) {
+      if (confirm('처음 화면으로 돌아가시겠습니까?\n현재 검색 상태가 초기화됩니다.')) {
         document.getElementById('app-container').style.display = 'none';
         document.getElementById('gate-page').style.display = '';
-        document.getElementById('gate-step-1').classList.remove('active');
-        document.getElementById('gate-step-2').classList.add('active');
+        // ★ 스텝1(모선 주소 입력)으로 돌아가기
+        document.getElementById('gate-step-2').classList.remove('active');
+        document.getElementById('gate-step-1').classList.add('active');
+        
         // 이전 선택 초기화
         var selectedCards = document.querySelectorAll('.gate-job-card.selected');
         for (var i = 0; i < selectedCards.length; i++) selectedCards[i].classList.remove('selected');
