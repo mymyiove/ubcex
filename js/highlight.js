@@ -57,15 +57,10 @@ function initHighlight() {
     return db - da;
   }).slice(0, 6);
 
-  // ★ 항해사's PICK → 전체 강의 중 수강생 + 평점 기준 상위 5개 자동 선택
+  // 초기에는 전체 인기 강의로 설정 (applyFilters 후 updateCuratorPicks에서 갱신)
   curatorPicks = S.courses
     .filter(function(c) { return c.rating >= 4.5 && c.enrollments >= 5000; })
-    .sort(function(a, b) {
-      // 평점 × 수강생 가중치로 정렬
-      var scoreA = (a.rating || 0) * Math.log10(Math.max(a.enrollments || 1, 1));
-      var scoreB = (b.rating || 0) * Math.log10(Math.max(b.enrollments || 1, 1));
-      return scoreB - scoreA;
-    })
+    .sort(function(a, b) { return (b.enrollments || 0) - (a.enrollments || 0); })
     .slice(0, 5);
 
   // ★ 헤더 텍스트 — 자연스러운 조사
@@ -130,3 +125,11 @@ function startAutoRotation() { stopAutoRotation(); popularInterval=setInterval(f
 function stopAutoRotation() { if(popularInterval)clearInterval(popularInterval); if(curatorInterval)clearInterval(curatorInterval); }
 function setupHoverPause() { ['#popular-carousel','#curator-carousel'].forEach(function(sel){var el=$(sel);if(el){el.addEventListener('mouseenter',stopAutoRotation);el.addEventListener('mouseleave',startAutoRotation);}}); }
 function manageCuratorPicks() { var currentPicks=localStorage.getItem('curator_picks'); var pickIds=currentPicks?JSON.parse(currentPicks):DEFAULT_CURATOR_PICKS; var newPicks=prompt("항해사's PICK 강의 ID (쉼표 구분):",pickIds.join(',')); if(newPicks!==null){var ids=newPicks.split(',').map(function(id){return id.trim();}).filter(Boolean);localStorage.setItem('curator_picks',JSON.stringify(ids));curatorPicks=ids.map(function(id){return S.courses.find(function(c){return c.id===id;});}).filter(Boolean);curatorIndex=0;renderCuratorCarousel();toast("⭐ 항해사's PICK "+curatorPicks.length+"개 업데이트");} }
+
+// ★ 필터링 결과 기반으로 항해사's PICK 갱신
+function updateCuratorPicks() {
+  if (!S.filtered || S.filtered.length === 0) return;
+  curatorPicks = S.filtered.slice(0, 5);
+  curatorIndex = 0;
+  renderCuratorCarousel();
+}
