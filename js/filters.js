@@ -449,6 +449,8 @@ function _doApplyFilters() {
   var dc = document.querySelector('.stats-card[data-idx="2"] .stats-value');
   if (dc) animateCount(dc, S._isTruncated ? S._fullCount : S.filtered.length, 800);
   renderList();
+  // ★ 항해사's PICK 갱신
+  if (typeof updateCuratorPicks === 'function') updateCuratorPicks();
 }
 
 // ═══════════════════════════════════════════════════════════
