@@ -431,7 +431,7 @@ function _doApplyFilters() {
   }
 
   S._fullFiltered = filtered;
-  if (searchText && filtered.length > 1000 && !S.showAllResults) {
+  if (searchText && filtered.length > 10000 && !S.showAllResults) {
     S.filtered = filtered.slice(0, 100);
     S._isTruncated = true;
     S._fullCount = filtered.length;
