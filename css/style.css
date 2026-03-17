@@ -617,7 +617,10 @@ button[title]:hover::after {
 
 /* ★ 게이트 페이지 — 푸터가 한 화면에 보이게 */
 #gate-page {
-  padding-top: 5rem !important;   
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 100vh !important;
 }
 
 /* ★ 게이트에서 돌아가기 버튼 숨기기 */
