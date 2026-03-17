@@ -96,35 +96,121 @@ function closeSidePanel() {
 // ★ 번역 기능
 async function translateSidePanel(btn) {
   if (!btn) return;
+  
+  // 토글: 이미 번역된 상태면 원문 복원
   if (btn.classList.contains('translated')) {
-    [...document.querySelectorAll('#sp-content .translated-text')].forEach(el => el.remove());
+    var translatedEls = document.querySelectorAll('#sp-content .translated-text');
+    for (var i = 0; i < translatedEls.length; i++) translatedEls[i].remove();
     btn.textContent = '🌐 한국어로 번역하기';
     btn.classList.remove('translated');
     return;
   }
+  
   btn.textContent = '⏳ 번역 중...';
   btn.disabled = true;
-  const targets = [...document.querySelectorAll('#sp-content .sp-translatable p, #sp-content .sp-translatable div:not(h4)')];
-  let translated = 0;
-  for (const el of targets) {
-    const text = el.textContent.trim();
+  
+  // ★ 번역 대상 수집
+  var targets = document.querySelectorAll('#sp-content .sp-translatable p, #sp-content .sp-translatable div:not(h4)');
+  var toTranslate = [];
+  
+  for (var i = 0; i < targets.length; i++) {
+    var text = targets[i].textContent.trim();
     if (!text || text.length < 5) continue;
-    if ((text.match(/[가-힣]/g) || []).length > text.length * 0.3) continue;
-    try {
-      const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ko&dt=t&q=${encodeURIComponent(text.substring(0, 2000))}`);
-      const data = await res.json();
-      const tr = data[0]?.map(s => s[0]).join('') || '';
-      if (tr && tr !== text) {
-        const div = document.createElement('div');
+    // 이미 한국어가 많으면 스킵
+    var koChars = (text.match(/[가-힣]/g) || []).length;
+    if (koChars > text.length * 0.3) continue;
+    toTranslate.push({ el: targets[i], text: text });
+  }
+  
+  if (toTranslate.length === 0) {
+    btn.disabled = false;
+    btn.textContent = '🌐 한국어로 번역하기';
+    toast('이미 한국어이거나 번역할 내용이 없습니다.', 'warning');
+    return;
+  }
+  
+  // ★ 핵심: 모든 텍스트를 하나로 합쳐서 한 번에 번역
+  var separator = '\n§§§\n';  // 구분자
+  var combinedText = '';
+  for (var i = 0; i < toTranslate.length; i++) {
+    if (i > 0) combinedText += separator;
+    combinedText += toTranslate[i].text.substring(0, 1500);  // 각 문단 1500자 제한
+  }
+  
+  // 전체 텍스트가 5000자 이하면 한 번에, 아니면 청크로 분할
+  var chunks = [];
+  if (combinedText.length <= 5000) {
+    chunks.push({ text: combinedText, items: toTranslate });
+  } else {
+    // 5000자씩 분할
+    var currentChunk = '';
+    var currentItems = [];
+    for (var i = 0; i < toTranslate.length; i++) {
+      var addition = (currentItems.length > 0 ? separator : '') + toTranslate[i].text.substring(0, 1500);
+      if (currentChunk.length + addition.length > 5000 && currentItems.length > 0) {
+        chunks.push({ text: currentChunk, items: currentItems.slice() });
+        currentChunk = toTranslate[i].text.substring(0, 1500);
+        currentItems = [toTranslate[i]];
+      } else {
+        currentChunk += addition;
+        currentItems.push(toTranslate[i]);
+      }
+    }
+    if (currentItems.length > 0) chunks.push({ text: currentChunk, items: currentItems });
+  }
+  
+  // ★ 핵심: 모든 청크를 병렬로 번역
+  var translateChunk = function(chunk) {
+    return fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ko&dt=t&q=' + encodeURIComponent(chunk.text))
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        var fullTranslation = '';
+        if (data && data[0]) {
+          for (var j = 0; j < data[0].length; j++) {
+            if (data[0][j] && data[0][j][0]) fullTranslation += data[0][j][0];
+          }
+        }
+        return { items: chunk.items, translation: fullTranslation };
+      })
+      .catch(function() { return { items: chunk.items, translation: '' }; });
+  };
+  
+  // 병렬 실행
+  var promises = [];
+  for (var i = 0; i < chunks.length; i++) {
+    promises.push(translateChunk(chunks[i]));
+  }
+  
+  var results = await Promise.all(promises);
+  
+  // ★ 핵심: 번역 결과를 한번에 DOM에 적용
+  var translated = 0;
+  for (var r = 0; r < results.length; r++) {
+    var result = results[r];
+    if (!result.translation) continue;
+    
+    // 구분자로 분리
+    var parts = result.translation.split(/§§§/);
+    
+    for (var i = 0; i < Math.min(parts.length, result.items.length); i++) {
+      var tr = parts[i].trim();
+      if (tr && tr !== result.items[i].text) {
+        var div = document.createElement('div');
         div.className = 'translated-text';
         div.textContent = tr;
-        el.after(div);
+        result.items[i].el.after(div);
         translated++;
       }
-    } catch (e) { console.warn('번역 실패:', e); }
-    await new Promise(r => setTimeout(r, 100));
+    }
   }
+  
   btn.disabled = false;
-  if (translated > 0) { btn.textContent = '🔄 원문 보기'; btn.classList.add('translated'); toast(`🌐 ${translated}개 번역 완료!`); }
-  else { btn.textContent = '🌐 한국어로 번역하기'; toast('이미 한국어이거나 번역할 내용이 없습니다.', 'warning'); }
+  if (translated > 0) {
+    btn.textContent = '🔄 원문 보기';
+    btn.classList.add('translated');
+    toast('🌐 ' + translated + '개 항목 번역 완료!');
+  } else {
+    btn.textContent = '🌐 한국어로 번역하기';
+    toast('번역할 내용이 없습니다.', 'warning');
+  }
 }
