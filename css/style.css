@@ -558,36 +558,40 @@ button[title]:hover::after {
   button[title]:hover::after { display: none; }
 }
 
-/* 모든 섹션 통일 — style.css 끝에 추가 */
+/* ★ 레이아웃 가로 폭 강제 통일 — 맨 끝에 추가 */
 .tips-banner,
 .highlight-section,
 .stats-section,
 .tab-panel,
 .list-section,
 .app-footer {
-  max-width: var(--content-max);
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: var(--content-pad);
-  padding-right: var(--content-pad);
-  box-sizing: border-box;
-  width: 100%;
+  max-width: var(--content-max) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
-/* tips-banner 내부 padding 중복 제거 */
+/* 개별 padding 조정 — 이중 패딩 방지 */
 .tips-banner {
-  padding-top: 0.8rem;
-  padding-bottom: 0.8rem;
+  padding: 0.8rem var(--content-pad) !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.8rem !important;
 }
-
-/* stats-section은 grid라서 padding 안에 gap이 들어감 */
-.stats-section {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-}
-
-/* highlight-section 마진 통일 */
 .highlight-section {
-  margin-top: 0.8rem;
-  margin-bottom: 0.8rem;
+  padding: 0 var(--content-pad) !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+.stats-section {
+  padding: 0 var(--content-pad) !important;
+  margin-top: 0.8rem !important;
+  margin-bottom: 0.8rem !important;
+}
+.tab-panel {
+  padding: 0 var(--content-pad) !important;
+}
+.list-section {
+  padding: 0 var(--content-pad) !important;
+  margin-top: 0.5rem !important;
 }
