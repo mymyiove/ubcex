@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// app.js — 메인 앱 (직무 클릭 즉시 출발 + 기본 검색 적용)
+// app.js — 메인 앱
 // ═══════════════════════════════════════════════════════════
 
 var ADMIN_CODE = 'jhj11';
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('btn-step1-next').addEventListener('click', goStep2);
   document.getElementById('input-subdomain').addEventListener('keyup', function(e) { if (e.key === 'Enter') goStep2(); });
 
-  // ★ 게이트 직무 카드 — 클릭 시 바로 출발
+  // 게이트 직무 카드 — 클릭 시 바로 출발
   var grid = document.getElementById('gate-job-grid');
   var curationEntries = Object.entries(CURATION);
   for (var i = 0; i < curationEntries.length; i++) {
@@ -49,10 +49,8 @@ document.addEventListener('DOMContentLoaded', function() {
     })(curationEntries[i][0], curationEntries[i][1]);
   }
 
-  // ★ "자유롭게 우주 여행 출발!" = 직무 선택 없이 출발
   document.getElementById('btn-launch').addEventListener('click', launch);
 
-  // 스크롤 버튼
   window.addEventListener('scroll', function() {
     var btn = document.getElementById('scroll-to-top');
     if (btn) btn.classList.toggle('visible', window.scrollY > 300);
@@ -71,9 +69,7 @@ function goStep2() {
   document.getElementById('gate-step-2').classList.add('active');
 }
 
-// ═══════════════════════════════════════════════════════════
-// 관리자 모드
-// ═══════════════════════════════════════════════════════════
+// ═══ 관리자 모드 ═══
 function enterAdminMode() {
   document.getElementById('gate-page').style.display = 'none';
   var ap = document.createElement('div');
@@ -95,7 +91,6 @@ function enterAdminMode() {
       '<div class="admin-section"><h3>📋 로우 데이터</h3><div class="admin-btn-group" style="align-items:center;"><label style="color:var(--text-secondary);font-size:0.85rem;">Chunk:</label><input type="number" id="chunk-number" value="0" min="0" max="50" style="width:60px;padding:0.4rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);text-align:center;" /><button class="admin-btn" id="btn-view-chunk">🔍 조회</button></div><div class="admin-log" id="raw-log"></div></div>' +
     '</div></div>';
   document.body.appendChild(ap);
-
   document.getElementById('admin-exit').addEventListener('click', exitAdminMode);
   document.getElementById('btn-sync-continue').addEventListener('click', function() { runSync(false); });
   document.getElementById('btn-sync-reset').addEventListener('click', function() { if (confirm('전체 재동기화?')) runSync(true); });
@@ -114,16 +109,9 @@ function enterAdminMode() {
 }
 
 function exitAdminMode() { var p = document.getElementById('admin-panel'); if (p) p.remove(); document.getElementById('gate-page').style.display = ''; document.getElementById('input-subdomain').value = ''; }
-
-async function loadAdminStatus() {
-  try { var r = await fetch(WORKER_URL+'/status',{headers:{'Authorization':'Bearer '+WORKER_SECRET}}); var d = await r.json(); document.getElementById('sync-status-value').textContent = d.isComplete?'✅ 완료':d.synced?'⏳ 진행 중':'❌ 미완료'; document.getElementById('sync-status-sub').textContent = d.syncedAt?'마지막: '+new Date(d.syncedAt).toLocaleString('ko-KR'):'기록 없음'; document.getElementById('courses-count-value').textContent = (d.totalCount||0).toLocaleString(); document.getElementById('courses-count-sub').textContent = d.isComplete?'완료':'진행 중'; document.getElementById('chunks-count-value').textContent = d.totalChunks||0; } catch(e) { document.getElementById('sync-status-value').textContent = '❌ 연결 실패'; }
-  try { var r2 = await fetch(WORKER_URL+'/test-token',{headers:{'Authorization':'Bearer '+WORKER_SECRET}}); var d2 = await r2.json(); document.getElementById('api-status-value').textContent = d2.success?'✅ 정상':'❌ 오류'; document.getElementById('api-status-sub').textContent = d2.success?'GraphQL OK':'실패'; } catch(e) { document.getElementById('api-status-value').textContent = '❌'; }
-}
-
+async function loadAdminStatus() { try { var r = await fetch(WORKER_URL+'/status',{headers:{'Authorization':'Bearer '+WORKER_SECRET}}); var d = await r.json(); document.getElementById('sync-status-value').textContent = d.isComplete?'✅ 완료':d.synced?'⏳ 진행 중':'❌ 미완료'; document.getElementById('sync-status-sub').textContent = d.syncedAt?'마지막: '+new Date(d.syncedAt).toLocaleString('ko-KR'):'기록 없음'; document.getElementById('courses-count-value').textContent = (d.totalCount||0).toLocaleString(); document.getElementById('courses-count-sub').textContent = d.isComplete?'완료':'진행 중'; document.getElementById('chunks-count-value').textContent = d.totalChunks||0; } catch(e) { document.getElementById('sync-status-value').textContent = '❌ 연결 실패'; } try { var r2 = await fetch(WORKER_URL+'/test-token',{headers:{'Authorization':'Bearer '+WORKER_SECRET}}); var d2 = await r2.json(); document.getElementById('api-status-value').textContent = d2.success?'✅ 정상':'❌ 오류'; document.getElementById('api-status-sub').textContent = d2.success?'GraphQL OK':'실패'; } catch(e) { document.getElementById('api-status-value').textContent = '❌'; } }
 async function runSync(isReset) { var l=document.getElementById('sync-log'); l.innerHTML='<div class="log-entry log-info">📡 시작...</div>'; try { var r=await fetch(WORKER_URL+'/sync'+(isReset?'?reset=true':''),{headers:{'Authorization':'Bearer '+WORKER_SECRET}}); var d=await r.json(); l.innerHTML+='<div class="log-entry '+(d.success?'log-success':'log-error')+'">'+(d.success?'✅':'❌')+' '+(d.message||d.error)+'</div>'; } catch(e) { l.innerHTML+='<div class="log-entry log-error">❌ '+e.message+'</div>'; } loadAdminStatus(); }
-
 async function runAutoSync() { var l=document.getElementById('sync-log'); var b=document.getElementById('btn-sync-auto'); b.disabled=true; b.textContent='⏳...'; l.innerHTML='<div class="log-entry log-info">🚀 자동 시작...</div>'; var c=1,go=true; while(go) { l.innerHTML+='<div class="log-entry log-info">📡 ['+c+']...</div>'; l.scrollTop=l.scrollHeight; try { var ep=c===1?WORKER_URL+'/sync?reset=true':WORKER_URL+'/sync'; var r=await fetch(ep,{headers:{'Authorization':'Bearer '+WORKER_SECRET}}); var d=await r.json(); if(d.error){l.innerHTML+='<div class="log-entry log-error">❌ '+d.error+'</div>';break;} l.innerHTML+='<div class="log-entry log-success">✅ '+d.message+'</div>'; if(d.stoppedByTimeout){await new Promise(function(r){setTimeout(r,2000)});c++;}else{l.innerHTML+='<div class="log-entry log-success">🎉 완료! '+d.totalCount+'개</div>';go=false;} } catch(e){l.innerHTML+='<div class="log-entry log-error">❌ '+e.message+'</div>';break;} l.scrollTop=l.scrollHeight; } b.disabled=false; b.textContent='🚀 자동 전체'; loadAdminStatus(); }
-
 function manageCuratorPicksAdmin() { var c=localStorage.getItem('curator_picks'); var ids=c?JSON.parse(c):['8324','1717020','2360128']; var n=prompt("항해사's PICK 강의 ID (쉼표 구분):",ids.join(',')); if(n!==null){var i=n.split(',').map(function(x){return x.trim();}).filter(Boolean);localStorage.setItem('curator_picks',JSON.stringify(i));var l=document.getElementById('picks-log');if(l)l.innerHTML='<div class="log-entry log-success">⭐ '+i.length+'개 업데이트</div>';toast('⭐ '+i.length+'개 업데이트');} }
 function viewCurrentPicks() { var c=localStorage.getItem('curator_picks'); var ids=c?JSON.parse(c):['8324','1717020','2360128']; var l=document.getElementById('picks-log'); if(l)l.innerHTML='<div class="log-entry log-info">'+ids.map(function(id,i){return (i+1)+'. ID: '+id;}).join('<br>')+'</div>'; }
 function manageExcludedCourses() { var c=localStorage.getItem('excluded_courses'); var ids=c?JSON.parse(c):[]; var n=prompt('제외할 강의 ID (쉼표 구분):',ids.join(',')); if(n!==null){var i=n.split(',').map(function(x){return x.trim();}).filter(Boolean);localStorage.setItem('excluded_courses',JSON.stringify(i));var l=document.getElementById('excluded-log');if(l)l.innerHTML='<div class="log-entry log-success">🚫 '+i.length+'개 제외 설정</div>';toast('🚫 '+i.length+'개 제외');} }
@@ -214,6 +202,8 @@ function initApp() {
     : '탐험가님, <strong>'+S.subdomain+'</strong> 우주에 도착했습니다!';
 
   S.searchMode = 'and';
+  // ★ 스마트 결과 제한 상태
+  S.showAllResults = false;
 
   renderDashCards();
   initMultiSelects();
@@ -221,7 +211,6 @@ function initApp() {
   if (typeof initHighlight === 'function') { initHighlight(); setupHoverPause(); }
   if (typeof initMissionCenter === 'function') initMissionCenter();
 
-  // ★ 게이트 직무 → 미션센터 은하 자동 선택
   if (S.selectedFamilies.length > 0) {
     setTimeout(function() {
       var firstFamily = S.selectedFamilies[0];
@@ -234,7 +223,6 @@ function initApp() {
 
   // ═══ 이벤트 바인딩 ═══
 
-  // 헤더 탭
   var navBtns = document.querySelectorAll('.header-nav-btn');
   for (var i = 0; i < navBtns.length; i++) {
     (function(btn) {
@@ -246,12 +234,12 @@ function initApp() {
     })(navBtns[i]);
   }
 
-  // 검색 입력
   var searchInput = document.getElementById('search-input');
   var debounceTimer;
   if (searchInput) {
     searchInput.addEventListener('input', function() {
       clearTimeout(debounceTimer);
+      S.showAllResults = false; // 검색어 변경 시 리셋
       debounceTimer = setTimeout(applyFilters, 400);
       setTimeout(function() { showSearchSuggestions(searchInput.value.trim()); }, 250);
     });
@@ -263,12 +251,12 @@ function initApp() {
         var sg = document.getElementById('search-suggestions');
         if (sg) sg.classList.remove('open');
         clearTimeout(debounceTimer);
+        S.showAllResults = false;
         applyFilters();
       }
     });
   }
 
-  // 검색 제안 외부 클릭
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.scanner-input-wrap')) {
       var sg = document.getElementById('search-suggestions');
@@ -276,7 +264,6 @@ function initApp() {
     }
   });
 
-  // 검색 모드 (AND / OR)
   var modeBtns = document.querySelectorAll('.scan-mode-btn[data-mode]');
   for (var i = 0; i < modeBtns.length; i++) {
     (function(btn) {
@@ -284,12 +271,12 @@ function initApp() {
         for (var j = 0; j < modeBtns.length; j++) modeBtns[j].classList.remove('active');
         btn.classList.add('active');
         S.searchMode = btn.dataset.mode;
+        S.showAllResults = false;
         applyFilters();
       });
     })(modeBtns[i]);
   }
 
-  // 감도
   var sensBtns = document.querySelectorAll('.sensitivity-btn');
   for (var i = 0; i < sensBtns.length; i++) {
     (function(btn) {
@@ -297,6 +284,7 @@ function initApp() {
         for (var j = 0; j < sensBtns.length; j++) sensBtns[j].classList.remove('active');
         btn.classList.add('active');
         S.sensitivity = btn.dataset.sensitivity;
+        S.showAllResults = false;
         applyFilters();
         var label = SENSITIVITY_CONFIG[S.sensitivity] ? SENSITIVITY_CONFIG[S.sensitivity].label : '';
         toast('🎚️ 감도: '+label);
@@ -304,7 +292,6 @@ function initApp() {
     })(sensBtns[i]);
   }
 
-  // AI 내비
   var aiScan = document.getElementById('btn-ai-scan');
   if (aiScan) aiScan.addEventListener('click', handleAIScan);
   var applyAi = document.getElementById('btn-apply-ai');
@@ -317,18 +304,17 @@ function initApp() {
   var aiClose = document.getElementById('btn-ai-close');
   if (aiClose) aiClose.addEventListener('click', function() { document.getElementById('ai-panel').classList.remove('open'); });
 
-  // 검색 버튼
   var searchBtn = document.getElementById('btn-search');
   if (searchBtn) {
     searchBtn.addEventListener('click', function() {
       var sg = document.getElementById('search-suggestions');
       if (sg) sg.classList.remove('open');
       clearTimeout(debounceTimer);
+      S.showAllResults = false;
       applyFilters();
     });
   }
 
-  // 필터 토글
   var filterToggle = document.getElementById('btn-filter-toggle');
   if (filterToggle) {
     filterToggle.addEventListener('click', function() {
@@ -337,21 +323,18 @@ function initApp() {
     });
   }
 
-  // 정렬 / 표시
   var sortSel = document.getElementById('sort-select');
   if (sortSel) sortSel.addEventListener('change', applyFilters);
   var rowsSel = document.getElementById('rows-select');
   if (rowsSel) rowsSel.addEventListener('change', function() { S.rows = parseInt(rowsSel.value); S.page = 1; renderList(); });
 
-  // CSV / 공유 / 리셋
   var csvBtn = document.getElementById('btn-csv');
   if (csvBtn) csvBtn.addEventListener('click', function() { downloadCSV(false); });
   var shareBtn = document.getElementById('btn-share');
   if (shareBtn) shareBtn.addEventListener('click', shareLink);
   var resetBtn = document.getElementById('btn-reset-inline');
-  if (resetBtn) resetBtn.addEventListener('click', function() { resetAll(true); });
+  if (resetBtn) resetBtn.addEventListener('click', function() { S.showAllResults = false; resetAll(true); });
 
-  // 뷰 모드
   var viewBtns = document.querySelectorAll('.view-btn');
   for (var i = 0; i < viewBtns.length; i++) {
     (function(btn) {
@@ -363,7 +346,6 @@ function initApp() {
     })(viewBtns[i]);
   }
 
-  // 전체 선택
   var checkAll = document.getElementById('check-all');
   if (checkAll) {
     checkAll.addEventListener('change', function() {
@@ -376,7 +358,6 @@ function initApp() {
     });
   }
 
-  // FAB
   var fabCsv = document.getElementById('fab-csv');
   if (fabCsv) fabCsv.addEventListener('click', function() { downloadCSV(true); });
   var fabLink = document.getElementById('fab-link');
@@ -389,13 +370,11 @@ function initApp() {
   var fabClear = document.getElementById('fab-clear');
   if (fabClear) fabClear.addEventListener('click', function() { S.selectedIds.clear(); renderList(); updateFAB(); });
 
-  // 사이드 패널
   var spOverlay = document.getElementById('side-panel-overlay');
   if (spOverlay) spOverlay.addEventListener('click', function(e) { if (e.target === spOverlay) closeSidePanel(); });
   var spClose = document.getElementById('sp-close');
   if (spClose) spClose.addEventListener('click', closeSidePanel);
 
-  // ★ 멀티셀렉트 외부 클릭 — 체크박스 클릭 보호
   document.addEventListener('click', function(e) {
     if (e.target.closest('.ms-wrap')) return;
     if (e.target.closest('.filter-chip-x')) return;
@@ -403,10 +382,9 @@ function initApp() {
     for (var i = 0; i < panels.length; i++) panels[i].classList.remove('open');
   });
 
-  // URL 파라미터
   applyURLParams();
 
-  // ★ 선택 직무가 있으면 해당 직무 카테고리로 기본 필터 적용
+  // 선택 직무 카테고리 기본 필터
   if (S.selectedFamilies.length > 0 && !document.getElementById('search-input').value.trim()) {
     var jobCats = [];
     for (var fi = 0; fi < S.selectedFamilies.length; fi++) {
@@ -415,23 +393,18 @@ function initApp() {
         for (var ri = 0; ri < famData.roles.length; ri++) {
           if (famData.roles[ri].cats) {
             for (var ci = 0; ci < famData.roles[ri].cats.length; ci++) {
-              if (jobCats.indexOf(famData.roles[ri].cats[ci]) === -1) {
-                jobCats.push(famData.roles[ri].cats[ci]);
-              }
+              if (jobCats.indexOf(famData.roles[ri].cats[ci]) === -1) jobCats.push(famData.roles[ri].cats[ci]);
             }
           }
         }
       }
     }
-    if (jobCats.length > 0) {
-      setMSValues('f-category', jobCats);
-    }
+    if (jobCats.length > 0) setMSValues('f-category', jobCats);
   }
 
-  // 첫 필터링
   applyFilters();
 
-  // 헤더 제목 클릭 → 맨위로 + 3번 클릭 항해사 PICK
+  // 헤더 제목 클릭
   var clickCount = 0;
   var headerTitle = document.getElementById('header-title');
   if (headerTitle) {
@@ -451,7 +424,6 @@ function initApp() {
   var helpOverlay = document.getElementById('help-overlay');
   if (helpOverlay) helpOverlay.addEventListener('click', function(e) { if (e.target === helpOverlay) helpOverlay.classList.remove('active'); });
 
-  // CSV 모달
   var csvModalClose = document.getElementById('csv-modal-close');
   if (csvModalClose) csvModalClose.addEventListener('click', function() { document.getElementById('csv-modal-overlay').classList.remove('active'); });
   var csvModalOverlay = document.getElementById('csv-modal-overlay');
@@ -472,11 +444,38 @@ function initApp() {
       if (e.key === 'ArrowRight') { var tp = Math.ceil(S.filtered.length/S.rows); if (S.page < tp) { S.page++; renderList(); } }
     }
   });
+
+  // ★ 활용팁 롤링 배너
+  var tips = [
+    '🔍 띄어쓰기는 AND 검색! "AI 영업" → AI와 영업이 모두 포함된 강의만 표시됩니다.',
+    '🤖 AI 내비로 키워드를 확장해보세요! 단, 5개 미만이 최적의 품질을 보장합니다.',
+    '🎚️ 검색 결과가 너무 적으면 감도를 🔭 광역으로, 너무 많으면 🔬 정밀로 조절하세요.',
+    '📋 강의를 체크하고 📋 미션 보고서로 CSV 다운로드할 수 있어요!',
+    '🇰🇷 한국어로 검색하면 자동으로 영어 번역도 함께 검색됩니다.',
+    '⌨️ / 키를 누르면 검색창으로 바로 이동! Esc로 패널을 닫을 수 있어요.',
+    '🛸 미션 센터에서 직무별 맞춤 강의를 탐색해보세요!',
+    '⭐ 강의 제목을 클릭하면 상세 정보 + 한국어 번역을 볼 수 있어요.',
+    '🔗 공유 링크로 동료에게 검색 조건을 공유할 수 있습니다.',
+    '📅 업데이트 필터로 최신 강의만 골라볼 수 있어요!',
+    '📊 AND 모드는 정확한 결과, OR 모드는 더 많은 결과를 보여줍니다.',
+    '💡 "AI 영업"처럼 검색하면 뒤쪽 키워드(영업)에 더 높은 가중치가 부여됩니다.',
+  ];
+  var tipIndex = 0;
+  var tipsText = document.getElementById('tips-text');
+  if (tipsText) {
+    tipsText.textContent = tips[0];
+    setInterval(function() {
+      tipsText.classList.add('fade');
+      setTimeout(function() {
+        tipIndex = (tipIndex + 1) % tips.length;
+        tipsText.textContent = tips[tipIndex];
+        tipsText.classList.remove('fade');
+      }, 300);
+    }, 6000);
+  }
 }
 
-// ═══════════════════════════════════════════════════════════
-// 탭 전환
-// ═══════════════════════════════════════════════════════════
+// ═══ 탭 전환 ═══
 function switchTab(tabId) {
   var panels = document.querySelectorAll('.tab-panel');
   for (var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
@@ -486,9 +485,7 @@ function switchTab(tabId) {
   if (listSection) listSection.style.display = (tabId === 'stars') ? 'none' : '';
 }
 
-// ═══════════════════════════════════════════════════════════
-// 스마트 검색 제안
-// ═══════════════════════════════════════════════════════════
+// ═══ 스마트 검색 제안 ═══
 function showSearchSuggestions(query) {
   var container = document.getElementById('search-suggestions');
   if (!container) return;
@@ -570,33 +567,3 @@ function showSearchSuggestions(query) {
     })(items[i]);
   }
 }
-
-// initApp() 함수 맨 끝, 키보드 단축키 바인딩 뒤에 추가:
-
-  // ★ 활용팁 롤링 배너
-  var tips = [
-    '🔍 띄어쓰기는 AND 검색! "AI 영업" → AI와 영업이 모두 포함된 강의만 표시됩니다.',
-    '🤖 AI 내비로 키워드를 확장해보세요! 단, 5개 미만이 최적의 품질을 보장합니다.',
-    '🎚️ 검색 결과가 너무 적으면 감도를 🔭 광역으로, 너무 많으면 🔬 정밀로 조절하세요.',
-    '📋 강의를 체크하고 📋 미션 보고서로 CSV 다운로드할 수 있어요!',
-    '🇰🇷 한국어로 검색하면 자동으로 영어 번역도 함께 검색됩니다.',
-    '⌨️ / 키를 누르면 검색창으로 바로 이동! Esc로 패널을 닫을 수 있어요.',
-    '🛸 미션 센터에서 직무별 맞춤 강의를 탐색해보세요!',
-    '⭐ 강의 제목을 클릭하면 상세 정보 + 한국어 번역을 볼 수 있어요.',
-    '🔗 공유 링크로 동료에게 검색 조건을 공유할 수 있습니다.',
-    '📅 업데이트 필터로 최신 강의만 골라볼 수 있어요!',
-    '📊 AND 모드는 정확한 결과, OR 모드는 더 많은 결과를 보여줍니다.',
-  ];
-  var tipIndex = 0;
-  var tipsText = document.getElementById('tips-text');
-  if (tipsText) {
-    tipsText.textContent = tips[0];
-    setInterval(function() {
-      tipsText.classList.add('fade');
-      setTimeout(function() {
-        tipIndex = (tipIndex + 1) % tips.length;
-        tipsText.textContent = tips[tipIndex];
-        tipsText.classList.remove('fade');
-      }, 300);
-    }, 6000);
-  }
