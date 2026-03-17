@@ -744,31 +744,6 @@ button[title]:hover::after {
   button[title]:hover::after { display: none; }
 }
 
-
-/* ★ 활용팁 롤링 배너 */
-.tips-banner {
-  max-width: var(--content-max);
-  margin: 0 auto 1rem;
-  padding: 0.6rem 1.2rem;
-  background: rgba(124, 108, 240, 0.08);
-  border: 1px solid var(--border-accent);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  animation: fadeSlideUp 0.5s ease;
-  overflow: hidden;
-}
-.tips-icon { font-size: 1.1rem; flex-shrink: 0; }
-.tips-text {
-  flex: 1;
-  transition: opacity 0.3s ease;
-}
-.tips-text.fade { opacity: 0; }
-
-
 /* ★ 팁 배너 — 우주선 콘솔 느낌 */
 .tips-banner {
   max-width: var(--content-max);
@@ -794,6 +769,20 @@ button[title]:hover::after {
   transition: opacity 0.4s ease;
 }
 .tips-text.fade { opacity: 0; }
+.tips-text::after {
+  content: '▌';
+  color: var(--accent-light);
+  animation: cursorBlink 1s step-end infinite;
+  margin-left: 2px;
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+
+
+
 /* ★ 깜빡이는 커서 */
 .tips-text::after {
   content: '▌';
