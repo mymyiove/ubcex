@@ -581,26 +581,28 @@ function parseTempList(text) {
     return;
   }
 
-  // 구분자 감지
   var separator = lines[0].indexOf('\t') !== -1 ? '\t' : ',';
-
-  // 헤더 파싱
   var headers = lines[0].split(separator).map(function(h) { return h.trim().toLowerCase().replace(/"/g, '').replace(/\s+/g, ''); });
 
-  // 컬럼 인덱스
-  var titleIdx=-1, catIdx=-1, descIdx=-1, headlineIdx=-1, langIdx=-1, idIdx=-1;
-  var subCatIdx=-1, diffIdx=-1, durationIdx=-1, ratingIdx=-1, enrollIdx=-1, updatedIdx=-1;
+  // ★ 컬럼 인덱스 — 번역 컬럼 추가
+  var titleIdx=-1, titleTransIdx=-1, catIdx=-1, subCatIdx=-1;
+  var descIdx=-1, descTransIdx=-1, headlineIdx=-1, headlineTransIdx=-1;
+  var langIdx=-1, idIdx=-1, diffIdx=-1, durationIdx=-1;
+  var ratingIdx=-1, enrollIdx=-1, updatedIdx=-1;
 
   for (var i = 0; i < headers.length; i++) {
     var h = headers[i];
     if (h==='title'||h==='제목'||h==='강의명') titleIdx = i;
+    else if (h==='강의명번역'||h==='title_kr'||h==='titletranslated') titleTransIdx = i;
     else if (h==='category'||h==='카테고리'||h==='분류') catIdx = i;
     else if (h==='subcategory'||h==='서브카테고리'||h==='소분류') subCatIdx = i;
     else if (h==='description'||h==='설명'||h==='상세설명') descIdx = i;
+    else if (h==='설명번역'||h==='description_kr'||h==='descriptiontranslated') descTransIdx = i;
     else if (h==='headline'||h==='소개'||h==='강의소개'||h==='강의개요') headlineIdx = i;
+    else if (h==='강의개요번역'||h==='headline_kr'||h==='headlinetranslated') headlineTransIdx = i;
     else if (h==='language'||h==='언어') langIdx = i;
     else if (h==='id'||h==='강의id') idIdx = i;
-    else if (h==='no') { /* 순서 번호 — 무시하거나 id로 사용 */ if (idIdx === -1) idIdx = i; }
+    else if (h==='#'||h==='no') { if (idIdx === -1) idIdx = i; }
     else if (h==='difficulty'||h==='난이도'||h==='level') diffIdx = i;
     else if (h==='duration'||h==='수강시간'||h==='수강시간(h)'||h==='시간') durationIdx = i;
     else if (h==='rating'||h==='평점') ratingIdx = i;
@@ -613,7 +615,6 @@ function parseTempList(text) {
     return;
   }
 
-  // 데이터 파싱
   var courses = [];
   for (var i = 1; i < lines.length; i++) {
     var cols = [];
@@ -634,6 +635,20 @@ function parseTempList(text) {
     var title = titleIdx < cols.length ? cols[titleIdx] : '';
     if (!title) continue;
 
+    // ★ 번역 컬럼 가져오기
+    var titleTrans = titleTransIdx !== -1 && titleTransIdx < cols.length ? cols[titleTransIdx] : '';
+    var headlineTrans = headlineTransIdx !== -1 && headlineTransIdx < cols.length ? cols[headlineTransIdx] : '';
+    var descTrans = descTransIdx !== -1 && descTransIdx < cols.length ? cols[descTransIdx] : '';
+    var headline = headlineIdx !== -1 && headlineIdx < cols.length ? cols[headlineIdx] : '';
+    var desc = descIdx !== -1 && descIdx < cols.length ? cols[descIdx] : '';
+
+    // ★ 검색용 텍스트: 원본 + 번역 합치기
+    // 제목: 원본 일본어 + 번역 한국어 (둘 다 검색 가능)
+    // 소개/설명: 원본 + 번역 합치기
+    var searchTitle = title + (titleTrans ? ' ' + titleTrans : '');
+    var searchHeadline = headline + (headlineTrans ? ' ' + headlineTrans : '');
+    var searchDesc = desc + (descTrans ? ' ' + descTrans : '');
+
     var durationMin = 0;
     if (durationIdx !== -1 && durationIdx < cols.length) {
       durationMin = Math.round((parseFloat(cols[durationIdx]) || 0) * 60);
@@ -641,11 +656,14 @@ function parseTempList(text) {
 
     courses.push({
       id: idIdx !== -1 && idIdx < cols.length ? String(cols[idIdx]) : 'temp_' + i,
+      // ★ 표시용: 원본 제목 (일본어)
       title: title,
+      // ★ 검색용: 번역 제목을 headline에 합침 (스코어링에서 headline도 검색됨)
+      // 원본 제목은 title 필드에, 번역은 topic 필드에 넣어서 검색 가능하게
       category: catIdx !== -1 && catIdx < cols.length ? cols[catIdx] : '',
-      topic: subCatIdx !== -1 && subCatIdx < cols.length ? cols[subCatIdx] : '',
-      description: descIdx !== -1 && descIdx < cols.length ? cols[descIdx] : '',
-      headline: headlineIdx !== -1 && headlineIdx < cols.length ? cols[headlineIdx] : '',
+      topic: (subCatIdx !== -1 && subCatIdx < cols.length ? cols[subCatIdx] : '') + (titleTrans ? ' | ' + titleTrans : ''),
+      description: searchDesc,
+      headline: searchHeadline,
       language: langIdx !== -1 && langIdx < cols.length ? cols[langIdx] : 'ja',
       instructor: '',
       difficulty: diffIdx !== -1 && diffIdx < cols.length ? (cols[diffIdx] || 'All Levels') : 'All Levels',
@@ -658,6 +676,10 @@ function parseTempList(text) {
       rating: ratingIdx !== -1 && ratingIdx < cols.length ? (parseFloat(cols[ratingIdx]) || 0) : 0,
       enrollments: enrollIdx !== -1 && enrollIdx < cols.length ? (parseInt(String(cols[enrollIdx]).replace(/,/g, '')) || 0) : 0,
       isNew: false,
+      // ★ 번역 데이터 보관 (사이드 패널에서 사용)
+      _titleTranslated: titleTrans,
+      _headlineTranslated: headlineTrans,
+      _descTranslated: descTrans,
       _search: '',
       _score: 0
     });
@@ -677,20 +699,26 @@ function parseTempList(text) {
   if (log) {
     log.innerHTML += '<div class="log-entry log-success">✅ ' + courses.length + '개 강의 로드 완료!</div>';
     log.innerHTML += '<div class="log-entry log-info">감지된 컬럼: ' +
-      (titleIdx !== -1 ? '제목✅ ' : '') +
+      (titleIdx !== -1 ? '강의명✅ ' : '') +
+      (titleTransIdx !== -1 ? '강의명번역✅ ' : '강의명번역❌ ') +
       (catIdx !== -1 ? '카테고리✅ ' : '') +
       (subCatIdx !== -1 ? '서브카테고리✅ ' : '') +
-      (descIdx !== -1 ? '설명✅ ' : '') +
       (headlineIdx !== -1 ? '강의개요✅ ' : '') +
+      (headlineTransIdx !== -1 ? '강의개요번역✅ ' : '강의개요번역❌ ') +
       (diffIdx !== -1 ? '난이도✅ ' : '') +
       (durationIdx !== -1 ? '수강시간✅ ' : '') +
       (ratingIdx !== -1 ? '평점✅ ' : '') +
       (enrollIdx !== -1 ? '리뷰수✅ ' : '') +
       (updatedIdx !== -1 ? '업데이트✅ ' : '') +
-      (langIdx !== -1 ? '언어✅ ' : '') +
       '</div>';
-    log.innerHTML += '<div class="log-entry log-info">샘플: ' + courses[0].title.substring(0, 60) + '...</div>';
+    if (titleTransIdx !== -1) {
+      log.innerHTML += '<div class="log-entry log-success">🌐 번역 컬럼 감지! 한국어로 검색 가능합니다.</div>';
+    }
+    log.innerHTML += '<div class="log-entry log-info">샘플: ' + courses[0].title.substring(0, 50) + '</div>';
+    if (courses[0]._titleTranslated) {
+      log.innerHTML += '<div class="log-entry log-info">번역: ' + courses[0]._titleTranslated.substring(0, 50) + '</div>';
+    }
   }
 
-  toast('📋 임시 목록 ' + courses.length + '개 로드! 관리자 모드를 나가면 검색할 수 있습니다.');
+  toast('📋 임시 목록 ' + courses.length + '개 로드!' + (titleTransIdx !== -1 ? ' (번역 포함)' : ''));
 }
