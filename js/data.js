@@ -154,7 +154,7 @@ const CURATION = {
     { id:"b2c", name:"B2C 영업/리테일", prompt:"b2c sales retail customer service selling techniques persuasion consumer behavior", keywords:["B2C","리테일","고객서비스","세일즈기법"], cats:["Business"] },
     { id:"cs", name:"Customer Success", prompt:"customer success csm onboarding churn retention NPS customer experience customer journey", keywords:["CS","온보딩","Churn","NPS","CX"], cats:["Business"] }
   ]},
-  management: { name: "경영지원", emoji: "💼", color: "#8b5cf6", roles: [
+  management: { name: "경영/운영", emoji: "💼", color: "#8b5cf6", roles: [
     { id:"hr", name:"인사 (HRM/HRD)", prompt:"hr hrm hrd recruiting evaluation compensation talent management organizational development employee engagement", keywords:["HRM","HRD","채용","평가보상","조직개발"], cats:["Business"] },
     { id:"od", name:"조직문화/OD", prompt:"organizational development culture engagement diversity inclusion change management team building", keywords:["조직문화","OD","다양성","변화관리"], cats:["Business","Personal Development"] },
     { id:"finance", name:"재무/회계", prompt:"finance accounting tax budgeting financial analysis financial modeling valuation corporate finance", keywords:["재무","회계","세무","재무모델링","기업재무"], cats:["Finance & Accounting"] },
