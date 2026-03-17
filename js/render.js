@@ -377,11 +377,38 @@ function downloadWithSelectedColumns() {
   }
 
   var label = csvDownloadType === 'all' ? '전체' : csvDownloadType === 'new' ? '신규' : '필터링';
+  
+  // ★ 파일명에 검색어 + 필터 정보 추가
+  var filenameParts = [label];
+  var searchQuery = document.getElementById('search-input').value.trim();
+  if (searchQuery) {
+    // 파일명에 사용 불가한 문자 제거 + 30자 제한
+    var safeQuery = searchQuery.replace(/[\\/:*?"<>|,]/g, '_').substring(0, 30);
+    filenameParts.push(safeQuery);
+  }
+  var activeCats = getMSValues('f-category');
+  if (activeCats.length > 0 && activeCats.length <= 3) {
+    filenameParts.push(activeCats.join('_').substring(0, 30));
+  }
+  var activeLangs = getMSValues('f-language');
+  if (activeLangs.length > 0 && activeLangs.length <= 2) {
+    filenameParts.push(activeLangs.join('_'));
+  }
+  var activeUpdated = getMSValues('f-updated');
+  if (activeUpdated.length > 0) {
+    filenameParts.push(activeUpdated[0]);
+  }
+  
+  var filename = filenameParts.join('_') + '_' + S.subdomain + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+  // 파일명 총 길이 제한 (100자)
+  if (filename.length > 100) filename = filename.substring(0, 96) + '.csv';
+  
   var csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = label + '_Courses_' + S.subdomain + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.download = filename;
+  
   a.click();
   URL.revokeObjectURL(a.href);
   document.getElementById('csv-modal-overlay').classList.remove('active');
