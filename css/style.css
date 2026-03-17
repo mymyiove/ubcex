@@ -615,15 +615,5 @@ button[title]:hover::after {
   padding-right: 1.2rem !important;
 }
 
-/* ★ 게이트 페이지 — 푸터가 한 화면에 보이게 */
-#gate-page {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-height: 100vh !important;
-}
-
 /* ★ 게이트에서 돌아가기 버튼 숨기기 */
-#gate-page #btn-back-gate {
-  display: none;
-}
+#gate-page ~ .app-footer #btn-back-gate { display: none; }
