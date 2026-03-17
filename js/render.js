@@ -58,7 +58,13 @@ function renderList() {
   document.getElementById('view-compact').className = 'compact-list ' + (S.viewMode === 'compact' ? 'active' : '');
 
   if (data.length === 0) {
-    var empty = '<div class="empty-state"><h3>😅 발견된 별이 없습니다</h3><p>감도를 🔭 광역으로 조절하거나 검색어를 변경해보세요.</p></div>';
+    var empty = '<div class="empty-state">' +
+  '<h3>😅 발견된 별이 없습니다</h3>' +
+  '<p>검색 모드를 <strong>AND에서 OR로 변경</strong>하시거나,<br>' +
+  '<strong>🤖 AI 내비</strong> 기능으로 검색어를 확장해보세요!</p>' +
+  '<p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">' +
+  '💡 감도를 🔭 광역으로 조절하면 더 많은 결과를 볼 수 있습니다.</p>' +
+  '</div>';
     document.getElementById('table-body').innerHTML = '<tr><td colspan="12">' + empty + '</td></tr>';
     document.getElementById('view-card').innerHTML = empty;
     document.getElementById('view-compact').innerHTML = empty;
