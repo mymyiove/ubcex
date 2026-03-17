@@ -153,3 +153,320 @@ async function playLaunchSequence() {
     await new Promise(function(r) { setTimeout(r, 600+Math.random()*400); });
   }
 }
+
+
+// ═══ 앱 초기화 ═══
+function initApp() {
+  S.searchMode = 'and';
+  S.showAllResults = false;
+
+  renderDashCards();
+  initMultiSelects();
+  if (typeof initHighlight === 'function') { initHighlight(); setupHoverPause(); }
+  if (typeof initMissionCenter === 'function') initMissionCenter();
+  if (S.selectedFamilies.length > 0) {
+    setTimeout(function() {
+      var firstFamily = S.selectedFamilies[0];
+      var galaxyCard = document.querySelector('.galaxy-card[data-galaxy="'+firstFamily+'"]');
+      if (galaxyCard) galaxyCard.click();
+    }, 500);
+  }
+  if (typeof initStars === 'function') initStars();
+
+  // 헤더 탭
+  var navBtns = document.querySelectorAll('.header-nav-btn');
+  for (var i = 0; i < navBtns.length; i++) {
+    (function(btn) { btn.addEventListener('click', function() {
+      for (var j = 0; j < navBtns.length; j++) navBtns[j].classList.remove('active');
+      btn.classList.add('active'); switchTab(btn.dataset.tab);
+    }); })(navBtns[i]);
+  }
+
+  // 검색 입력
+  var searchInput = document.getElementById('search-input');
+  var debounceTimer;
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      clearTimeout(debounceTimer);
+      S.showAllResults = false;
+      debounceTimer = setTimeout(applyFilters, 400);
+      setTimeout(function() { showSearchSuggestions(searchInput.value.trim()); }, 250);
+    });
+    searchInput.addEventListener('focus', function() {
+      if (searchInput.value.trim().length >= 2) showSearchSuggestions(searchInput.value.trim());
+    });
+    searchInput.addEventListener('keyup', function(e) {
+      if (e.key === 'Enter') {
+        var sg = document.getElementById('search-suggestions'); if (sg) sg.classList.remove('open');
+        clearTimeout(debounceTimer); S.showAllResults = false; applyFilters();
+      }
+    });
+  }
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.scanner-input-wrap')) { var sg = document.getElementById('search-suggestions'); if (sg) sg.classList.remove('open'); }
+  });
+
+  // 검색 모드
+  var modeBtns = document.querySelectorAll('.scan-mode-btn[data-mode]');
+  for (var i = 0; i < modeBtns.length; i++) {
+    (function(btn) { btn.addEventListener('click', function() {
+      for (var j = 0; j < modeBtns.length; j++) modeBtns[j].classList.remove('active');
+      btn.classList.add('active'); S.searchMode = btn.dataset.mode; S.showAllResults = false; applyFilters();
+    }); })(modeBtns[i]);
+  }
+
+  // 감도
+  var sensBtns = document.querySelectorAll('.sensitivity-btn');
+  for (var i = 0; i < sensBtns.length; i++) {
+    (function(btn) { btn.addEventListener('click', function() {
+      for (var j = 0; j < sensBtns.length; j++) sensBtns[j].classList.remove('active');
+      btn.classList.add('active'); S.sensitivity = btn.dataset.sensitivity; S.showAllResults = false; applyFilters();
+      toast('🎚️ 감도: '+(SENSITIVITY_CONFIG[S.sensitivity]?SENSITIVITY_CONFIG[S.sensitivity].label:''));
+    }); })(sensBtns[i]);
+  }
+
+  // AI 내비
+  var aiScan = document.getElementById('btn-ai-scan');
+  if (aiScan) aiScan.addEventListener('click', handleAIScan);
+  var applyAi = document.getElementById('btn-apply-ai');
+  if (applyAi) applyAi.addEventListener('click', applyAIKeywords);
+  var aiSelectAll = document.getElementById('btn-ai-select-all');
+  if (aiSelectAll) aiSelectAll.addEventListener('click', function() {
+    var tags = document.querySelectorAll('#ai-panel-results .ai-kw-tag');
+    for (var i = 0; i < tags.length; i++) tags[i].classList.add('selected');
+  });
+  var aiClose = document.getElementById('btn-ai-close');
+  if (aiClose) aiClose.addEventListener('click', function() { document.getElementById('ai-panel').classList.remove('open'); });
+
+  // 검색 버튼
+  var searchBtn = document.getElementById('btn-search');
+  if (searchBtn) searchBtn.addEventListener('click', function() {
+    var sg = document.getElementById('search-suggestions'); if (sg) sg.classList.remove('open');
+    clearTimeout(debounceTimer); S.showAllResults = false; applyFilters();
+  });
+
+  // 필터 토글
+  var filterToggle = document.getElementById('btn-filter-toggle');
+  if (filterToggle) filterToggle.addEventListener('click', function() {
+    document.getElementById('filters-grid').classList.toggle('open'); filterToggle.classList.toggle('active');
+  });
+
+  // 정렬 / 표시
+  var sortSel = document.getElementById('sort-select');
+  if (sortSel) sortSel.addEventListener('change', applyFilters);
+  var rowsSel = document.getElementById('rows-select');
+  if (rowsSel) rowsSel.addEventListener('change', function() { S.rows = parseInt(rowsSel.value); S.page = 1; renderList(); });
+
+  // CSV / 공유 / 리셋
+  var csvBtn = document.getElementById('btn-csv');
+  if (csvBtn) csvBtn.addEventListener('click', function() { downloadCSV(false); });
+  var shareBtn = document.getElementById('btn-share');
+  if (shareBtn) shareBtn.addEventListener('click', shareLink);
+  var resetBtn = document.getElementById('btn-reset-inline');
+  if (resetBtn) resetBtn.addEventListener('click', function() { S.showAllResults = false; resetAll(true); });
+
+  // 뷰 모드
+  var viewBtns = document.querySelectorAll('.view-btn');
+  for (var i = 0; i < viewBtns.length; i++) {
+    (function(btn) { btn.addEventListener('click', function() {
+      for (var j = 0; j < viewBtns.length; j++) viewBtns[j].classList.remove('active');
+      btn.classList.add('active'); if (btn.dataset.view) { S.viewMode = btn.dataset.view; renderList(); }
+    }); })(viewBtns[i]);
+  }
+
+  // 전체 선택
+  var checkAll = document.getElementById('check-all');
+  if (checkAll) checkAll.addEventListener('change', function() {
+    var ids = getPageData().map(function(c) { return c.id; });
+    for (var i = 0; i < ids.length; i++) { if (checkAll.checked) S.selectedIds.add(ids[i]); else S.selectedIds.delete(ids[i]); }
+    renderList(); updateFAB();
+  });
+
+  // FAB
+  var fabCsv = document.getElementById('fab-csv');
+  if (fabCsv) fabCsv.addEventListener('click', function() { downloadCSV(true); });
+  var fabLink = document.getElementById('fab-link');
+  if (fabLink) fabLink.addEventListener('click', function() {
+    var links = []; S.selectedIds.forEach(function(id) { var c = S.courses.find(function(x){return x.id===id;}); if(c) links.push(buildCourseUrl(c)); });
+    navigator.clipboard.writeText(links.join('\n')); toast('🔗 '+links.length+'개 복사');
+  });
+  var fabClear = document.getElementById('fab-clear');
+  if (fabClear) fabClear.addEventListener('click', function() { S.selectedIds.clear(); renderList(); updateFAB(); });
+
+  // 사이드 패널
+  var spOverlay = document.getElementById('side-panel-overlay');
+  if (spOverlay) spOverlay.addEventListener('click', function(e) { if (e.target === spOverlay) closeSidePanel(); });
+  var spClose = document.getElementById('sp-close');
+  if (spClose) spClose.addEventListener('click', closeSidePanel);
+
+  // 멀티셀렉트 외부 클릭
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.ms-wrap')) return;
+    if (e.target.closest('.filter-chip-x')) return;
+    var panels = document.querySelectorAll('.ms-panel.open');
+    for (var i = 0; i < panels.length; i++) panels[i].classList.remove('open');
+  });
+
+  // URL 파라미터
+  applyURLParams();
+
+  // 선택 직무 카테고리 기본 필터
+  if (S.selectedFamilies.length > 0 && !document.getElementById('search-input').value.trim()) {
+    var jobCats = [];
+    for (var fi = 0; fi < S.selectedFamilies.length; fi++) {
+      var famData = CURATION[S.selectedFamilies[fi]];
+      if (famData && famData.roles) {
+        for (var ri = 0; ri < famData.roles.length; ri++) {
+          if (famData.roles[ri].cats) {
+            for (var ci = 0; ci < famData.roles[ri].cats.length; ci++) {
+              if (jobCats.indexOf(famData.roles[ri].cats[ci]) === -1) jobCats.push(famData.roles[ri].cats[ci]);
+            }
+          }
+        }
+      }
+    }
+    if (jobCats.length > 0) setMSValues('f-category', jobCats);
+  }
+
+  // 첫 필터링
+  applyFilters();
+
+  // 헤더 제목 클릭
+  var clickCount = 0;
+  var headerTitle = document.getElementById('header-title');
+  if (headerTitle) headerTitle.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    clickCount++; setTimeout(function() { clickCount = 0; }, 1000);
+    if (clickCount === 3) { if (typeof manageCuratorPicks === 'function') manageCuratorPicks(); clickCount = 0; }
+  });
+
+  // 도움말
+  var helpBtn = document.getElementById('btn-help');
+  if (helpBtn) helpBtn.addEventListener('click', function() { document.getElementById('help-overlay').classList.add('active'); });
+  var helpClose = document.getElementById('help-close');
+  if (helpClose) helpClose.addEventListener('click', function() { document.getElementById('help-overlay').classList.remove('active'); });
+  var helpOverlay = document.getElementById('help-overlay');
+  if (helpOverlay) helpOverlay.addEventListener('click', function(e) { if (e.target === helpOverlay) helpOverlay.classList.remove('active'); });
+
+  // CSV 모달
+  var csvModalClose = document.getElementById('csv-modal-close');
+  if (csvModalClose) csvModalClose.addEventListener('click', function() { document.getElementById('csv-modal-overlay').classList.remove('active'); });
+  var csvModalOverlay = document.getElementById('csv-modal-overlay');
+  if (csvModalOverlay) csvModalOverlay.addEventListener('click', function(e) { if (e.target === csvModalOverlay) csvModalOverlay.classList.remove('active'); });
+
+  // 키보드 단축키
+  document.addEventListener('keydown', function(e) {
+    if (e.key === '/' && !e.target.matches('input,textarea,select')) { e.preventDefault(); if (searchInput) searchInput.focus(); }
+    if (e.key === 'Escape') {
+      closeSidePanel();
+      var ho = document.getElementById('help-overlay'); if (ho) ho.classList.remove('active');
+      var ap = document.getElementById('ai-panel'); if (ap) ap.classList.remove('open');
+      var sg = document.getElementById('search-suggestions'); if (sg) sg.classList.remove('open');
+      var cm = document.getElementById('csv-modal-overlay'); if (cm) cm.classList.remove('active');
+    }
+    if (!e.target.matches('input,textarea,select')) {
+      if (e.key === 'ArrowLeft' && S.page > 1) { S.page--; renderList(); }
+      if (e.key === 'ArrowRight') { var tp = Math.ceil(S.filtered.length/S.rows); if (S.page < tp) { S.page++; renderList(); } }
+    }
+  });
+
+  // ★ 활용팁 롤링 배너 (환영 메시지 통합)
+  var welcomeMsg = '🚀 탐험가님, ' + S.subdomain + ' 우주에 도착했습니다! ' + S.courses.length.toLocaleString() + '개의 별이 기다리고 있어요.';
+  var tips = [
+    welcomeMsg,
+    '🔍 띄어쓰기는 AND 검색! "AI 영업" → AI와 영업이 모두 포함된 강의만 표시됩니다.',
+    '🤖 AI 내비로 키워드를 확장해보세요! 단, 5개 미만이 최적의 품질을 보장합니다.',
+    '🎚️ 검색 결과가 너무 적으면 감도를 🔭 광역으로, 너무 많으면 🔬 정밀로 조절하세요.',
+    '📋 강의를 체크하고 📋 미션 보고서로 CSV 다운로드할 수 있어요!',
+    '🇰🇷 한국어로 검색하면 자동으로 영어 번역도 함께 검색됩니다.',
+    '⌨️ / 키를 누르면 검색창으로 바로 이동! Esc로 패널을 닫을 수 있어요.',
+    '🛸 미션 센터에서 직무별 맞춤 강의를 탐색해보세요!',
+    '⭐ 강의 제목을 클릭하면 상세 정보 + 한국어 번역을 볼 수 있어요.',
+    '🔗 공유 링크로 동료에게 검색 조건을 공유할 수 있습니다.',
+    '📅 업데이트 필터로 최신 강의만 골라볼 수 있어요!',
+    '📊 AND 모드는 정확한 결과, OR 모드는 더 많은 결과를 보여줍니다.',
+    '💡 "AI 영업"처럼 검색하면 뒤쪽 키워드(영업)에 더 높은 가중치가 부여됩니다.',
+  ];
+  var tipIndex = 0;
+  var tipsText = document.getElementById('tips-text');
+  if (tipsText) {
+    tipsText.textContent = tips[0];
+    setInterval(function() {
+      tipsText.classList.add('fade');
+      setTimeout(function() {
+        tipIndex = (tipIndex + 1) % tips.length;
+        tipsText.textContent = tips[tipIndex];
+        tipsText.classList.remove('fade');
+      }, 400);
+    }, 6000);
+  }
+}
+
+// ═══ 탭 전환 ═══
+function switchTab(tabId) {
+  var panels = document.querySelectorAll('.tab-panel');
+  for (var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
+  var panel = document.getElementById('panel-'+tabId);
+  if (panel) panel.classList.add('active');
+  var listSection = document.getElementById('list-section');
+  if (listSection) listSection.style.display = (tabId === 'stars') ? 'none' : '';
+}
+
+// ═══ 스마트 검색 제안 ═══
+function showSearchSuggestions(query) {
+  var container = document.getElementById('search-suggestions');
+  if (!container) return;
+  if (query.length < 2) { container.classList.remove('open'); return; }
+  var ql = query.toLowerCase();
+  var titleMatches = [], catSet = new Set(), topicSet = new Set(), koEnSuggestions = [];
+  for (var i = 0; i < S.courses.length; i++) {
+    var c = S.courses[i];
+    if (c.title && c.title.toLowerCase().indexOf(ql) !== -1) titleMatches.push(c);
+    if (c.category && c.category.toLowerCase().indexOf(ql) !== -1) catSet.add(c.category.split(',')[0].trim());
+    if (c.topic && c.topic.toLowerCase().indexOf(ql) !== -1) topicSet.add(c.topic);
+  }
+  titleMatches.sort(function(a,b) { return (b.enrollments||0)-(a.enrollments||0); });
+  titleMatches = titleMatches.slice(0, 3);
+  var catMatches = Array.from(catSet).filter(Boolean).slice(0, 2);
+  var topicMatches = Array.from(topicSet).filter(Boolean).slice(0, 2);
+  var entries = Object.entries(KO_EN_MAP);
+  for (var i = 0; i < entries.length; i++) {
+    var ko = entries[i][0], enList = entries[i][1];
+    var match = ko.indexOf(ql) !== -1;
+    if (!match) { for (var j = 0; j < enList.length; j++) { if (enList[j].indexOf(ql) !== -1) { match = true; break; } } }
+    if (match) koEnSuggestions.push({ ko: ko, en: enList[0] });
+  }
+  var html = '';
+  if (titleMatches.length > 0) {
+    html += '<div class="suggestion-category">🔥 인기 강의</div>';
+    for (var i = 0; i < titleMatches.length; i++) {
+      var c = titleMatches[i];
+      html += '<div class="suggestion-item" data-course-id="'+c.id+'"><span class="suggestion-icon">📖</span><span class="suggestion-text">'+(c.title.length>50?c.title.substring(0,50)+'...':c.title)+'</span><span class="suggestion-badge">⭐'+(c.rating?c.rating.toFixed(1):'-')+'</span></div>';
+    }
+  }
+  if (catMatches.length > 0) {
+    html += '<div class="suggestion-category">🌌 카테고리</div>';
+    for (var i = 0; i < catMatches.length; i++) html += '<div class="suggestion-item" data-category="'+catMatches[i]+'"><span class="suggestion-icon">'+getCatEmoji(catMatches[i])+'</span><span class="suggestion-text">'+catMatches[i]+'</span><span class="suggestion-badge">카테고리 필터</span></div>';
+  }
+  if (topicMatches.length > 0) {
+    html += '<div class="suggestion-category">💡 주제</div>';
+    for (var i = 0; i < topicMatches.length; i++) html += '<div class="suggestion-item" data-topic="'+topicMatches[i]+'"><span class="suggestion-icon">🏷️</span><span class="suggestion-text">'+topicMatches[i]+'</span></div>';
+  }
+  if (koEnSuggestions.length > 0) {
+    html += '<div class="suggestion-category">🌐 번역 제안</div>';
+    for (var i = 0; i < Math.min(2, koEnSuggestions.length); i++) html += '<div class="suggestion-item" data-keyword="'+koEnSuggestions[i].en+'"><span class="suggestion-icon">🔄</span><span class="suggestion-text">'+koEnSuggestions[i].ko+' → '+koEnSuggestions[i].en+'</span></div>';
+  }
+  if (!html) { container.classList.remove('open'); return; }
+  container.innerHTML = html;
+  container.classList.add('open');
+  var items = container.querySelectorAll('.suggestion-item');
+  for (var i = 0; i < items.length; i++) {
+    (function(item) { item.addEventListener('click', function() {
+      if (item.dataset.courseId) { var course = S.courses.find(function(x){return x.id===item.dataset.courseId;}); if (course) openSidePanel(course); }
+      else if (item.dataset.category) { setMSValues('f-category',[item.dataset.category]); applyFilters(); }
+      else if (item.dataset.topic) { document.getElementById('search-input').value = item.dataset.topic; applyFilters(); }
+      else if (item.dataset.keyword) { var cur = document.getElementById('search-input').value.trim(); document.getElementById('search-input').value = cur ? cur+', '+item.dataset.keyword : item.dataset.keyword; applyFilters(); }
+      container.classList.remove('open');
+    }); })(items[i]);
+  }
+}
