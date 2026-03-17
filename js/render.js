@@ -1,16 +1,21 @@
 // ═══════════════════════════════════════════════════════════
 // render.js — 통계 카드 + 테이블/카드/컴팩트 렌더링
-// 수강자 수: 100명 단위 표시 (정렬은 원본 숫자)
 // ═══════════════════════════════════════════════════════════
 var currentSortColumn = null;
 var currentSortDirection = 'desc';
 var csvDownloadType = 'all';
 
-// ★ 수강자 수 표시 포맷 (100명 단위)
+// ★ 수강자 수 표시 포맷
 function formatEnrollments(n) {
-  if (!n || n <= 0) return '-';
+  if (!n || n <= 0) return '100▼';
   if (n < 100) return '100▼';
-  // 100명 단위로 반올림
+  if (n >= 1000) {
+    // 1,000 이상은 K 표시 + 100단위 반올림
+    var rounded = Math.round(n / 100) * 100;
+    var k = (rounded / 1000).toFixed(rounded % 1000 === 0 ? 0 : 1);
+    return k + 'K▲';
+  }
+  // 100~999: 100단위 반올림
   var rounded = Math.round(n / 100) * 100;
   return rounded.toLocaleString() + '▲';
 }
@@ -140,7 +145,6 @@ function renderList() {
   document.getElementById('view-compact').innerHTML = compactHtml;
 
   // ═══ 이벤트 바인딩 ═══
-  // 강의 링크 클릭 → 사이드 패널
   var courseLinks = document.querySelectorAll('.course-link[data-id]');
   for (var i = 0; i < courseLinks.length; i++) {
     (function(link) {
@@ -152,7 +156,6 @@ function renderList() {
     })(courseLinks[i]);
   }
 
-  // 체크박스
   var checkboxes = document.querySelectorAll('#table-body input[type="checkbox"], #view-compact input[type="checkbox"]');
   for (var i = 0; i < checkboxes.length; i++) {
     (function(cb) {
@@ -164,7 +167,6 @@ function renderList() {
     })(checkboxes[i]);
   }
 
-  // 정렬 헤더
   var sortHeaders = document.querySelectorAll('th.sortable');
   for (var i = 0; i < sortHeaders.length; i++) {
     sortHeaders[i].style.cursor = 'pointer';
@@ -239,7 +241,6 @@ function renderDashCards() {
   }
   container.innerHTML = html;
 
-  // 카운트 애니메이션
   var statCards = container.querySelectorAll('.stats-card');
   for (var i = 0; i < statCards.length; i++) {
     var target = parseInt(statCards[i].querySelector('.stats-value').dataset.target);
@@ -254,7 +255,6 @@ function renderDashCards() {
     }
   }
 
-  // 다운로드 버튼
   var dlBtns = container.querySelectorAll('.stats-download-btn');
   for (var i = 0; i < dlBtns.length; i++) {
     (function(btn) {
@@ -267,7 +267,6 @@ function renderDashCards() {
     })(dlBtns[i]);
   }
 
-  // CSV 모달 이벤트
   var csvClose = document.getElementById('csv-modal-close');
   if (csvClose) csvClose.addEventListener('click', function() { document.getElementById('csv-modal-overlay').classList.remove('active'); });
   var csvConfirm = document.getElementById('csv-download-confirm');
@@ -289,7 +288,6 @@ function renderDashCards() {
   });
 }
 
-// ★ CSV 다운로드 — 수강자 수도 100명 단위로 표시
 function downloadWithSelectedColumns() {
   var data;
   if (csvDownloadType === 'all') data = S.courses;
@@ -332,10 +330,7 @@ function downloadWithSelectedColumns() {
       var col = cols[j];
       var v = c[col.key] || '';
       if (col.key === 'url') v = buildCourseUrl(c);
-      else if (col.key === 'enrollments') {
-        // ★ CSV에서도 100명 단위 표시
-        v = formatEnrollments(c.enrollments);
-      }
+      else if (col.key === 'enrollments') v = formatEnrollments(c.enrollments);
       else if (col.key === 'subtitles') v = hasKoreanSub(c) ? 'Y' : 'N';
       else if (['title','category','instructor'].indexOf(col.key) !== -1) v = '"' + String(v).replace(/"/g, '""') + '"';
       row.push(v);
