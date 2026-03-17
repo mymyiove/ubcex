@@ -109,7 +109,9 @@ function enterAdminMode() {
       '<div class="admin-section"><h3>🔑 API 테스트</h3><div class="admin-btn-group"><button class="admin-btn" id="btn-test-graphql">🔐 GraphQL</button><button class="admin-btn" id="btn-test-gemini">🤖 Gemini</button></div><div class="admin-log" id="api-log"></div></div>' +
       '<div class="admin-section"><h3>📋 로우 데이터</h3><div class="admin-btn-group" style="align-items:center;"><label style="color:var(--text-secondary);font-size:0.85rem;">Chunk:</label><input type="number" id="chunk-number" value="0" min="0" max="50" style="width:60px;padding:0.4rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);text-align:center;" /><button class="admin-btn" id="btn-view-chunk">🔍 조회</button></div><div class="admin-log" id="raw-log"></div></div>' +
     '</div></div>';
-  document.body.appendChild(ap);
+  var footer = document.querySelector('.app-footer');
+  if (footer) document.body.insertBefore(ap, footer);
+  else document.body.appendChild(ap);
 
   document.getElementById('admin-exit').addEventListener('click', exitAdminMode);
   document.getElementById('btn-sync-continue').addEventListener('click', function() { runSync(false); });
