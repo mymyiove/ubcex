@@ -46,6 +46,7 @@ const CAT_COLORS = {
 };
 const getCatColor = (cat) => { if(!cat) return 'var(--accent)'; for(const k in CAT_COLORS) { if(cat.includes(k)) return CAT_COLORS[k]; } return 'var(--accent)'; };
 const KO_EN_MAP = {
+  // ═══ 기존 ═══
   '마케팅':['marketing'],'개발':['development','programming'],'디자인':['design'],
   '리더십':['leadership'],'데이터':['data'],'분석':['analysis','analytics'],
   '관리':['management'],'영업':['sales'],'회계':['accounting'],'재무':['finance'],
@@ -55,7 +56,44 @@ const KO_EN_MAP = {
   '엑셀':['excel'],'파이썬':['python'],'자바':['java'],'파워포인트':['powerpoint'],
   '기획':['planning','strategy'],'협상':['negotiation'],'채용':['recruiting','hiring'],
   '자동화':['automation'],'생산성':['productivity'],'인공지능':['artificial intelligence','ai'],
-  '머신러닝':['machine learning'],'딥러닝':['deep learning']
+  '머신러닝':['machine learning'],'딥러닝':['deep learning'],
+  // ═══ 기술 ═══
+  '반도체':['semiconductor','chip'],'블록체인':['blockchain','web3'],
+  '사이버보안':['cybersecurity','information security'],
+  '프롬프트':['prompt engineering','prompt'],'생성형ai':['generative ai','genai','llm'],
+  '애자일':['agile','scrum'],'데브옵스':['devops','ci/cd'],
+  '빅데이터':['big data','data engineering'],'사물인터넷':['iot','internet of things'],
+  '증강현실':['ar','augmented reality'],'가상현실':['vr','virtual reality'],
+  '로봇공학':['robotics','robot'],'자연어처리':['nlp','natural language processing'],
+  '컴퓨터비전':['computer vision','image recognition'],
+  '타입스크립트':['typescript'],'리액트':['react','react.js'],
+  '노드':['node.js','nodejs'],'스프링':['spring','spring boot'],
+  '도커':['docker','container'],'쿠버네티스':['kubernetes','k8s'],
+  '테라폼':['terraform','infrastructure as code'],
+  '깃':['git','github','version control'],
+  // ═══ 비즈니스 ═══
+  '경영전략':['business strategy','corporate strategy'],
+  '조직관리':['organizational management'],'성과관리':['performance management','okr','kpi'],
+  '고객경험':['customer experience','cx'],'공급망':['supply chain','scm','logistics'],
+  '재무분석':['financial analysis','financial modeling'],
+  '위험관리':['risk management','compliance'],'변화관리':['change management'],
+  '코칭':['coaching','mentoring'],'갈등관리':['conflict management','conflict resolution'],
+  '시간관리':['time management'],'의사결정':['decision making'],
+  '문제해결':['problem solving','critical thinking'],
+  '비즈니스영어':['business english'],'이메일':['email','email writing'],
+  '보고서':['report','report writing'],'스프레드시트':['spreadsheet','google sheets'],
+  // ═══ 직무 ═══
+  '백엔드':['backend','server','api'],'프론트엔드':['frontend','front-end','ui'],
+  '풀스택':['fullstack','full stack'],'모바일':['mobile','ios','android'],
+  '데이터분석':['data analysis','data analytics','bi'],
+  '데이터사이언스':['data science'],'데이터엔지니어링':['data engineering','etl'],
+  '웹개발':['web development'],'앱개발':['app development','mobile development'],
+  '게임개발':['game development','unity','unreal'],
+  '퍼포먼스마케팅':['performance marketing','digital marketing'],
+  '콘텐츠마케팅':['content marketing','copywriting'],
+  '그로스':['growth','growth hacking','growth marketing'],
+  '브랜딩':['branding','brand strategy'],
+  'crm':['crm','salesforce','hubspot'],'seo':['seo','search engine optimization'],
 };
 const NEW_MONTHS = 1;
 const isNew = (d) => { if(!d) return false; const u=new Date(d), t=new Date(); t.setMonth(t.getMonth()-NEW_MONTHS); return u>=t; };
