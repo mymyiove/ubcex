@@ -311,21 +311,32 @@ function initApp() {
   applyURLParams();
 
   // 선택 직무 카테고리 기본 필터
+  // ★ 선택 직무 → 핵심 키워드로 검색 (카테고리 대신)
   if (S.selectedFamilies.length > 0 && !document.getElementById('search-input').value.trim()) {
-    var jobCats = [];
+    var jobKeywords = [];
     for (var fi = 0; fi < S.selectedFamilies.length; fi++) {
       var famData = CURATION[S.selectedFamilies[fi]];
-      if (famData && famData.roles) {
-        for (var ri = 0; ri < famData.roles.length; ri++) {
-          if (famData.roles[ri].cats) {
-            for (var ci = 0; ci < famData.roles[ri].cats.length; ci++) {
-              if (jobCats.indexOf(famData.roles[ri].cats[ci]) === -1) jobCats.push(famData.roles[ri].cats[ci]);
-            }
-          }
+      if (famData) {
+        // 직무 그룹의 name을 키워드로 사용
+        var famName = famData.name; // "제품/기획", "IT/개발", "디자인" 등
+        // 한영 매핑에서 영어 키워드 추출
+        var nameWords = famName.split(/[\/·,\s]+/);
+        for (var ni = 0; ni < nameWords.length; ni++) {
+          var w = nameWords[ni].trim();
+          if (w.length >= 2 && jobKeywords.indexOf(w) === -1) jobKeywords.push(w);
         }
       }
     }
-    if (jobCats.length > 0) setMSValues('f-category', jobCats);
+    if (jobKeywords.length > 0) {
+      // OR 모드로 검색 (직무 키워드 중 하나라도 매칭)
+      document.getElementById('search-input').value = jobKeywords.join(', ');
+      S.searchMode = 'or';
+      var modeBtns = document.querySelectorAll('.scan-mode-btn[data-mode]');
+      for (var mi = 0; mi < modeBtns.length; mi++) {
+        modeBtns[mi].classList.remove('active');
+        if (modeBtns[mi].getAttribute('data-mode') === 'or') modeBtns[mi].classList.add('active');
+      }
+    }
   }
 
   // 첫 필터링
@@ -343,6 +354,23 @@ function initApp() {
   // 도움말
   var helpBtn = document.getElementById('btn-help');
   if (helpBtn) helpBtn.addEventListener('click', function() { document.getElementById('help-overlay').classList.add('active'); });
+  var backGateBtn = document.getElementById('btn-back-gate');
+  if (backGateBtn) {
+    backGateBtn.addEventListener('click', function() {
+      if (confirm('게이트 페이지로 돌아가시겠습니까?\n현재 검색 상태가 초기화됩니다.')) {
+        document.getElementById('app-container').style.display = 'none';
+        document.getElementById('gate-page').style.display = '';
+        document.getElementById('gate-step-1').classList.remove('active');
+        document.getElementById('gate-step-2').classList.add('active');
+        // 이전 선택 초기화
+        var selectedCards = document.querySelectorAll('.gate-job-card.selected');
+        for (var i = 0; i < selectedCards.length; i++) selectedCards[i].classList.remove('selected');
+        resetAll(false);
+        toast('🚪 게이트 페이지로 돌아왔습니다.');
+      }
+    });
+  }
+  
   var helpClose = document.getElementById('help-close');
   if (helpClose) helpClose.addEventListener('click', function() { document.getElementById('help-overlay').classList.remove('active'); });
   var helpOverlay = document.getElementById('help-overlay');
