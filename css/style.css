@@ -595,3 +595,37 @@ button[title]:hover::after {
   padding: 0 var(--content-pad) !important;
   margin-top: 0.5rem !important;
 }
+
+/* ★ 발견된 별 통계 카드 hover 효과 */
+.stats-card {
+  cursor: pointer;
+}
+.stats-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+/* ★ TIP 배너 가로 폭 축소 — 다른 섹션과 동일하게 */
+.tips-banner {
+  max-width: calc(var(--content-max) - var(--content-pad) * 2) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 1.2rem !important;
+  padding-right: 1.2rem !important;
+}
+
+/* ★ 게이트 페이지 푸터 — 스크롤 없이 보이게 */
+#gate-page {
+  min-height: 100vh;
+  padding-bottom: 0;
+}
+#gate-page .app-footer {
+  position: relative;
+  margin-top: auto;
+}
+
+/* ★ 게이트에서 돌아가기 버튼 숨기기 */
+#gate-page #btn-back-gate {
+  display: none;
+}
