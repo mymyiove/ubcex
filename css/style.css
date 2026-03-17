@@ -557,3 +557,37 @@ button[title]:hover::after {
 @media (max-width: 768px) {
   button[title]:hover::after { display: none; }
 }
+
+/* 모든 섹션 통일 — style.css 끝에 추가 */
+.tips-banner,
+.highlight-section,
+.stats-section,
+.tab-panel,
+.list-section,
+.app-footer {
+  max-width: var(--content-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--content-pad);
+  padding-right: var(--content-pad);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* tips-banner 내부 padding 중복 제거 */
+.tips-banner {
+  padding-top: 0.8rem;
+  padding-bottom: 0.8rem;
+}
+
+/* stats-section은 grid라서 padding 안에 gap이 들어감 */
+.stats-section {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* highlight-section 마진 통일 */
+.highlight-section {
+  margin-top: 0.8rem;
+  margin-bottom: 0.8rem;
+}
