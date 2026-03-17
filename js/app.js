@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// app.js — 메인 앱
+// app.js — 메인 앱 + 임시 목록 모드
 // ═══════════════════════════════════════════════════════════
 var ADMIN_CODE = 'jhj11';
 var WORKER_URL = 'https://udemy-sync.mymyiove882.workers.dev';
@@ -51,7 +51,7 @@ function goStep2() {
   document.getElementById('gate-step-2').classList.add('active');
 }
 
-// ═══ 관리자 모드 ═══
+// ═══ 관리자 모드 + 임시 목록 ═══
 function enterAdminMode() {
   document.getElementById('gate-page').style.display = 'none';
   var ap = document.createElement('div');
@@ -68,11 +68,27 @@ function enterAdminMode() {
       '<div class="admin-section"><h3>📡 강의 동기화</h3><div class="admin-btn-group"><button class="admin-btn admin-btn-primary" id="btn-sync-continue">▶️ 이어서</button><button class="admin-btn admin-btn-warning" id="btn-sync-reset">🔄 전체 재동기화</button><button class="admin-btn admin-btn-danger" id="btn-sync-auto">🚀 자동 전체</button></div><div class="admin-log" id="sync-log"></div></div>' +
       '<div class="admin-section"><h3>⭐ 항해사 PICK</h3><div class="admin-btn-group"><button class="admin-btn admin-btn-primary" id="btn-manage-picks">⭐ PICK 설정</button><button class="admin-btn" id="btn-view-picks">📋 현재 보기</button></div><div class="admin-log" id="picks-log"></div></div>' +
       '<div class="admin-section"><h3>🚫 제외 강의 관리</h3><p class="admin-desc">웅진데모 전용 강의 등 제외할 강의 ID를 관리합니다.</p><div class="admin-btn-group"><button class="admin-btn admin-btn-warning" id="btn-manage-excluded">🚫 제외 강의 설정</button><button class="admin-btn" id="btn-view-excluded">📋 현재 보기</button></div><div class="admin-log" id="excluded-log"></div></div>' +
+      // ★ 임시 목록 모드
+      '<div class="admin-section"><h3>📋 임시 목록 모드</h3>' +
+        '<p class="admin-desc">외부 강의 목록(CSV/텍스트)을 업로드하여 임시로 큐레이션합니다.<br>기존 API 데이터는 보존되며, 복원 버튼으로 돌아갈 수 있습니다.</p>' +
+        '<div class="admin-btn-group">' +
+          '<label class="admin-btn admin-btn-primary" style="cursor:pointer;">📥 CSV 업로드<input type="file" id="temp-csv-upload" accept=".csv,.tsv,.txt" style="display:none;" /></label>' +
+          '<button class="admin-btn admin-btn-primary" id="btn-temp-paste">📝 텍스트 붙여넣기</button>' +
+          '<button class="admin-btn admin-btn-warning" id="btn-temp-restore" style="display:none;">↩️ 원래 목록 복원</button>' +
+        '</div>' +
+        '<div id="temp-paste-area" style="display:none; margin-top:0.8rem;">' +
+          '<textarea id="temp-paste-text" rows="8" placeholder="탭 또는 쉼표로 구분된 데이터를 붙여넣으세요.&#10;&#10;첫 줄은 헤더 (예: 강의명, 카테고리, 강의개요)&#10;&#10;지원 헤더: title/강의명, category/카테고리, description/설명,&#10;headline/강의개요/소개, difficulty/난이도, rating/평점,&#10;수강시간(h), 리뷰수, 최근업데이트, 서브카테고리" style="width:100%;padding:0.8rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);font-size:0.82rem;font-family:Consolas,monospace;resize:vertical;"></textarea>' +
+          '<button class="admin-btn admin-btn-primary" id="btn-temp-apply-paste" style="margin-top:0.5rem;">🚀 이 목록으로 전환</button>' +
+        '</div>' +
+        '<div class="admin-log" id="temp-log"></div>' +
+      '</div>' +
       '<div class="admin-section"><h3>🔍 데이터 검증</h3><div class="admin-btn-group"><button class="admin-btn" id="btn-verify-data">📊 현황</button><button class="admin-btn" id="btn-verify-sample">📋 샘플</button></div><div class="admin-log" id="verify-log"></div></div>' +
       '<div class="admin-section"><h3>🔑 API 테스트</h3><div class="admin-btn-group"><button class="admin-btn" id="btn-test-graphql">🔐 GraphQL</button><button class="admin-btn" id="btn-test-gemini">🤖 Gemini</button></div><div class="admin-log" id="api-log"></div></div>' +
       '<div class="admin-section"><h3>📋 로우 데이터</h3><div class="admin-btn-group" style="align-items:center;"><label style="color:var(--text-secondary);font-size:0.85rem;">Chunk:</label><input type="number" id="chunk-number" value="0" min="0" max="50" style="width:60px;padding:0.4rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);text-align:center;" /><button class="admin-btn" id="btn-view-chunk">🔍 조회</button></div><div class="admin-log" id="raw-log"></div></div>' +
     '</div></div>';
   document.body.appendChild(ap);
+
+  // 기존 이벤트
   document.getElementById('admin-exit').addEventListener('click', exitAdminMode);
   document.getElementById('btn-sync-continue').addEventListener('click', function() { runSync(false); });
   document.getElementById('btn-sync-reset').addEventListener('click', function() { if (confirm('전체 재동기화?')) runSync(true); });
@@ -86,9 +102,56 @@ function enterAdminMode() {
   document.getElementById('btn-test-graphql').addEventListener('click', testGraphQL);
   document.getElementById('btn-test-gemini').addEventListener('click', testGemini);
   document.getElementById('btn-view-chunk').addEventListener('click', viewChunk);
-  loadAdminStatus(); toast('🔧 관리자 모드에 진입했습니다.');
+
+  // ★ 임시 목록 이벤트
+  var tempCsvUpload = document.getElementById('temp-csv-upload');
+  if (tempCsvUpload) {
+    tempCsvUpload.addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev) { parseTempList(ev.target.result); };
+      reader.readAsText(file);
+    });
+  }
+  var btnTempPaste = document.getElementById('btn-temp-paste');
+  if (btnTempPaste) {
+    btnTempPaste.addEventListener('click', function() {
+      var area = document.getElementById('temp-paste-area');
+      if (area) area.style.display = area.style.display === 'none' ? 'block' : 'none';
+    });
+  }
+  var btnTempApplyPaste = document.getElementById('btn-temp-apply-paste');
+  if (btnTempApplyPaste) {
+    btnTempApplyPaste.addEventListener('click', function() {
+      var text = document.getElementById('temp-paste-text').value.trim();
+      if (!text) { toast('데이터를 입력해주세요.', 'warning'); return; }
+      parseTempList(text);
+    });
+  }
+  var btnTempRestore = document.getElementById('btn-temp-restore');
+  if (btnTempRestore) {
+    btnTempRestore.addEventListener('click', function() {
+      if (S._originalCourses) {
+        S.courses = S._originalCourses;
+        S._originalCourses = null;
+        var log = document.getElementById('temp-log');
+        if (log) log.innerHTML = '<div class="log-entry log-success">✅ 원래 목록 복원 완료! (' + S.courses.length.toLocaleString() + '개)</div>';
+        btnTempRestore.style.display = 'none';
+        toast('↩️ 원래 목록(' + S.courses.length.toLocaleString() + '개)으로 복원되었습니다.');
+      }
+    });
+  }
+  if (S._originalCourses) {
+    var rb = document.getElementById('btn-temp-restore');
+    if (rb) rb.style.display = '';
+  }
+
+  loadAdminStatus();
+  toast('🔧 관리자 모드에 진입했습니다.');
 }
-function exitAdminMode() { var p=document.getElementById('admin-panel'); if(p)p.remove(); document.getElementById('gate-page').style.display=''; document.getElementById('input-subdomain').value=''; }
+
+function exitAdminMode() { var p = document.getElementById('admin-panel'); if (p) p.remove(); document.getElementById('gate-page').style.display = ''; document.getElementById('input-subdomain').value = ''; }
 async function loadAdminStatus(){try{var r=await fetch(WORKER_URL+'/status',{headers:{'Authorization':'Bearer '+WORKER_SECRET}});var d=await r.json();document.getElementById('sync-status-value').textContent=d.isComplete?'✅ 완료':d.synced?'⏳ 진행 중':'❌ 미완료';document.getElementById('sync-status-sub').textContent=d.syncedAt?'마지막: '+new Date(d.syncedAt).toLocaleString('ko-KR'):'기록 없음';document.getElementById('courses-count-value').textContent=(d.totalCount||0).toLocaleString();document.getElementById('courses-count-sub').textContent=d.isComplete?'완료':'진행 중';document.getElementById('chunks-count-value').textContent=d.totalChunks||0;}catch(e){document.getElementById('sync-status-value').textContent='❌ 연결 실패';}try{var r2=await fetch(WORKER_URL+'/test-token',{headers:{'Authorization':'Bearer '+WORKER_SECRET}});var d2=await r2.json();document.getElementById('api-status-value').textContent=d2.success?'✅ 정상':'❌ 오류';document.getElementById('api-status-sub').textContent=d2.success?'GraphQL OK':'실패';}catch(e){document.getElementById('api-status-value').textContent='❌';}}
 async function runSync(isReset){var l=document.getElementById('sync-log');l.innerHTML='<div class="log-entry log-info">📡 시작...</div>';try{var r=await fetch(WORKER_URL+'/sync'+(isReset?'?reset=true':''),{headers:{'Authorization':'Bearer '+WORKER_SECRET}});var d=await r.json();l.innerHTML+='<div class="log-entry '+(d.success?'log-success':'log-error')+'">'+(d.success?'✅':'❌')+' '+(d.message||d.error)+'</div>';}catch(e){l.innerHTML+='<div class="log-entry log-error">❌ '+e.message+'</div>';}loadAdminStatus();}
 async function runAutoSync(){var l=document.getElementById('sync-log');var b=document.getElementById('btn-sync-auto');b.disabled=true;b.textContent='⏳...';l.innerHTML='<div class="log-entry log-info">🚀 자동 시작...</div>';var c=1,go=true;while(go){l.innerHTML+='<div class="log-entry log-info">📡 ['+c+']...</div>';l.scrollTop=l.scrollHeight;try{var ep=c===1?WORKER_URL+'/sync?reset=true':WORKER_URL+'/sync';var r=await fetch(ep,{headers:{'Authorization':'Bearer '+WORKER_SECRET}});var d=await r.json();if(d.error){l.innerHTML+='<div class="log-entry log-error">❌ '+d.error+'</div>';break;}l.innerHTML+='<div class="log-entry log-success">✅ '+d.message+'</div>';if(d.stoppedByTimeout){await new Promise(function(r){setTimeout(r,2000)});c++;}else{l.innerHTML+='<div class="log-entry log-success">🎉 완료! '+d.totalCount+'개</div>';go=false;}}catch(e){l.innerHTML+='<div class="log-entry log-error">❌ '+e.message+'</div>';break;}l.scrollTop=l.scrollHeight;}b.disabled=false;b.textContent='🚀 자동 전체';loadAdminStatus();}
@@ -154,12 +217,10 @@ async function playLaunchSequence() {
   }
 }
 
-
 // ═══ 앱 초기화 ═══
 function initApp() {
   S.searchMode = 'and';
   S.showAllResults = false;
-
   renderDashCards();
   initMultiSelects();
   if (typeof initHighlight === 'function') { initHighlight(); setupHoverPause(); }
@@ -182,14 +243,12 @@ function initApp() {
     }); })(navBtns[i]);
   }
 
-  // 검색 입력
+  // 검색 입력 — 자동 검색 제거, 제안만 표시
   var searchInput = document.getElementById('search-input');
   var debounceTimer;
   if (searchInput) {
-    // ★ 자동 검색 제거 — 검색 제안만 표시
     searchInput.addEventListener('input', function() {
       clearTimeout(debounceTimer);
-      // 검색 제안만 표시 (자동 검색 안 함)
       debounceTimer = setTimeout(function() { showSearchSuggestions(searchInput.value.trim()); }, 250);
     });
     searchInput.addEventListener('focus', function() {
@@ -310,17 +369,13 @@ function initApp() {
   // URL 파라미터
   applyURLParams();
 
-  // 선택 직무 카테고리 기본 필터
-  // ★ 선택 직무 → 핵심 키워드로 검색 (카테고리 대신)
+  // ★ 선택 직무 → 키워드 검색
   if (S.selectedFamilies.length > 0 && !document.getElementById('search-input').value.trim()) {
     var jobKeywords = [];
     for (var fi = 0; fi < S.selectedFamilies.length; fi++) {
       var famData = CURATION[S.selectedFamilies[fi]];
       if (famData) {
-        // 직무 그룹의 name을 키워드로 사용
-        var famName = famData.name; // "제품/기획", "IT/개발", "디자인" 등
-        // 한영 매핑에서 영어 키워드 추출
-        var nameWords = famName.split(/[\/·,\s]+/);
+        var nameWords = famData.name.split(/[\/·,\s]+/);
         for (var ni = 0; ni < nameWords.length; ni++) {
           var w = nameWords[ni].trim();
           if (w.length >= 2 && jobKeywords.indexOf(w) === -1) jobKeywords.push(w);
@@ -328,18 +383,13 @@ function initApp() {
       }
     }
     if (jobKeywords.length > 0) {
-      // OR 모드로 검색 (직무 키워드 중 하나라도 매칭)
       document.getElementById('search-input').value = jobKeywords.join(', ');
       S.searchMode = 'or';
-      var modeBtns = document.querySelectorAll('.scan-mode-btn[data-mode]');
-      for (var mi = 0; mi < modeBtns.length; mi++) {
-        modeBtns[mi].classList.remove('active');
-        if (modeBtns[mi].getAttribute('data-mode') === 'or') modeBtns[mi].classList.add('active');
-      }
+      var mbs = document.querySelectorAll('.scan-mode-btn[data-mode]');
+      for (var mi = 0; mi < mbs.length; mi++) { mbs[mi].classList.remove('active'); if (mbs[mi].getAttribute('data-mode') === 'or') mbs[mi].classList.add('active'); }
     }
   }
 
-  // 첫 필터링
   applyFilters();
 
   // 헤더 제목 클릭
@@ -354,29 +404,26 @@ function initApp() {
   // 도움말
   var helpBtn = document.getElementById('btn-help');
   if (helpBtn) helpBtn.addEventListener('click', function() { document.getElementById('help-overlay').classList.add('active'); });
+  var helpClose = document.getElementById('help-close');
+  if (helpClose) helpClose.addEventListener('click', function() { document.getElementById('help-overlay').classList.remove('active'); });
+  var helpOverlay = document.getElementById('help-overlay');
+  if (helpOverlay) helpOverlay.addEventListener('click', function(e) { if (e.target === helpOverlay) helpOverlay.classList.remove('active'); });
+
+  // 게이트 돌아가기
   var backGateBtn = document.getElementById('btn-back-gate');
   if (backGateBtn) {
     backGateBtn.addEventListener('click', function() {
       if (confirm('처음 화면으로 돌아가시겠습니까?\n현재 검색 상태가 초기화됩니다.')) {
         document.getElementById('app-container').style.display = 'none';
         document.getElementById('gate-page').style.display = '';
-        // ★ 스텝1(모선 주소 입력)으로 돌아가기
         document.getElementById('gate-step-2').classList.remove('active');
         document.getElementById('gate-step-1').classList.add('active');
-        
-        // 이전 선택 초기화
         var selectedCards = document.querySelectorAll('.gate-job-card.selected');
         for (var i = 0; i < selectedCards.length; i++) selectedCards[i].classList.remove('selected');
         resetAll(false);
-        toast('🚪 게이트 페이지로 돌아왔습니다.');
       }
     });
   }
-  
-  var helpClose = document.getElementById('help-close');
-  if (helpClose) helpClose.addEventListener('click', function() { document.getElementById('help-overlay').classList.remove('active'); });
-  var helpOverlay = document.getElementById('help-overlay');
-  if (helpOverlay) helpOverlay.addEventListener('click', function(e) { if (e.target === helpOverlay) helpOverlay.classList.remove('active'); });
 
   // CSV 모달
   var csvModalClose = document.getElementById('csv-modal-close');
@@ -400,7 +447,7 @@ function initApp() {
     }
   });
 
-  // ★ 활용팁 롤링 배너 (환영 메시지 통합)
+  // 활용팁 롤링
   var welcomeMsg = '🚀 탐험가님, ' + S.subdomain + ' 우주에 도착했습니다! ' + S.courses.length.toLocaleString() + '개의 별이 기다리고 있어요.';
   var tips = [
     welcomeMsg,
@@ -499,4 +546,131 @@ function showSearchSuggestions(query) {
       container.classList.remove('open');
     }); })(items[i]);
   }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ★ 임시 목록 파싱 + 적용
+// ═══════════════════════════════════════════════════════════
+function parseTempList(text) {
+  var log = document.getElementById('temp-log');
+  if (log) log.innerHTML = '<div class="log-entry log-info">📋 파싱 중...</div>';
+
+  var lines = text.split('\n').filter(function(l) { return l.trim().length > 0; });
+  if (lines.length < 2) {
+    if (log) log.innerHTML += '<div class="log-entry log-error">❌ 최소 2줄 필요 (헤더 + 데이터)</div>';
+    return;
+  }
+
+  // 구분자 감지
+  var separator = lines[0].indexOf('\t') !== -1 ? '\t' : ',';
+
+  // 헤더 파싱
+  var headers = lines[0].split(separator).map(function(h) { return h.trim().toLowerCase().replace(/"/g, '').replace(/\s+/g, ''); });
+
+  // 컬럼 인덱스
+  var titleIdx=-1, catIdx=-1, descIdx=-1, headlineIdx=-1, langIdx=-1, idIdx=-1;
+  var subCatIdx=-1, diffIdx=-1, durationIdx=-1, ratingIdx=-1, enrollIdx=-1, updatedIdx=-1;
+
+  for (var i = 0; i < headers.length; i++) {
+    var h = headers[i];
+    if (h==='title'||h==='제목'||h==='강의명') titleIdx = i;
+    else if (h==='category'||h==='카테고리'||h==='분류') catIdx = i;
+    else if (h==='subcategory'||h==='서브카테고리'||h==='소분류') subCatIdx = i;
+    else if (h==='description'||h==='설명'||h==='상세설명') descIdx = i;
+    else if (h==='headline'||h==='소개'||h==='강의소개'||h==='강의개요') headlineIdx = i;
+    else if (h==='language'||h==='언어') langIdx = i;
+    else if (h==='id'||h==='강의id') idIdx = i;
+    else if (h==='no') { /* 순서 번호 — 무시하거나 id로 사용 */ if (idIdx === -1) idIdx = i; }
+    else if (h==='difficulty'||h==='난이도'||h==='level') diffIdx = i;
+    else if (h==='duration'||h==='수강시간'||h==='수강시간(h)'||h==='시간') durationIdx = i;
+    else if (h==='rating'||h==='평점') ratingIdx = i;
+    else if (h==='enrollments'||h==='수강생'||h==='리뷰수'||h==='리뷰 수'||h==='수강신청수') enrollIdx = i;
+    else if (h==='updated'||h==='최근업데이트'||h==='최근 업데이트'||h==='업데이트') updatedIdx = i;
+  }
+
+  if (titleIdx === -1) {
+    if (log) log.innerHTML += '<div class="log-entry log-error">❌ title 또는 강의명 컬럼을 찾을 수 없습니다.<br>감지된 헤더: ' + headers.join(', ') + '</div>';
+    return;
+  }
+
+  // 데이터 파싱
+  var courses = [];
+  for (var i = 1; i < lines.length; i++) {
+    var cols = [];
+    if (separator === ',') {
+      var line = lines[i];
+      var inQuote = false;
+      var current = '';
+      for (var j = 0; j < line.length; j++) {
+        if (line[j] === '"') { inQuote = !inQuote; }
+        else if (line[j] === ',' && !inQuote) { cols.push(current.trim()); current = ''; }
+        else { current += line[j]; }
+      }
+      cols.push(current.trim());
+    } else {
+      cols = lines[i].split(separator).map(function(c) { return c.trim().replace(/^"|"$/g, ''); });
+    }
+
+    var title = titleIdx < cols.length ? cols[titleIdx] : '';
+    if (!title) continue;
+
+    var durationMin = 0;
+    if (durationIdx !== -1 && durationIdx < cols.length) {
+      durationMin = Math.round((parseFloat(cols[durationIdx]) || 0) * 60);
+    }
+
+    courses.push({
+      id: idIdx !== -1 && idIdx < cols.length ? String(cols[idIdx]) : 'temp_' + i,
+      title: title,
+      category: catIdx !== -1 && catIdx < cols.length ? cols[catIdx] : '',
+      topic: subCatIdx !== -1 && subCatIdx < cols.length ? cols[subCatIdx] : '',
+      description: descIdx !== -1 && descIdx < cols.length ? cols[descIdx] : '',
+      headline: headlineIdx !== -1 && headlineIdx < cols.length ? cols[headlineIdx] : '',
+      language: langIdx !== -1 && langIdx < cols.length ? cols[langIdx] : 'ja',
+      instructor: '',
+      difficulty: diffIdx !== -1 && diffIdx < cols.length ? (cols[diffIdx] || 'All Levels') : 'All Levels',
+      objectives: '',
+      subtitles: '',
+      lastUpdated: updatedIdx !== -1 && updatedIdx < cols.length ? (cols[updatedIdx] || '') : new Date().toISOString(),
+      url: '',
+      image: '',
+      contentLength: durationMin,
+      rating: ratingIdx !== -1 && ratingIdx < cols.length ? (parseFloat(cols[ratingIdx]) || 0) : 0,
+      enrollments: enrollIdx !== -1 && enrollIdx < cols.length ? (parseInt(String(cols[enrollIdx]).replace(/,/g, '')) || 0) : 0,
+      isNew: false,
+      _search: '',
+      _score: 0
+    });
+  }
+
+  if (courses.length === 0) {
+    if (log) log.innerHTML += '<div class="log-entry log-error">❌ 파싱된 강의가 없습니다.</div>';
+    return;
+  }
+
+  if (!S._originalCourses) S._originalCourses = S.courses.slice();
+  S.courses = courses;
+
+  var restoreBtn = document.getElementById('btn-temp-restore');
+  if (restoreBtn) restoreBtn.style.display = '';
+
+  if (log) {
+    log.innerHTML += '<div class="log-entry log-success">✅ ' + courses.length + '개 강의 로드 완료!</div>';
+    log.innerHTML += '<div class="log-entry log-info">감지된 컬럼: ' +
+      (titleIdx !== -1 ? '제목✅ ' : '') +
+      (catIdx !== -1 ? '카테고리✅ ' : '') +
+      (subCatIdx !== -1 ? '서브카테고리✅ ' : '') +
+      (descIdx !== -1 ? '설명✅ ' : '') +
+      (headlineIdx !== -1 ? '강의개요✅ ' : '') +
+      (diffIdx !== -1 ? '난이도✅ ' : '') +
+      (durationIdx !== -1 ? '수강시간✅ ' : '') +
+      (ratingIdx !== -1 ? '평점✅ ' : '') +
+      (enrollIdx !== -1 ? '리뷰수✅ ' : '') +
+      (updatedIdx !== -1 ? '업데이트✅ ' : '') +
+      (langIdx !== -1 ? '언어✅ ' : '') +
+      '</div>';
+    log.innerHTML += '<div class="log-entry log-info">샘플: ' + courses[0].title.substring(0, 60) + '...</div>';
+  }
+
+  toast('📋 임시 목록 ' + courses.length + '개 로드! 관리자 모드를 나가면 검색할 수 있습니다.');
 }
