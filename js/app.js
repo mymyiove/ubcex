@@ -151,7 +151,27 @@ function enterAdminMode() {
   toast('🔧 관리자 모드에 진입했습니다.');
 }
 
-function exitAdminMode() { var p = document.getElementById('admin-panel'); if (p) p.remove(); document.getElementById('gate-page').style.display = ''; document.getElementById('input-subdomain').value = ''; }
+function exitAdminMode() {
+  var p = document.getElementById('admin-panel');
+  if (p) p.remove();
+  
+  // ★ 임시 목록이 로드된 상태면 바로 메인 화면으로
+  if (S.courses && S.courses.length > 0 && S._originalCourses) {
+    document.getElementById('gate-page').style.display = 'none';
+    document.getElementById('app-container').style.display = 'block';
+    // 통계 + 필터 + 목록 갱신
+    S.filtered = S.courses.slice();
+    renderDashCards();
+    initMultiSelects();
+    if (typeof initHighlight === 'function') { initHighlight(); setupHoverPause(); }
+    applyFilters();
+    toast('📋 임시 목록 ' + S.courses.length + '개로 탐색 모드 진입!');
+  } else {
+    // 일반 모드 — 게이트로 돌아가기
+    document.getElementById('gate-page').style.display = '';
+    document.getElementById('input-subdomain').value = '';
+  }
+}
 async function loadAdminStatus(){try{var r=await fetch(WORKER_URL+'/status',{headers:{'Authorization':'Bearer '+WORKER_SECRET}});var d=await r.json();document.getElementById('sync-status-value').textContent=d.isComplete?'✅ 완료':d.synced?'⏳ 진행 중':'❌ 미완료';document.getElementById('sync-status-sub').textContent=d.syncedAt?'마지막: '+new Date(d.syncedAt).toLocaleString('ko-KR'):'기록 없음';document.getElementById('courses-count-value').textContent=(d.totalCount||0).toLocaleString();document.getElementById('courses-count-sub').textContent=d.isComplete?'완료':'진행 중';document.getElementById('chunks-count-value').textContent=d.totalChunks||0;}catch(e){document.getElementById('sync-status-value').textContent='❌ 연결 실패';}try{var r2=await fetch(WORKER_URL+'/test-token',{headers:{'Authorization':'Bearer '+WORKER_SECRET}});var d2=await r2.json();document.getElementById('api-status-value').textContent=d2.success?'✅ 정상':'❌ 오류';document.getElementById('api-status-sub').textContent=d2.success?'GraphQL OK':'실패';}catch(e){document.getElementById('api-status-value').textContent='❌';}}
 async function runSync(isReset){var l=document.getElementById('sync-log');l.innerHTML='<div class="log-entry log-info">📡 시작...</div>';try{var r=await fetch(WORKER_URL+'/sync'+(isReset?'?reset=true':''),{headers:{'Authorization':'Bearer '+WORKER_SECRET}});var d=await r.json();l.innerHTML+='<div class="log-entry '+(d.success?'log-success':'log-error')+'">'+(d.success?'✅':'❌')+' '+(d.message||d.error)+'</div>';}catch(e){l.innerHTML+='<div class="log-entry log-error">❌ '+e.message+'</div>';}loadAdminStatus();}
 async function runAutoSync(){var l=document.getElementById('sync-log');var b=document.getElementById('btn-sync-auto');b.disabled=true;b.textContent='⏳...';l.innerHTML='<div class="log-entry log-info">🚀 자동 시작...</div>';var c=1,go=true;while(go){l.innerHTML+='<div class="log-entry log-info">📡 ['+c+']...</div>';l.scrollTop=l.scrollHeight;try{var ep=c===1?WORKER_URL+'/sync?reset=true':WORKER_URL+'/sync';var r=await fetch(ep,{headers:{'Authorization':'Bearer '+WORKER_SECRET}});var d=await r.json();if(d.error){l.innerHTML+='<div class="log-entry log-error">❌ '+d.error+'</div>';break;}l.innerHTML+='<div class="log-entry log-success">✅ '+d.message+'</div>';if(d.stoppedByTimeout){await new Promise(function(r){setTimeout(r,2000)});c++;}else{l.innerHTML+='<div class="log-entry log-success">🎉 완료! '+d.totalCount+'개</div>';go=false;}}catch(e){l.innerHTML+='<div class="log-entry log-error">❌ '+e.message+'</div>';break;}l.scrollTop=l.scrollHeight;}b.disabled=false;b.textContent='🚀 자동 전체';loadAdminStatus();}
