@@ -617,9 +617,7 @@ button[title]:hover::after {
 
 /* ★ 게이트 페이지 — 푸터가 한 화면에 보이게 */
 #gate-page {
-  min-height: auto !important;
-  padding-bottom: 1rem !important;
-  padding-top: 10rem !important;   
+  padding-top: 5rem !important;   
 }
 
 /* ★ 게이트에서 돌아가기 버튼 숨기기 */
