@@ -235,6 +235,9 @@
     '.curation-header',
     '.new-summary',
     '.stat-item'
+    '.section-illustration',      // ★ 추가
+    '.closing-illustration',      // ★ 추가
+    '.curation-banner-image'      // ★ 추가    
   ];
 
   var animateElements = document.querySelectorAll(animateSelectors.join(', '));
