@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// app.js — 메인 앱 + 임시 목록 + 관리자 + 샘플 다운로드
+// app.js — 메인 앱 + 임시 목록 + 관리자 + 썸네일 다운로드
 // ═══════════════════════════════════════════════════════════
 var ADMIN_CODE = 'jhj11';
 var WORKER_URL = 'https://udemy-sync.mymyiove882.workers.dev';
@@ -47,7 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
   window.addEventListener('scroll', function() { var btn = document.getElementById('scroll-to-top'); if (btn) btn.classList.toggle('visible', window.scrollY > 300); });
   var scrollBtn = document.getElementById('scroll-to-top');
   if (scrollBtn) scrollBtn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
-  // ★ 🛸 라벨 3번 클릭 → 관리자 모드
   var gateClickCount = 0;
   var gateLabel = document.querySelector('.gate-input-group label');
   if (gateLabel) {
@@ -69,20 +68,21 @@ function goStep2() {
   document.getElementById('gate-step-2').classList.add('active');
 }
 
-// ═══ 샘플 CSV 다운로드 ═══
 function downloadSampleCSV() {
   var headers = '강의명\t강의명번역\t카테고리\t서브카테고리\t난이도\t수강시간(h)\t평점\t리뷰 수\t최근 업데이트\t강의 개요\t강의개요번역';
-  var sample1 = 'JavaシリーズVol.1【ゼロからJavaの基礎文法と開発ツールを同時に学ぶ】\tJava 시리즈 Vol.1 【0부터 Java의 기초 문법과 개발 툴을 동시에 배우다】\tDevelopment\tProgramming Languages\tBeginner\t2.3\t4.4\t334\t2025-06-21\t私は、新人教育でJavaを教えてきました\t나는 신인 교육에서 자바를 가르쳐 왔습니다';
-  var sample2 = 'ビジネス日本語コミュニケーション入門\t비즈니스 일본어 커뮤니케이션 입문\tBusiness\tCommunication\tBeginner\t1.5\t4.2\t128\t2025-03-15\tビジネスシーンで使える日本語を学びます\t비즈니스 현장에서 사용할 수 있는 일본어를 배웁니다';
-  var sample3 = 'AI・機械学習の基礎と実践\tAI·머신러닝의 기초와 실전\tIT & Software\tData Science\tIntermediate\t4.0\t4.6\t567\t2025-09-10\tAIと機械学習の基本概念から実践まで\tAI와 머신러닝의 기본 개념부터 실전까지';
-  var csv = '\uFEFF' + headers + '\n' + sample1 + '\n' + sample2 + '\n' + sample3;
+  var s1 = 'JavaシリーズVol.1【ゼロからJavaの基礎文法と開発ツールを同時に学ぶ】\tJava 시리즈 Vol.1 【0부터 Java의 기초 문법과 개발 툴을 동시에 배우다】\tDevelopment\tProgramming Languages\tBeginner\t2.3\t4.4\t334\t2025-06-21\t私は、新人教育でJavaを教えてきました\t나는 신인 교육에서 자바를 가르쳐 왔습니다';
+  var s2 = 'ビジネス日本語コミュニケーション入門\t비즈니스 일본어 커뮤니케이션 입문\tBusiness\tCommunication\tBeginner\t1.5\t4.2\t128\t2025-03-15\tビジネスシーンで使える日本語を学びます\t비즈니스 현장에서 사용할 수 있는 일본어를 배웁니다';
+  var s3 = 'AI・機械学習の基礎と実践\tAI·머신러닝의 기초와 실전\tIT & Software\tData Science\tIntermediate\t4.0\t4.6\t567\t2025-09-10\tAIと機械学習の基本概念から実践まで\tAI와 머신러닝의 기본 개념부터 실전까지';
+  var csv = '\uFEFF' + headers + '\n' + s1 + '\n' + s2 + '\n' + s3;
   var blob = new Blob([csv], {type: 'text/tab-separated-values;charset=utf-8;'});
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = '임시목록_샘플양식.tsv';
-  a.click();
-  URL.revokeObjectURL(a.href);
-  toast('📥 샘플 양식 다운로드 완료! 엑셀에서 열어서 수정하세요.');
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '임시목록_샘플양식.tsv'; a.click(); URL.revokeObjectURL(a.href);
+  toast('📥 샘플 양식 다운로드 완료!');
+}
+
+function downloadThumbnail(imageUrl, uid) {
+  fetch(imageUrl).then(function(res) { return res.blob(); }).then(function(blob) {
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'udemy_thumb_' + uid + '.jpg'; a.click(); URL.revokeObjectURL(a.href);
+  }).catch(function() { window.open(imageUrl, '_blank'); toast('⚠️ 직접 다운로드 실패 — 새 탭에서 우클릭 → 저장', 'warning'); });
 }
 
 // ═══ 관리자 모드 ═══
@@ -90,6 +90,7 @@ function enterAdminMode() {
   document.getElementById('gate-page').style.display = 'none';
   var existingApp = document.getElementById('app-container');
   if (existingApp) existingApp.style.display = 'none';
+  var footer = document.querySelector('.app-footer');
   var ap = document.createElement('div');
   ap.id = 'admin-panel';
   ap.innerHTML = '<div class="admin-container">' +
@@ -104,15 +105,19 @@ function enterAdminMode() {
       '<div class="admin-section"><h3>📡 강의 동기화</h3><div class="admin-btn-group"><button class="admin-btn admin-btn-primary" id="btn-sync-continue">▶️ 이어서</button><button class="admin-btn admin-btn-warning" id="btn-sync-reset">🔄 전체 재동기화</button><button class="admin-btn admin-btn-danger" id="btn-sync-auto">🚀 자동 전체</button></div><div class="admin-log" id="sync-log"></div></div>' +
       '<div class="admin-section"><h3>⭐ 항해사 PICK</h3><div class="admin-btn-group"><button class="admin-btn admin-btn-primary" id="btn-manage-picks">⭐ PICK 설정</button><button class="admin-btn" id="btn-view-picks">📋 현재 보기</button></div><div class="admin-log" id="picks-log"></div></div>' +
       '<div class="admin-section"><h3>🚫 제외 강의 관리</h3><p class="admin-desc">웅진데모 전용 강의 등 제외할 강의 ID를 관리합니다.</p><div class="admin-btn-group"><button class="admin-btn admin-btn-warning" id="btn-manage-excluded">🚫 제외 강의 설정</button><button class="admin-btn" id="btn-view-excluded">📋 현재 보기</button></div><div class="admin-log" id="excluded-log"></div></div>' +
+      // 임시 목록
       '<div class="admin-section"><h3>📋 임시 목록 모드 <button class="admin-btn" id="btn-temp-help" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin-left:0.5rem;">❓ 사용법</button> <button class="admin-btn" id="btn-temp-sample" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin-left:0.3rem;">📥 샘플 양식</button></h3><p class="admin-desc">외부 강의 목록(CSV/텍스트)을 업로드하여 임시로 큐레이션합니다.</p><div class="admin-btn-group"><label class="admin-btn admin-btn-primary" style="cursor:pointer;">📥 CSV 업로드<input type="file" id="temp-csv-upload" accept=".csv,.tsv,.txt" style="display:none;" /></label><button class="admin-btn admin-btn-primary" id="btn-temp-paste">📝 텍스트 붙여넣기</button><button class="admin-btn admin-btn-warning" id="btn-temp-restore" style="display:none;">↩️ 원래 목록 복원</button></div><div id="temp-paste-area" style="display:none;margin-top:0.8rem;"><textarea id="temp-paste-text" rows="8" placeholder="탭 또는 쉼표로 구분된 데이터를 붙여넣으세요.&#10;첫 줄은 헤더 (📥 샘플 양식 참고)" style="width:100%;padding:0.8rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);font-size:0.82rem;font-family:Consolas,monospace;resize:vertical;"></textarea><button class="admin-btn admin-btn-primary" id="btn-temp-apply-paste" style="margin-top:0.5rem;">🚀 이 목록으로 전환</button></div><div class="admin-log" id="temp-log"></div></div>' +
+      // 썸네일 다운로드
+      '<div class="admin-section"><h3>🖼️ 썸네일 다운로드</h3><p class="admin-desc">과정 UID(ID)를 입력하면 해당 강의의 썸네일 이미지를 다운로드합니다. 데이터가 로드된 상태에서 사용하세요.</p><div class="admin-btn-group" style="align-items:center;"><input type="text" id="thumb-uid" placeholder="과정 UID 입력 (쉼표로 여러 개 가능)" style="flex:1;padding:0.5rem 0.8rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);font-size:0.85rem;" /><button class="admin-btn admin-btn-primary" id="btn-thumb-search">🔍 검색</button><button class="admin-btn" id="btn-thumb-download-all" style="display:none;">📥 전체 다운로드</button></div><div id="thumb-results" style="display:flex;flex-wrap:wrap;gap:0.8rem;margin-top:0.8rem;"></div><div class="admin-log" id="thumb-log"></div></div>' +
+      // 데이터 검증
       '<div class="admin-section"><h3>🔍 데이터 검증</h3><div class="admin-btn-group"><button class="admin-btn" id="btn-verify-data">📊 현황</button><button class="admin-btn" id="btn-verify-sample">📋 샘플</button></div><div class="admin-log" id="verify-log"></div></div>' +
       '<div class="admin-section"><h3>🔑 API 테스트</h3><div class="admin-btn-group"><button class="admin-btn" id="btn-test-graphql">🔐 GraphQL</button><button class="admin-btn" id="btn-test-gemini">🤖 Gemini</button></div><div class="admin-log" id="api-log"></div></div>' +
       '<div class="admin-section"><h3>📋 로우 데이터</h3><div class="admin-btn-group" style="align-items:center;"><label style="color:var(--text-secondary);font-size:0.85rem;">Chunk:</label><input type="number" id="chunk-number" value="0" min="0" max="50" style="width:60px;padding:0.4rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);text-align:center;" /><button class="admin-btn" id="btn-view-chunk">🔍 조회</button></div><div class="admin-log" id="raw-log"></div></div>' +
     '</div></div>';
-  var footer = document.querySelector('.app-footer');
   if (footer) document.body.insertBefore(ap, footer);
   else document.body.appendChild(ap);
 
+  // 기존 이벤트
   document.getElementById('admin-exit').addEventListener('click', exitAdminMode);
   document.getElementById('btn-sync-continue').addEventListener('click', function() { runSync(false); });
   document.getElementById('btn-sync-reset').addEventListener('click', function() { if (confirm('전체 재동기화?')) runSync(true); });
@@ -127,67 +132,69 @@ function enterAdminMode() {
   document.getElementById('btn-test-gemini').addEventListener('click', testGemini);
   document.getElementById('btn-view-chunk').addEventListener('click', viewChunk);
 
-  // ★ 샘플 양식 다운로드
+  // 샘플 + 도움말
   var btnTempSample = document.getElementById('btn-temp-sample');
   if (btnTempSample) btnTempSample.addEventListener('click', downloadSampleCSV);
-
-  // ★ 도움말 팝업
   var btnTempHelp = document.getElementById('btn-temp-help');
-  if (btnTempHelp) {
-    btnTempHelp.addEventListener('click', function() {
-      var helpDiv = document.createElement('div');
-      helpDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:5000;display:flex;justify-content:center;align-items:center;padding:2rem;';
-      helpDiv.innerHTML = '<div style="background:var(--bg-nebula);border:1px solid var(--border);border-radius:var(--radius);max-width:600px;width:100%;max-height:80vh;overflow-y:auto;padding:2rem;position:relative;">' +
-        '<button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text-secondary);font-size:1.5rem;cursor:pointer;">&times;</button>' +
-        '<h2 style="color:var(--accent-light);margin-bottom:1rem;">📋 임시 목록 모드 사용법</h2>' +
-        '<div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.8;">' +
-          '<h3 style="color:var(--text-bright);margin:1rem 0 0.5rem;">📥 1단계: 양식 준비</h3>' +
-          '<p><strong>📥 샘플 양식</strong> 버튼으로 TSV 파일을 다운로드하세요.<br>엑셀이나 구글 시트에서 열어서 데이터를 입력합니다.</p>' +
-          '<div style="background:var(--bg-card-solid);padding:0.8rem;border-radius:var(--radius-xs);margin:0.5rem 0;font-family:Consolas,monospace;font-size:0.78rem;">' +
-            '<strong>필수:</strong> 강의명 (또는 title)<br>' +
-            '<strong>권장:</strong> 카테고리, 강의개요, 난이도, 평점, 수강시간(h)<br>' +
-            '<strong>번역:</strong> 강의명번역, 강의개요번역 (외국어 강의 시)' +
-          '</div>' +
-          '<h3 style="color:var(--text-bright);margin:1rem 0 0.5rem;">📤 2단계: 업로드</h3>' +
-          '<p><strong>📥 CSV 업로드</strong> 버튼으로 파일을 올리거나,<br><strong>📝 텍스트 붙여넣기</strong>로 엑셀에서 복사한 데이터를 붙여넣으세요.</p>' +
-          '<h3 style="color:var(--text-bright);margin:1rem 0 0.5rem;">🔍 3단계: 검색</h3>' +
-          '<p><strong>🚪 나가기</strong> → 메인 화면에서 검색/필터 사용!<br>번역 컬럼이 있으면 한국어로 검색 가능합니다.</p>' +
-          '<h3 style="color:var(--text-bright);margin:1rem 0 0.5rem;">↩️ 4단계: 복원</h3>' +
-          '<p>끝나면 다시 관리자 모드 → <strong>↩️ 원래 목록 복원</strong></p>' +
-          '<h3 style="color:var(--text-bright);margin:1rem 0 0.5rem;">🌐 외국어 강의 팁</h3>' +
-          '<p>구글 시트에서 <code style="background:var(--bg-card-solid);padding:0.2rem 0.4rem;border-radius:3px;">=GOOGLETRANSLATE(A2,"ja","ko")</code> 함수로 번역!</p>' +
-          '<h3 style="color:var(--warning);margin:1rem 0 0.5rem;">⚠️ 주의</h3>' +
-          '<ul style="padding-left:1.2rem;"><li>임시 목록은 새로고침 시 사라집니다</li><li>CSV 인코딩: UTF-8 권장 (EUC-KR 자동 감지)</li><li>탭 구분 / 쉼표 구분 모두 지원</li></ul>' +
-        '</div></div>';
-      helpDiv.addEventListener('click', function(e) { if (e.target === helpDiv) helpDiv.remove(); });
-      document.body.appendChild(helpDiv);
-    });
-  }
+  if (btnTempHelp) btnTempHelp.addEventListener('click', function() {
+    var h = document.createElement('div');
+    h.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:5000;display:flex;justify-content:center;align-items:center;padding:2rem;';
+    h.innerHTML = '<div style="background:var(--bg-nebula);border:1px solid var(--border);border-radius:var(--radius);max-width:600px;width:100%;max-height:80vh;overflow-y:auto;padding:2rem;position:relative;"><button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text-secondary);font-size:1.5rem;cursor:pointer;">&times;</button><h2 style="color:var(--accent-light);margin-bottom:1rem;">📋 임시 목록 모드 사용법</h2><div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.8;"><h3 style="color:var(--text-bright);margin:1rem 0 0.5rem;">📥 1단계: 양식 준비</h3><p><strong>📥 샘플 양식</strong> 버튼으로 TSV 파일을 다운로드하세요.</p><div style="background:var(--bg-card-solid);padding:0.8rem;border-radius:var(--radius-xs);margin:0.5rem 0;font-family:Consolas,monospace;font-size:0.78rem;"><strong>필수:</strong> 강의명<br><strong>권장:</strong> 카테고리, 강의개요, 난이도, 평점<br><strong>번역:</strong> 강의명번역, 강의개요번역 (외국어 시)</div><h3 style="color:var(--text-bright);margin:1rem 0 0.5rem;">📤 2단계: 업로드</h3><p>CSV 업로드 또는 텍스트 붙여넣기</p><h3 style="color:var(--text-bright);margin:1rem 0 0.5rem;">🔍 3단계: 검색</h3><p>🚪 나가기 → 메인 화면에서 검색/필터 사용!</p><h3 style="color:var(--text-bright);margin:1rem 0 0.5rem;">↩️ 4단계: 복원</h3><p>관리자 모드 → ↩️ 원래 목록 복원</p><h3 style="color:var(--text-bright);margin:1rem 0 0.5rem;">🌐 외국어 팁</h3><p>구글 시트: <code style="background:var(--bg-card-solid);padding:0.2rem 0.4rem;border-radius:3px;">=GOOGLETRANSLATE(A2,"ja","ko")</code></p><h3 style="color:var(--warning);margin:1rem 0 0.5rem;">⚠️ 주의</h3><ul style="padding-left:1.2rem;"><li>새로고침 시 사라짐</li><li>UTF-8 권장 (EUC-KR 자동 감지)</li></ul></div></div>';
+    h.addEventListener('click', function(e) { if (e.target === h) h.remove(); });
+    document.body.appendChild(h);
+  });
 
   // 임시 목록 이벤트
   var tempCsvUpload = document.getElementById('temp-csv-upload');
-  if (tempCsvUpload) {
-    tempCsvUpload.addEventListener('change', function(e) {
-      var file = e.target.files[0]; if (!file) return;
-      var reader = new FileReader();
-      reader.onload = function(ev) {
-        var text = ev.target.result;
-        if (text.indexOf('�') !== -1 || text.indexOf('ï¿½') !== -1) {
-          var reader2 = new FileReader();
-          reader2.onload = function(ev2) { parseTempList(ev2.target.result); };
-          reader2.readAsText(file, 'EUC-KR');
-        } else { parseTempList(text); }
-      };
-      reader.readAsText(file, 'UTF-8');
-    });
-  }
+  if (tempCsvUpload) tempCsvUpload.addEventListener('change', function(e) {
+    var file = e.target.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) { var text = ev.target.result; if (text.indexOf('�') !== -1) { var r2 = new FileReader(); r2.onload = function(ev2) { parseTempList(ev2.target.result); }; r2.readAsText(file, 'EUC-KR'); } else parseTempList(text); };
+    reader.readAsText(file, 'UTF-8');
+  });
   var btnTempPaste = document.getElementById('btn-temp-paste');
   if (btnTempPaste) btnTempPaste.addEventListener('click', function() { var a = document.getElementById('temp-paste-area'); if (a) a.style.display = a.style.display === 'none' ? 'block' : 'none'; });
   var btnTempApplyPaste = document.getElementById('btn-temp-apply-paste');
   if (btnTempApplyPaste) btnTempApplyPaste.addEventListener('click', function() { var t = document.getElementById('temp-paste-text').value.trim(); if (!t) { toast('데이터를 입력해주세요.', 'warning'); return; } parseTempList(t); });
   var btnTempRestore = document.getElementById('btn-temp-restore');
-  if (btnTempRestore) btnTempRestore.addEventListener('click', function() { if (S._originalCourses) { S.courses = S._originalCourses; S._originalCourses = null; var log = document.getElementById('temp-log'); if (log) log.innerHTML = '<div class="log-entry log-success">✅ 원래 목록 복원! (' + S.courses.length.toLocaleString() + '개)</div>'; btnTempRestore.style.display = 'none'; toast('↩️ 원래 목록 복원!'); } });
+  if (btnTempRestore) btnTempRestore.addEventListener('click', function() { if (S._originalCourses) { S.courses = S._originalCourses; S._originalCourses = null; document.getElementById('temp-log').innerHTML = '<div class="log-entry log-success">✅ 원래 목록 복원!</div>'; btnTempRestore.style.display = 'none'; toast('↩️ 원래 목록 복원!'); } });
   if (S._originalCourses) { var rb = document.getElementById('btn-temp-restore'); if (rb) rb.style.display = ''; }
+
+  // ★ 썸네일 다운로드 이벤트
+  var btnThumbSearch = document.getElementById('btn-thumb-search');
+  if (btnThumbSearch) btnThumbSearch.addEventListener('click', function() {
+    var input = document.getElementById('thumb-uid').value.trim();
+    if (!input) { toast('과정 UID를 입력해주세요.', 'warning'); return; }
+    var uids = input.split(/[,\s]+/).map(function(u) { return u.trim(); }).filter(Boolean);
+    var results = document.getElementById('thumb-results');
+    var log = document.getElementById('thumb-log');
+    var dlAllBtn = document.getElementById('btn-thumb-download-all');
+    results.innerHTML = '';
+    if (log) log.innerHTML = '<div class="log-entry log-info">🔍 ' + uids.length + '개 검색 중...</div>';
+    var found = [], notFound = [];
+    var searchData = S._originalCourses || S.courses || [];
+    for (var i = 0; i < uids.length; i++) {
+      var uid = uids[i];
+      var course = null;
+      for (var j = 0; j < searchData.length; j++) { if (String(searchData[j].id) === String(uid)) { course = searchData[j]; break; } }
+      if (course && course.image) {
+        found.push(course);
+        var safeTitle = (course.title || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        results.innerHTML += '<div style="background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);padding:0.8rem;text-align:center;width:200px;"><img src="' + course.image + '" alt="" style="width:100%;border-radius:4px;margin-bottom:0.5rem;" /><div style="font-size:0.75rem;color:var(--text-primary);margin-bottom:0.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + safeTitle + '">' + (course.title || '').substring(0, 30) + '</div><div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;">ID: ' + uid + '</div><button class="admin-btn" style="padding:0.3rem 0.6rem;font-size:0.75rem;" onclick="downloadThumbnail(\'' + course.image + '\',\'' + uid + '\')">📥 다운로드</button></div>';
+      } else notFound.push(uid);
+    }
+    if (log) {
+      log.innerHTML = '<div class="log-entry log-success">✅ ' + found.length + '개 발견</div>';
+      if (notFound.length > 0) log.innerHTML += '<div class="log-entry log-error">❌ ' + notFound.length + '개 미발견: ' + notFound.join(', ') + '</div><div class="log-entry log-info">💡 먼저 메인 화면에서 데이터를 로드해주세요.</div>';
+    }
+    if (found.length > 1 && dlAllBtn) dlAllBtn.style.display = '';
+  });
+  var btnThumbDownloadAll = document.getElementById('btn-thumb-download-all');
+  if (btnThumbDownloadAll) btnThumbDownloadAll.addEventListener('click', function() {
+    var imgs = document.querySelectorAll('#thumb-results img');
+    for (var i = 0; i < imgs.length; i++) { (function(img, idx) { setTimeout(function() { var p = img.closest('div'); var ut = p ? p.querySelectorAll('div')[1] : null; var uid = ut ? ut.textContent.replace('ID: ', '') : 'thumb_' + idx; downloadThumbnail(img.src, uid); }, idx * 500); })(imgs[i], i); }
+    toast('📥 ' + imgs.length + '개 썸네일 다운로드 시작!');
+  });
 
   loadAdminStatus();
   toast('🔧 관리자 모드에 진입했습니다.');
@@ -333,7 +340,7 @@ function initApp() {
 
   applyFilters();
 
-  // ★ 헤더 로고 3번 클릭 → 관리자 모드
+  // 헤더 로고 3번 클릭 → 관리자 모드
   var clickCount = 0;
   var headerTitle = document.getElementById('header-title');
   if (headerTitle) headerTitle.addEventListener('click', function() {
@@ -411,7 +418,6 @@ function showSearchSuggestions(query) {
   }); })(items[i]); }
 }
 
-// ═══ 임시 목록 파싱 ═══
 function parseTempList(text) {
   var log = document.getElementById('temp-log');
   if (log) log.innerHTML = '<div class="log-entry log-info">📋 파싱 중...</div>';
@@ -419,11 +425,9 @@ function parseTempList(text) {
   if (lines.length < 2) { if (log) log.innerHTML += '<div class="log-entry log-error">❌ 최소 2줄 필요</div>'; return; }
   var separator = lines[0].indexOf('\t') !== -1 ? '\t' : ',';
   var headers = lines[0].split(separator).map(function(h) { return h.trim().toLowerCase().replace(/"/g, '').replace(/\s+/g, ''); });
-
   var titleIdx=-1, titleTransIdx=-1, catIdx=-1, subCatIdx=-1, descIdx=-1, descTransIdx=-1;
   var headlineIdx=-1, headlineTransIdx=-1, langIdx=-1, idIdx=-1, diffIdx=-1;
   var durationIdx=-1, ratingIdx=-1, enrollIdx=-1, updatedIdx=-1;
-
   for (var i = 0; i < headers.length; i++) {
     var h = headers[i];
     if (h==='title'||h==='제목'||h==='강의명') titleIdx = i;
@@ -443,21 +447,14 @@ function parseTempList(text) {
     else if (h==='enrollments'||h==='수강생'||h==='리뷰수') enrollIdx = i;
     else if (h==='updated'||h==='최근업데이트'||h==='업데이트') updatedIdx = i;
   }
-
   if (titleIdx === -1) { if (log) log.innerHTML += '<div class="log-entry log-error">❌ title/강의명 컬럼 없음<br>헤더: ' + headers.join(', ') + '</div>'; return; }
-
   var courses = [];
   for (var i = 1; i < lines.length; i++) {
     var cols = [];
-    if (separator === ',') {
-      var line = lines[i]; var inQuote = false; var current = '';
-      for (var j = 0; j < line.length; j++) { if (line[j] === '"') { inQuote = !inQuote; } else if (line[j] === ',' && !inQuote) { cols.push(current.trim()); current = ''; } else { current += line[j]; } }
-      cols.push(current.trim());
-    } else { cols = lines[i].split(separator).map(function(c) { return c.trim().replace(/^"|"$/g, ''); }); }
-
+    if (separator === ',') { var line = lines[i]; var inQuote = false; var current = ''; for (var j = 0; j < line.length; j++) { if (line[j] === '"') { inQuote = !inQuote; } else if (line[j] === ',' && !inQuote) { cols.push(current.trim()); current = ''; } else { current += line[j]; } } cols.push(current.trim()); }
+    else { cols = lines[i].split(separator).map(function(c) { return c.trim().replace(/^"|"$/g, ''); }); }
     var title = titleIdx < cols.length ? cols[titleIdx] : '';
     if (!title) continue;
-
     var titleTrans = titleTransIdx !== -1 && titleTransIdx < cols.length ? cols[titleTransIdx] : '';
     var headlineTrans = headlineTransIdx !== -1 && headlineTransIdx < cols.length ? cols[headlineTransIdx] : '';
     var descTrans = descTransIdx !== -1 && descTransIdx < cols.length ? cols[descTransIdx] : '';
@@ -465,7 +462,6 @@ function parseTempList(text) {
     var desc = descIdx !== -1 && descIdx < cols.length ? cols[descIdx] : '';
     var durationMin = 0;
     if (durationIdx !== -1 && durationIdx < cols.length) durationMin = Math.round((parseFloat(cols[durationIdx]) || 0) * 60);
-
     courses.push({
       id: idIdx !== -1 && idIdx < cols.length ? String(cols[idIdx]) : 'temp_' + i,
       title: title,
@@ -480,26 +476,16 @@ function parseTempList(text) {
       url: '', image: '', contentLength: durationMin,
       rating: ratingIdx !== -1 && ratingIdx < cols.length ? (parseFloat(cols[ratingIdx]) || 0) : 0,
       enrollments: enrollIdx !== -1 && enrollIdx < cols.length ? (parseInt(String(cols[enrollIdx]).replace(/,/g, '')) || 0) : 0,
-      isNew: false,
-      _titleTranslated: titleTrans, _headlineTranslated: headlineTrans, _descTranslated: descTrans,
-      _search: '', _score: 0
+      isNew: false, _titleTranslated: titleTrans, _headlineTranslated: headlineTrans, _descTranslated: descTrans, _search: '', _score: 0
     });
   }
-
   if (courses.length === 0) { if (log) log.innerHTML += '<div class="log-entry log-error">❌ 파싱된 강의 없음</div>'; return; }
   if (!S._originalCourses) S._originalCourses = S.courses.slice();
   S.courses = courses;
   var restoreBtn = document.getElementById('btn-temp-restore'); if (restoreBtn) restoreBtn.style.display = '';
-
   if (log) {
     log.innerHTML += '<div class="log-entry log-success">✅ ' + courses.length + '개 로드!</div>';
-    log.innerHTML += '<div class="log-entry log-info">' +
-      (titleIdx !== -1 ? '강의명✅ ' : '') + (titleTransIdx !== -1 ? '강의명번역✅ ' : '') +
-      (catIdx !== -1 ? '카테고리✅ ' : '') + (subCatIdx !== -1 ? '서브카테고리✅ ' : '') +
-      (headlineIdx !== -1 ? '강의개요✅ ' : '') + (headlineTransIdx !== -1 ? '강의개요번역✅ ' : '') +
-      (diffIdx !== -1 ? '난이도✅ ' : '') + (durationIdx !== -1 ? '수강시간✅ ' : '') +
-      (ratingIdx !== -1 ? '평점✅ ' : '') + (enrollIdx !== -1 ? '리뷰수✅ ' : '') +
-      (updatedIdx !== -1 ? '업데이트✅ ' : '') + '</div>';
+    log.innerHTML += '<div class="log-entry log-info">' + (titleIdx !== -1 ? '강의명✅ ' : '') + (titleTransIdx !== -1 ? '강의명번역✅ ' : '') + (catIdx !== -1 ? '카테고리✅ ' : '') + (subCatIdx !== -1 ? '서브카테고리✅ ' : '') + (headlineIdx !== -1 ? '강의개요✅ ' : '') + (headlineTransIdx !== -1 ? '강의개요번역✅ ' : '') + (diffIdx !== -1 ? '난이도✅ ' : '') + (durationIdx !== -1 ? '수강시간✅ ' : '') + (ratingIdx !== -1 ? '평점✅ ' : '') + (enrollIdx !== -1 ? '리뷰수✅ ' : '') + (updatedIdx !== -1 ? '업데이트✅ ' : '') + '</div>';
     if (titleTransIdx !== -1) log.innerHTML += '<div class="log-entry log-success">🌐 번역 컬럼 감지! 한국어 검색 가능</div>';
     log.innerHTML += '<div class="log-entry log-info">샘플: ' + courses[0].title.substring(0, 50) + '</div>';
     if (courses[0]._titleTranslated) log.innerHTML += '<div class="log-entry log-info">번역: ' + courses[0]._titleTranslated.substring(0, 50) + '</div>';
