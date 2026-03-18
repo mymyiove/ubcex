@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Udemy Letter Admin</title>
+<link rel="stylesheet" href="css/admin.css">
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- Toast -->
+<div class="admin-toast" id="admin-toast"></div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loading">
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- === Gate === -->
+<div class="admin-gate" id="admin-gate">
+  <div class="gate-card">
+    <h1>Udemy Letter Admin</h1>
+    <p>관리자 코드를 입력해주세요</p>
+    <input type="password" class="gate-input" id="gate-code" placeholder="관리자 코드" />
+    <button class="gate-btn" id="gate-submit">진입하기</button>
+  </div>
+</div>
+
+<!-- === Admin App === -->
+<div id="admin-app" style="display:none;">
+
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <div class="admin-brand">
+        <span class="admin-brand-icon">📮</span>
+        <span class="admin-brand-text">Letter Admin</span>
+      </div>
+      <div class="admin-nav">
+        <button class="admin-nav-btn active" data-panel="list">📋 목록</button>
+        <button class="admin-nav-btn" data-panel="editor">✏️ 편집</button>
+        <a href="index.html" target="_blank" class="admin-nav-btn">👁️ 뷰어</a>
+        <button class="admin-nav-btn" id="btn-logout">🚪 나가기</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+
+    <!-- === Panel: Letter List === -->
+    <div class="admin-panel active" id="panel-list">
+      <div class="letter-list-header">
+        <h2>📮 레터 목록</h2>
+        <button class="btn-new-letter" id="btn-new-letter">+ 새 레터 만들기</button>
+      </div>
+      <div class="letter-grid" id="letter-grid">
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <p>아직 레터가 없습니다.<br>새 레터를 만들어보세요!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- === Panel: Editor === -->
+    <div class="admin-panel" id="panel-editor">
+
+      <div class="editor-header">
+        <h2 id="editor-title">✏️ 새 레터 만들기</h2>
+        <div class="editor-actions">
+          <button class="btn-editor" id="btn-back-list">← 목록</button>
+          <button class="btn-editor" id="btn-preview">👁️ 미리보기</button>
+          <button class="btn-editor btn-save" id="btn-save">💾 저장</button>
+          <button class="btn-editor btn-danger" id="btn-delete" style="display:none;">🗑️ 삭제</button>
+        </div>
+      </div>
+
+      <!-- Section: Basic Info -->
+      <div class="section-card" id="sec-basic">
+        <div class="section-card-header">
+          <h3>📋 기본 정보</h3>
+          <span class="section-card-toggle">▼</span>
+        </div>
+        <div class="section-card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">호수 (YYYY-MM)</label>
+              <input type="text" class="form-input" id="f-month" placeholder="2026-03" />
+              <div class="form-hint">예: 2026-03 (3월호)</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">상태</label>
+              <select class="form-input" id="f-status">
+                <option value="draft">📝 초안</option>
+                <option value="published">✅ 발행</option>
+                <option value="sent">📧 발송완료</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">제목 (한국어)</label>
+            <input type="text" class="form-input" id="f-title-ko" placeholder="기술혁신을 넘어 강력한 시너지를 만드는 법" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">부제 (한국어)</label>
+            <input type="text" class="form-input" id="f-subtitle-ko" placeholder="AI 고도화와 장수경제, 세대 시너지" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">표지 이미지 URL</label>
+            <input type="text" class="form-input" id="f-cover-image" placeholder="src/img/Brand_Launch.jpg" />
+            <div class="form-hint">이미지 파일 경로 또는 외부 URL</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Trend Insight -->
+      <div class="section-card" id="sec-insight">
+        <div class="section-card-header">
+          <h3>📊 트렌드 인사이트</h3>
+          <span class="section-card-toggle">▼</span>
+        </div>
+        <div class="section-card-body">
+          <div class="form-group">
+            <label class="form-label">섹션 이미지 URL</label>
+            <input type="text" class="form-input" id="f-insight-image" placeholder="src/img/Global_Learning.png" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">콘텐츠 (여러 페이지 가능)</label>
+            <div class="page-tabs" id="insight-tabs">
+              <button class="page-tab active" data-page="0">페이지 1</button>
+              <button class="page-tab-add" id="insight-add-page">+ 추가</button>
+            </div>
+            <div id="insight-editors">
+              <div class="editor-wrap" data-page="0">
+                <div id="insight-editor-0"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: New Content -->
+      <div class="section-card" id="sec-new">
+        <div class="section-card-header">
+          <h3>✨ 신규 콘텐츠</h3>
+          <span class="section-card-toggle">▼</span>
+        </div>
+        <div class="section-card-body">
+          <div class="form-group">
+            <label class="form-label">섹션 이미지 URL</label>
+            <input type="text" class="form-input" id="f-new-image" placeholder="src/img/Instructor_Journey.jpg" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">콘텐츠</label>
+            <div class="editor-wrap">
+              <div id="new-editor"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">요약 문구 (한국어)</label>
+            <input type="text" class="form-input" id="f-new-summary-ko" placeholder="이외에도 총 40개의 신규 한국어 강의가..." />
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Curation -->
+      <div class="section-card" id="sec-curation">
+        <div class="section-card-header">
+          <h3>🎯 이달의 큐레이션</h3>
+          <span class="section-card-toggle">▼</span>
+        </div>
+        <div class="section-card-body">
+          <div class="form-group">
+            <label class="form-label">섹션 이미지 URL</label>
+            <input type="text" class="form-input" id="f-curation-image" placeholder="src/img/Learning_at_Home.jpg" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">소개 문구 (한국어)</label>
+            <input type="text" class="form-input" id="f-curation-intro-ko" placeholder="본격적으로 시작되는 업무, 반복적인 업무는 이렇게 처리합니다." />
+          </div>
+          <div class="form-group">
+            <label class="form-label">태그 (쉼표 구분)</label>
+            <input type="text" class="form-input" id="f-curation-tags" placeholder="내 일에 AI 활용하기, 자동화로 퇴근시간 앞당기기" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">강의 ID (쉼표 구분)</label>
+            <input type="text" class="course-id-input" id="f-curation-ids" placeholder="12345, 67890, 11111, 22222" />
+            <div class="form-hint">Course Explorer의 강의 ID를 입력하세요. 입력 순서대로 표시됩니다.</div>
+          </div>
+          <div class="course-preview" id="curation-preview"></div>
+          <div class="comment-list" id="curation-comments"></div>
+        </div>
+      </div>
+
+      <!-- Section: Promo -->
+      <div class="section-card" id="sec-promo">
+        <div class="section-card-header">
+          <h3>📢 홍보</h3>
+          <span class="section-card-toggle">▼</span>
+        </div>
+        <div class="section-card-body">
+          <div class="form-group">
+            <label class="form-label">콘텐츠 (여러 페이지 가능)</label>
+            <div class="page-tabs" id="promo-tabs">
+              <button class="page-tab active" data-page="0">페이지 1</button>
+              <button class="page-tab-add" id="promo-add-page">+ 추가</button>
+            </div>
+            <div id="promo-editors">
+              <div class="editor-wrap" data-page="0">
+                <div id="promo-editor-0"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Closing -->
+      <div class="section-card" id="sec-closing">
+        <div class="section-card-header">
+          <h3>🚀 마무리</h3>
+          <span class="section-card-toggle">▼</span>
+        </div>
+        <div class="section-card-body">
+          <div class="form-group">
+            <label class="form-label">마무리 이미지 URL</label>
+            <input type="text" class="form-input" id="f-closing-image" placeholder="src/img/Brand_Launch_2.png" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">마무리 메시지 (한국어)</label>
+            <div class="editor-wrap">
+              <div id="closing-editor"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /panel-editor -->
+
+  </main>
+</div><!-- /admin-app -->
+
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
