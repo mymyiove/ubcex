@@ -1,20 +1,13 @@
-// ═══════════════════════════════════════════════════════════
-// letter.js v3 — 서브도메인 + PDF(print) + 다국어 + 스크롤
-//                 프로그레스 바 + 맨 위로 + 헤더 스크롤 효과
-// ═══════════════════════════════════════════════════════════
 (function() {
-  'use strict';
 
   var params = new URLSearchParams(window.location.search);
   var sub = params.get('sub') || '';
   var lang = params.get('lang') || 'ko';
   var baseUrl = sub ? 'https://' + sub + '.udemy.com/course/' : '#';
 
-  // ═══ 다국어 시스템 ═══
   function applyLanguage(targetLang) {
     lang = targetLang;
 
-    // URL 파라미터 업데이트 (새로고침 없이)
     var url = new URL(window.location);
     if (targetLang === 'ko') {
       url.searchParams.delete('lang');
@@ -23,10 +16,8 @@
     }
     window.history.replaceState({}, '', url);
 
-    // html lang 속성
     document.documentElement.lang = targetLang;
 
-    // data-ko / data-en 속성 텍스트 교체
     var elements = document.querySelectorAll('[data-' + targetLang + ']');
     for (var i = 0; i < elements.length; i++) {
       var el = elements[i];
@@ -36,7 +27,6 @@
       }
     }
 
-    // 토글 버튼 active 상태
     var langBtns = document.querySelectorAll('.lang-btn');
     for (var i = 0; i < langBtns.length; i++) {
       langBtns[i].classList.remove('active');
@@ -45,7 +35,6 @@
       }
     }
 
-    // 기업명 인사 재적용
     updateGreeting();
   }
 
@@ -54,14 +43,13 @@
     if (!greeting) return;
     if (sub) {
       if (lang === 'en') {
-        greeting.textContent = "This month's letter for " + sub.toUpperCase() + ' learners';
+        greeting.textContent = 'This month\'s letter for ' + sub.toUpperCase() + ' learners';
       } else {
         greeting.textContent = sub.toUpperCase() + ' 학습자님을 위한 이달의 레터';
       }
     }
   }
 
-  // 언어 토글 이벤트
   var langToggle = document.getElementById('lang-toggle');
   if (langToggle) {
     var langBtns = langToggle.querySelectorAll('.lang-btn');
@@ -72,10 +60,8 @@
     }
   }
 
-  // 초기 언어 적용
   applyLanguage(lang);
 
-  // ═══ 학습장 링크 ═══
   var campusIds = ['btn-campus', 'btn-campus-bottom', 'btn-campus-mid1', 'btn-campus-mid2', 'btn-campus-bottom2'];
   for (var i = 0; i < campusIds.length; i++) {
     var el = document.getElementById(campusIds[i]);
@@ -85,7 +71,6 @@
     }
   }
 
-  // ═══ 강의 링크 서브도메인 적용 ═══
   var courseLinks = document.querySelectorAll('a[data-slug]');
   for (var i = 0; i < courseLinks.length; i++) {
     var el = courseLinks[i];
@@ -109,22 +94,18 @@
     }
   }
 
-  // ═══ PDF 다운로드 (브라우저 인쇄) ═══
   function downloadPDF() {
-    // 파일명 안내
     var filename = (sub || 'general') + '_Udemy_Letter_20260320.pdf';
     var msg = lang === 'en'
       ? 'In the print dialog, select "Save as PDF".\nRecommended filename: ' + filename
       : '인쇄 대화상자에서 "PDF로 저장"을 선택해주세요.\n권장 파일명: ' + filename;
 
-    // 제목 임시 변경 (PDF 파일명에 반영)
     var originalTitle = document.title;
     document.title = filename.replace('.pdf', '');
 
     alert(msg);
     window.print();
 
-    // 제목 복원
     setTimeout(function() {
       document.title = originalTitle;
     }, 1000);
@@ -135,7 +116,6 @@
     pdfBtns[i].addEventListener('click', downloadPDF);
   }
 
-  // ═══ 수신거부 ═══
   var unsubBtn = document.getElementById('btn-unsubscribe');
   if (unsubBtn) {
     unsubBtn.addEventListener('click', function(e) {
@@ -148,29 +128,30 @@
         : '수신거부가 처리되었습니다. 감사합니다.';
       if (confirm(msg)) {
         alert(confirmMsg);
-        // TODO: 실제 수신거부 API 호출
       }
     });
   }
 
-  // ═══ INDEX 부드러운 스크롤 ═══
   var indexLinks = document.querySelectorAll('.index-card');
   for (var i = 0; i < indexLinks.length; i++) {
     indexLinks[i].addEventListener('click', function(e) {
       e.preventDefault();
       var target = document.querySelector(this.getAttribute('href'));
       if (target) {
-        var headerHeight = document.querySelector('.letter-header').offsetHeight || 60;
+        var headerEl = document.querySelector('.letter-header');
+        var headerHeight = headerEl ? headerEl.offsetHeight : 60;
         var targetPos = target.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
         window.scrollTo({ top: targetPos, behavior: 'smooth' });
       }
     });
   }
 
-  // ═══ 스크롤 프로그레스 바 ═══
   var progressBar = document.getElementById('scroll-progress');
+  var header = document.getElementById('letter-header');
+  var scrollTopBtn = document.getElementById('scroll-to-top');
 
   function updateProgress() {
+    if (!progressBar) return;
     var scrollTop = window.scrollY;
     var docHeight = document.documentElement.scrollHeight - window.innerHeight;
     if (docHeight > 0) {
@@ -179,10 +160,8 @@
     }
   }
 
-  // ═══ 헤더 스크롤 효과 ═══
-  var header = document.getElementById('letter-header');
-
   function updateHeader() {
+    if (!header) return;
     if (window.scrollY > 50) {
       header.classList.add('scrolled');
     } else {
@@ -190,10 +169,8 @@
     }
   }
 
-  // ═══ 맨 위로 버튼 ═══
-  var scrollTopBtn = document.getElementById('scroll-to-top');
-
   function updateScrollTopBtn() {
+    if (!scrollTopBtn) return;
     if (window.scrollY > 400) {
       scrollTopBtn.classList.add('visible');
     } else {
@@ -207,9 +184,7 @@
     });
   }
 
-  // ═══ 스크롤 이벤트 통합 (성능 최적화) ═══
   var ticking = false;
-
   window.addEventListener('scroll', function() {
     if (!ticking) {
       requestAnimationFrame(function() {
@@ -222,7 +197,6 @@
     }
   });
 
-  // ═══ 스크롤 애니메이션 (IntersectionObserver) ═══
   var animateSelectors = [
     '.content-section',
     '.index-card',
@@ -234,10 +208,10 @@
     '.cta-banner',
     '.curation-header',
     '.new-summary',
-    '.stat-item'
-    '.section-illustration',      // ★ 추가
-    '.closing-illustration',      // ★ 추가
-    '.curation-banner-image'      // ★ 추가    
+    '.stat-item',
+    '.section-illustration',
+    '.closing-illustration',
+    '.curation-banner-image'
   ];
 
   var animateElements = document.querySelectorAll(animateSelectors.join(', '));
@@ -245,25 +219,21 @@
     animateElements[i].classList.add('animate-on-scroll');
   }
 
-  // 큐레이션 아이템 시차
   var curationItems = document.querySelectorAll('.curation-rich-item');
   for (var i = 0; i < curationItems.length; i++) {
     curationItems[i].style.transitionDelay = (i * 0.06) + 's';
   }
 
-  // 인덱스 카드 시차
   var indexCards = document.querySelectorAll('.index-card');
   for (var i = 0; i < indexCards.length; i++) {
     indexCards[i].style.transitionDelay = (i * 0.1) + 's';
   }
 
-  // 미니 카드 시차
   var miniCards = document.querySelectorAll('.course-mini-card');
   for (var i = 0; i < miniCards.length; i++) {
     miniCards[i].style.transitionDelay = (i * 0.08) + 's';
   }
 
-  // 통계 아이템 시차
   var statItems = document.querySelectorAll('.stat-item');
   for (var i = 0; i < statItems.length; i++) {
     statItems[i].style.transitionDelay = (i * 0.12) + 's';
@@ -285,7 +255,6 @@
     observer.observe(scrollElements[i]);
   }
 
-  // ═══ CTA 버튼 리플 효과 ═══
   var ctaButtons = document.querySelectorAll('.cta-primary, .curation-rich-cta');
   for (var i = 0; i < ctaButtons.length; i++) {
     ctaButtons[i].addEventListener('mouseenter', function(e) {
@@ -296,8 +265,5 @@
       this.style.setProperty('--ripple-y', y + 'px');
     });
   }
-
-  // ═══ 초기 로드 애니메이션 ═══
-  document.body.classList.add('loaded');
 
 })();
