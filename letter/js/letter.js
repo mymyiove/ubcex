@@ -78,3 +78,22 @@
     });
   }
 })();
+
+// ★ 스크롤 애니메이션
+  var animateElements = document.querySelectorAll('.content-section, .index-card, .insight-card, .course-mini-card, .new-highlight-card, .curation-item, .closing-section');
+  for (var i = 0; i < animateElements.length; i++) {
+    animateElements[i].classList.add('animate-on-scroll');
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    for (var i = 0; i < entries.length; i++) {
+      if (entries[i].isIntersecting) {
+        entries[i].target.classList.add('visible');
+      }
+    }
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+  var scrollElements = document.querySelectorAll('.animate-on-scroll');
+  for (var i = 0; i < scrollElements.length; i++) {
+    observer.observe(scrollElements[i]);
+  }
