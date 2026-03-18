@@ -940,3 +940,37 @@ body > * { position: relative; z-index: 1; }
   .curation-rich-item { flex-direction: column; }
   .cta-banner { padding: 1.2rem 1rem; }
 }
+
+/* ═══ 언어 토글 ═══ */
+.lang-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--bg-glass);
+  backdrop-filter: blur(8px);
+}
+.lang-btn {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: var(--font-en);
+}
+.lang-btn:hover {
+  color: var(--accent);
+}
+.lang-btn.active {
+  background: var(--gradient-main);
+  color: white;
+  border-radius: 18px;
+}
+
+/* 언어 전환 시 부드러운 페이드 */
+[data-ko][data-en] {
+  transition: opacity 0.2s ease;
+}
