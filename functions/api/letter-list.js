@@ -14,7 +14,7 @@ export async function onRequestGet(context) {
     'Cache-Control': 'public, max-age=30'
   };
 
-  var KV = env.COURSE_KV || env.KV;
+  var KV = env.COURSE_CACHE;
 
   try {
     var indexRaw = await KV.get('letter_index');
