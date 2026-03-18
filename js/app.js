@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// app.js — 메인 앱 + 임시 목록 + 관리자 + 썸네일(고해상도+ZIP)
+// app.js — 메인 앱 + 임시 목록 + 관리자 + 썸네일(HD+ZIP)
 // ═══════════════════════════════════════════════════════════
 var ADMIN_CODE = 'jhj11';
 var WORKER_URL = 'https://udemy-sync.mymyiove882.workers.dev';
@@ -37,9 +37,40 @@ function goStep2() { var sub = document.getElementById('input-subdomain').value.
 
 function downloadSampleCSV() { var headers = '강의명\t강의명번역\t카테고리\t서브카테고리\t난이도\t수강시간(h)\t평점\t리뷰 수\t최근 업데이트\t강의 개요\t강의개요번역'; var s1 = 'JavaシリーズVol.1【ゼロからJavaの基礎文法と開発ツールを同時に学ぶ】\tJava 시리즈 Vol.1 【0부터 Java의 기초 문법과 개발 툴을 동시에 배우다】\tDevelopment\tProgramming Languages\tBeginner\t2.3\t4.4\t334\t2025-06-21\t私は、新人教育でJavaを教えてきました\t나는 신인 교육에서 자바를 가르쳐 왔습니다'; var s2 = 'ビジネス日本語コミュニケーション入門\t비즈니스 일본어 커뮤니케이션 입문\tBusiness\tCommunication\tBeginner\t1.5\t4.2\t128\t2025-03-15\tビジネスシーンで使える日本語を学びます\t비즈니스 현장에서 사용할 수 있는 일본어를 배웁니다'; var s3 = 'AI・機械学習の基礎と実践\tAI·머신러닝의 기초와 실전\tIT & Software\tData Science\tIntermediate\t4.0\t4.6\t567\t2025-09-10\tAIと機械学習の基本概念から実践まで\tAI와 머신러닝의 기본 개념부터 실전까지'; var csv = '\uFEFF' + headers + '\n' + s1 + '\n' + s2 + '\n' + s3; var blob = new Blob([csv], {type: 'text/tab-separated-values;charset=utf-8;'}); var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '임시목록_샘플양식.tsv'; a.click(); URL.revokeObjectURL(a.href); toast('📥 샘플 양식 다운로드 완료!'); }
 
-function getHighResImage(imageUrl) { if (!imageUrl) return imageUrl; return imageUrl.replace('/240x135/', '/960x540/').replace('/480x270/', '/960x540/').replace('px240x135', 'px960x540'); }
+// ★ 고해상도 이미지 URL 변환
+function getHighResImage(imageUrl) {
+  if (!imageUrl) return imageUrl;
+  return imageUrl.replace(/\/240x135\//g, '/960x540/').replace(/\/480x270\//g, '/960x540/').replace(/\/750x422\//g, '/960x540/');
+}
 
-function downloadThumbnail(imageUrl, uid) { var hiRes = getHighResImage(imageUrl); fetch(hiRes).then(function(res) { if (!res.ok) return fetch(imageUrl).then(function(r) { return r.blob(); }); return res.blob(); }).then(function(blob) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'udemy_thumb_' + uid + '.jpg'; a.click(); URL.revokeObjectURL(a.href); }).catch(function() { window.open(hiRes, '_blank'); toast('⚠️ 직접 다운로드 실패 — 새 탭에서 우클릭 → 저장', 'warning'); }); }
+// ★ 이미지 확장자 감지
+function getImageExtension(url) {
+  if (!url) return 'jpg';
+  var lower = url.toLowerCase();
+  if (lower.indexOf('.webp') !== -1) return 'webp';
+  if (lower.indexOf('.png') !== -1) return 'png';
+  if (lower.indexOf('.gif') !== -1) return 'gif';
+  return 'jpg';
+}
+
+// ★ 썸네일 다운로드 (960→750→원본 폴백 + 확장자 유지)
+function downloadThumbnail(imageUrl, uid) {
+  var hiRes = getHighResImage(imageUrl);
+  var ext = getImageExtension(imageUrl);
+  fetch(hiRes, { mode: 'cors' }).then(function(res) {
+    if (!res.ok) throw new Error('hi-res failed');
+    return res.blob();
+  }).catch(function() {
+    var midRes = imageUrl.replace(/\/240x135\//g, '/750x422/').replace(/\/480x270\//g, '/750x422/');
+    return fetch(midRes, { mode: 'cors' }).then(function(res) { if (!res.ok) throw new Error('mid failed'); return res.blob(); });
+  }).catch(function() {
+    return fetch(imageUrl, { mode: 'cors' }).then(function(res) { return res.blob(); });
+  }).then(function(blob) {
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'udemy_thumb_' + uid + '.' + ext; a.click(); URL.revokeObjectURL(a.href);
+  }).catch(function() {
+    window.open(hiRes, '_blank'); toast('⚠️ 직접 다운로드 실패 — 새 탭에서 우클릭 → 저장', 'warning');
+  });
+}
 
 // ═══ 관리자 모드 ═══
 function enterAdminMode() {
@@ -55,7 +86,7 @@ function enterAdminMode() {
       '<div class="admin-section"><h3>⭐ 항해사 PICK</h3><div class="admin-btn-group"><button class="admin-btn admin-btn-primary" id="btn-manage-picks">⭐ PICK 설정</button><button class="admin-btn" id="btn-view-picks">📋 현재 보기</button></div><div class="admin-log" id="picks-log"></div></div>' +
       '<div class="admin-section"><h3>🚫 제외 강의 관리</h3><p class="admin-desc">웅진데모 전용 강의 등 제외할 강의 ID를 관리합니다.</p><div class="admin-btn-group"><button class="admin-btn admin-btn-warning" id="btn-manage-excluded">🚫 제외 강의 설정</button><button class="admin-btn" id="btn-view-excluded">📋 현재 보기</button></div><div class="admin-log" id="excluded-log"></div></div>' +
       '<div class="admin-section"><h3>📋 임시 목록 모드 <button class="admin-btn" id="btn-temp-help" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin-left:0.5rem;">❓ 사용법</button> <button class="admin-btn" id="btn-temp-sample" style="padding:0.3rem 0.6rem;font-size:0.75rem;margin-left:0.3rem;">📥 샘플 양식</button></h3><p class="admin-desc">외부 강의 목록(CSV/텍스트)을 업로드하여 임시로 큐레이션합니다.</p><div class="admin-btn-group"><label class="admin-btn admin-btn-primary" style="cursor:pointer;">📥 CSV 업로드<input type="file" id="temp-csv-upload" accept=".csv,.tsv,.txt" style="display:none;" /></label><button class="admin-btn admin-btn-primary" id="btn-temp-paste">📝 텍스트 붙여넣기</button><button class="admin-btn admin-btn-warning" id="btn-temp-restore" style="display:none;">↩️ 원래 목록 복원</button></div><div id="temp-paste-area" style="display:none;margin-top:0.8rem;"><textarea id="temp-paste-text" rows="8" placeholder="탭 또는 쉼표로 구분된 데이터를 붙여넣으세요.&#10;첫 줄은 헤더 (📥 샘플 양식 참고)" style="width:100%;padding:0.8rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);font-size:0.82rem;font-family:Consolas,monospace;resize:vertical;"></textarea><button class="admin-btn admin-btn-primary" id="btn-temp-apply-paste" style="margin-top:0.5rem;">🚀 이 목록으로 전환</button></div><div class="admin-log" id="temp-log"></div></div>' +
-      '<div class="admin-section"><h3>🖼️ 썸네일 다운로드</h3><p class="admin-desc">과정 UID(ID)를 입력하면 고해상도(960×540) 썸네일을 다운로드합니다. 데이터가 로드된 상태에서 사용하세요.</p><div class="admin-btn-group" style="align-items:center;"><input type="text" id="thumb-uid" placeholder="과정 UID 입력 (쉼표로 여러 개 가능)" style="flex:1;padding:0.5rem 0.8rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);font-size:0.85rem;" /><button class="admin-btn admin-btn-primary" id="btn-thumb-search">🔍 검색</button><button class="admin-btn" id="btn-thumb-download-all" style="display:none;">📥 전체 다운로드 (ZIP)</button></div><div id="thumb-results" style="display:flex;flex-wrap:wrap;gap:0.8rem;margin-top:0.8rem;"></div><div class="admin-log" id="thumb-log"></div></div>' +
+      '<div class="admin-section"><h3>🖼️ 썸네일 다운로드</h3><p class="admin-desc">과정 UID(ID)를 입력하면 고해상도(960×540) 썸네일을 다운로드합니다.</p><div class="admin-btn-group" style="align-items:center;"><input type="text" id="thumb-uid" placeholder="과정 UID 입력 (쉼표로 여러 개 가능)" style="flex:1;padding:0.5rem 0.8rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);font-size:0.85rem;" /><button class="admin-btn admin-btn-primary" id="btn-thumb-search">🔍 검색</button><button class="admin-btn" id="btn-thumb-download-all" style="display:none;">📥 전체 다운로드 (ZIP)</button></div><div id="thumb-results" style="display:flex;flex-wrap:wrap;gap:0.8rem;margin-top:0.8rem;"></div><div class="admin-log" id="thumb-log"></div></div>' +
       '<div class="admin-section"><h3>🔍 데이터 검증</h3><div class="admin-btn-group"><button class="admin-btn" id="btn-verify-data">📊 현황</button><button class="admin-btn" id="btn-verify-sample">📋 샘플</button></div><div class="admin-log" id="verify-log"></div></div>' +
       '<div class="admin-section"><h3>🔑 API 테스트</h3><div class="admin-btn-group"><button class="admin-btn" id="btn-test-graphql">🔐 GraphQL</button><button class="admin-btn" id="btn-test-gemini">🤖 Gemini</button></div><div class="admin-log" id="api-log"></div></div>' +
       '<div class="admin-section"><h3>📋 로우 데이터</h3><div class="admin-btn-group" style="align-items:center;"><label style="color:var(--text-secondary);font-size:0.85rem;">Chunk:</label><input type="number" id="chunk-number" value="0" min="0" max="50" style="width:60px;padding:0.4rem;background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-bright);text-align:center;" /><button class="admin-btn" id="btn-view-chunk">🔍 조회</button></div><div class="admin-log" id="raw-log"></div></div>' +
@@ -88,7 +119,7 @@ function enterAdminMode() {
   var btnTempRestore = document.getElementById('btn-temp-restore'); if (btnTempRestore) btnTempRestore.addEventListener('click', function() { if (S._originalCourses) { S.courses = S._originalCourses; S._originalCourses = null; document.getElementById('temp-log').innerHTML = '<div class="log-entry log-success">✅ 원래 목록 복원!</div>'; btnTempRestore.style.display = 'none'; toast('↩️ 원래 목록 복원!'); } });
   if (S._originalCourses) { var rb = document.getElementById('btn-temp-restore'); if (rb) rb.style.display = ''; }
 
-  // ★ 썸네일 다운로드 이벤트
+  // ★ 썸네일 검색
   var btnThumbSearch = document.getElementById('btn-thumb-search');
   if (btnThumbSearch) btnThumbSearch.addEventListener('click', function() {
     var input = document.getElementById('thumb-uid').value.trim();
@@ -107,14 +138,15 @@ function enterAdminMode() {
       if (course && course.image) {
         found.push(course);
         var safeTitle = (course.title || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        results.innerHTML += '<div style="background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);padding:0.8rem;text-align:center;width:200px;"><img src="' + course.image + '" alt="" style="width:100%;border-radius:4px;margin-bottom:0.5rem;" /><div style="font-size:0.75rem;color:var(--text-primary);margin-bottom:0.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + safeTitle + '">' + (course.title || '').substring(0, 30) + '</div><div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;">ID: ' + uid + '</div><button class="admin-btn" style="padding:0.3rem 0.6rem;font-size:0.75rem;" onclick="downloadThumbnail(\'' + course.image.replace(/'/g, "\\'") + '\',\'' + uid + '\')">📥 다운로드 (HD)</button></div>';
+        var imgExt = getImageExtension(course.image);
+        results.innerHTML += '<div style="background:var(--bg-card-solid);border:1px solid var(--border);border-radius:var(--radius-xs);padding:0.8rem;text-align:center;width:200px;"><img src="' + course.image + '" alt="" style="width:100%;border-radius:4px;margin-bottom:0.5rem;" onerror="this.src=this.src.replace(\'.jpg\',\'.webp\')" /><div style="font-size:0.75rem;color:var(--text-primary);margin-bottom:0.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + safeTitle + '">' + (course.title || '').substring(0, 30) + '</div><div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;">ID: ' + uid + ' (' + imgExt + ')</div><button class="admin-btn" style="padding:0.3rem 0.6rem;font-size:0.75rem;" onclick="downloadThumbnail(\'' + course.image.replace(/'/g, "\\'") + '\',\'' + uid + '\')">📥 HD 다운로드</button></div>';
       } else notFound.push(uid);
     }
     if (log) { log.innerHTML = '<div class="log-entry log-success">✅ ' + found.length + '개 발견 (960×540 고해상도)</div>'; if (notFound.length > 0) log.innerHTML += '<div class="log-entry log-error">❌ ' + notFound.length + '개 미발견: ' + notFound.join(', ') + '</div><div class="log-entry log-info">💡 먼저 메인 화면에서 데이터를 로드해주세요.</div>'; }
     if (found.length > 1 && dlAllBtn) dlAllBtn.style.display = '';
   });
 
-  // ★ 전체 다운로드 (ZIP)
+  // ★ 전체 다운로드 (ZIP + 고해상도 + 확장자 유지)
   var btnThumbDownloadAll = document.getElementById('btn-thumb-download-all');
   if (btnThumbDownloadAll) btnThumbDownloadAll.addEventListener('click', function() {
     var imgs = document.querySelectorAll('#thumb-results img');
@@ -128,15 +160,29 @@ function enterAdminMode() {
     for (var i = 0; i < imgs.length; i++) {
       (function(img, idx) {
         var p = img.closest('div'); var divs = p ? p.querySelectorAll('div') : []; var uid = 'thumb_' + idx;
-        for (var d = 0; d < divs.length; d++) { if (divs[d].textContent.indexOf('ID:') !== -1) { uid = divs[d].textContent.replace('ID:', '').trim(); break; } }
+        for (var d = 0; d < divs.length; d++) { if (divs[d].textContent.indexOf('ID:') !== -1) { uid = divs[d].textContent.split('ID:')[1].split('(')[0].trim(); break; } }
+        var ext = getImageExtension(img.src);
         var hiRes = getHighResImage(img.src);
-        var promise = fetch(hiRes).then(function(res) { if (!res.ok) return fetch(img.src).then(function(r) { return r.blob(); }); return res.blob(); }).then(function(blob) { zip.file('udemy_thumb_' + uid + '.jpg', blob); if (log) log.innerHTML = '<div class="log-entry log-info">📦 ZIP 생성 중... (' + (idx + 1) + '/' + imgs.length + ')</div>'; }).catch(function() { if (log) log.innerHTML += '<div class="log-entry log-error">❌ ' + uid + ' 실패</div>'; });
+        var promise = fetch(hiRes, { mode: 'cors' }).then(function(res) {
+          if (!res.ok) throw new Error('hi failed');
+          return res.blob();
+        }).catch(function() {
+          var midRes = img.src.replace(/\/240x135\//g, '/750x422/').replace(/\/480x270\//g, '/750x422/');
+          return fetch(midRes, { mode: 'cors' }).then(function(res) { if (!res.ok) throw new Error('mid failed'); return res.blob(); });
+        }).catch(function() {
+          return fetch(img.src, { mode: 'cors' }).then(function(res) { return res.blob(); });
+        }).then(function(blob) {
+          zip.file('udemy_thumb_' + uid + '.' + ext, blob);
+          if (log) log.innerHTML = '<div class="log-entry log-info">📦 ZIP 생성 중... (' + (idx + 1) + '/' + imgs.length + ')</div>';
+        }).catch(function() {
+          if (log) log.innerHTML += '<div class="log-entry log-error">❌ ' + uid + ' 실패</div>';
+        });
         promises.push(promise);
       })(imgs[i], i);
     }
     Promise.all(promises).then(function() { return zip.generateAsync({ type: 'blob' }); }).then(function(content) {
       var a = document.createElement('a'); a.href = URL.createObjectURL(content); a.download = 'udemy_thumbnails_' + new Date().toISOString().slice(0, 10) + '.zip'; a.click(); URL.revokeObjectURL(a.href);
-      if (log) log.innerHTML = '<div class="log-entry log-success">✅ ZIP 다운로드 완료! (' + imgs.length + '개, 960×540)</div>';
+      if (log) log.innerHTML = '<div class="log-entry log-success">✅ ZIP 다운로드 완료! (' + imgs.length + '개, HD)</div>';
       toast('📦 ' + imgs.length + '개 썸네일 ZIP 다운로드 완료!');
     }).catch(function(err) { if (log) log.innerHTML += '<div class="log-entry log-error">❌ ZIP 실패: ' + err.message + '</div>'; toast('ZIP 생성 실패', 'error');
     }).finally(function() { btnThumbDownloadAll.disabled = false; btnThumbDownloadAll.textContent = '📥 전체 다운로드 (ZIP)'; });
@@ -159,6 +205,7 @@ async function verifySample(){var l=document.getElementById('verify-log');l.inne
 async function testGraphQL(){var l=document.getElementById('api-log');l.innerHTML='<div class="log-entry log-info">🔐 테스트...</div>';try{var r=await fetch(WORKER_URL+'/test-token',{headers:{'Authorization':'Bearer '+WORKER_SECRET}});var d=await r.json();l.innerHTML+='<div class="log-entry '+(d.success?'log-success':'log-error')+'">'+(d.success?'✅ 성공':'❌ '+d.error)+'</div>';}catch(e){l.innerHTML+='<div class="log-entry log-error">❌ '+e.message+'</div>';}}
 async function testGemini(){var l=document.getElementById('api-log');l.innerHTML='<div class="log-entry log-info">🤖 테스트...</div>';try{var r=await fetch('/api/ai-expand',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:'python'})});var d=await r.json();l.innerHTML+='<div class="log-entry '+(d.success?'log-success':'log-error')+'">'+(d.success?'✅ 성공':'❌ '+(d.error||'실패'))+'</div>';}catch(e){l.innerHTML+='<div class="log-entry log-error">❌ '+e.message+'</div>';}}
 async function viewChunk(){var l=document.getElementById('raw-log');var n=document.getElementById('chunk-number').value||'0';l.innerHTML='<div class="log-entry log-info">📋 Chunk '+n+'...</div>';try{var r=await fetch(WORKER_URL+'/get-courses?chunk='+n,{headers:{'Authorization':'Bearer '+WORKER_SECRET}});if(!r.ok){l.innerHTML+='<div class="log-entry log-error">❌ 없음</div>';return;}var d=await r.json();l.innerHTML+='<div class="log-entry log-success"><strong>📦 '+d.length+'개</strong><br>'+d.slice(0,3).map(function(c,i){return(i+1)+'. '+((c.title||'').substring(0,40));}).join('<br>')+'</div>';}catch(e){l.innerHTML+='<div class="log-entry log-error">❌ '+e.message+'</div>';}}
+
 
 async function launch() {
   S.selectedFamilies = []; var selected = document.querySelectorAll('.gate-job-card.selected'); for (var i = 0; i < selected.length; i++) S.selectedFamilies.push(selected[i].dataset.family);
