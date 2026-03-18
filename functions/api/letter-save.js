@@ -102,7 +102,7 @@ export async function onRequestPost(context) {
     };
 
     // KV에 저장
-    var KV = env.COURSE_KV || env.KV;
+    var KV = env.COURSE_CACHE;
     await KV.put('letter_' + month, JSON.stringify(letterData));
 
     // 레터 목록(인덱스) 업데이트
