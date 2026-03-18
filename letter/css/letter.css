@@ -653,3 +653,290 @@ body > * { position: relative; z-index: 1; }
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   인터랙션 + 생동감 + CTA 강화
+   ═══════════════════════════════════════════════════════════ */
+
+/* ★ 그라데이션 애니메이션 */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(124,108,240,0.15); }
+  50% { box-shadow: 0 0 40px rgba(124,108,240,0.25); }
+}
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+/* 표지 그라데이션 움직임 */
+.cover-section {
+  background: linear-gradient(-45deg, #7c6cf0, #a78bfa, #c084fc, #ec4899, #f97316, #7c6cf0);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* 이모지 움직임 */
+.index-icon { animation: bounce-subtle 3s ease-in-out infinite; }
+.stat-icon { animation: bounce-subtle 2.5s ease-in-out infinite; }
+.mini-icon { animation: wiggle 4s ease-in-out infinite; }
+.curation-rank { animation: sparkle 2s ease-in-out infinite; }
+
+/* 각 인덱스 카드 시차 애니메이션 */
+.index-card:nth-child(1) .index-icon { animation-delay: 0s; }
+.index-card:nth-child(2) .index-icon { animation-delay: 0.3s; }
+.index-card:nth-child(3) .index-icon { animation-delay: 0.6s; }
+
+/* ★ CTA 버튼 강화 */
+.cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1.5rem;
+  background: var(--gradient-main);
+  background-size: 200% 200%;
+  animation: gradientShift 5s ease infinite;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(124,108,240,0.25);
+}
+.cta-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 30px rgba(124,108,240,0.35);
+}
+.cta-primary .cta-arrow {
+  transition: transform 0.3s;
+}
+.cta-primary:hover .cta-arrow {
+  transform: translateX(4px);
+}
+
+/* CTA 섹션 중간 배너 */
+.cta-banner {
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem 2rem;
+  text-align: center;
+  margin: 2rem 0;
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+.cta-banner p {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.8rem;
+}
+.cta-banner strong {
+  color: var(--accent);
+}
+
+/* ★ 강의 카드 — 풍부한 정보 */
+.course-rich-card {
+  display: flex;
+  gap: 1.2rem;
+  padding: 1.5rem;
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.course-rich-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--gradient-main);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.course-rich-card:hover {
+  border-color: var(--accent-light);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+}
+.course-rich-card:hover::after { opacity: 1; }
+
+.course-thumb {
+  width: 120px;
+  height: 68px;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.course-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+.course-rich-card:hover .course-thumb img {
+  transform: scale(1.05);
+}
+
+.course-details { flex: 1; display: flex; flex-direction: column; gap: 0.3rem; }
+.course-details h4 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+}
+.course-details h4 a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.course-details h4 a:hover { color: var(--accent); }
+
+.course-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+.course-meta-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+/* AI 추천 코멘트 */
+.ai-comment {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-warm);
+  border-left: 3px solid var(--accent-light);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  margin-top: 0.3rem;
+}
+.ai-comment::before {
+  content: '🤖 ';
+}
+
+.course-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+  padding: 0.4rem 1rem;
+  background: var(--gradient-main);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s;
+  align-self: flex-start;
+}
+.course-cta:hover {
+  box-shadow: 0 4px 15px rgba(124,108,240,0.3);
+  transform: translateY(-1px);
+}
+
+/* ★ 큐레이션 리스트 — 풍부한 버전 */
+.curation-rich-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1.2rem 1.5rem;
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  align-items: flex-start;
+}
+.curation-rich-item:hover {
+  border-color: var(--accent-light);
+  box-shadow: var(--shadow);
+  transform: translateX(6px);
+}
+.curation-rich-item .curation-rank {
+  font-family: var(--font-en);
+  font-size: 1.2rem;
+  font-weight: 900;
+  background: var(--gradient-main);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  min-width: 35px;
+  text-align: center;
+  padding-top: 0.2rem;
+}
+.curation-rich-info { flex: 1; }
+.curation-rich-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  line-height: 1.4;
+  display: block;
+  margin-bottom: 0.3rem;
+  transition: color 0.2s;
+}
+.curation-rich-title:hover { color: var(--accent); }
+.curation-rich-meta {
+  display: flex;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+.curation-rich-comment {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding: 0.5rem 0.7rem;
+  background: var(--bg-warm);
+  border-left: 2px solid var(--accent-light);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  margin-bottom: 0.4rem;
+}
+.curation-rich-comment::before { content: '💡 '; }
+.curation-rich-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.9rem;
+  background: var(--gradient-main);
+  color: white;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+.curation-rich-cta:hover {
+  box-shadow: 0 3px 12px rgba(124,108,240,0.3);
+  transform: translateY(-1px);
+}
+
+/* ★ 반응형 추가 */
+@media (max-width: 768px) {
+  .course-rich-card { flex-direction: column; }
+  .course-thumb { width: 100%; height: 140px; }
+  .curation-rich-item { flex-direction: column; }
+  .cta-banner { padding: 1.2rem 1rem; }
+}
