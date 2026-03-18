@@ -13,7 +13,7 @@ export async function onRequestGet(context) {
     'Cache-Control': 'public, max-age=60'
   };
 
-  var KV = env.COURSE_KV || env.KV;
+  var KV = env.COURSE_CACHE;
 
   // month 없으면 최신호 반환
   if (!month) {
