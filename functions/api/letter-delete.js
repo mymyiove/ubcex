@@ -26,7 +26,7 @@ export async function onRequestPost(context) {
       });
     }
 
-    var KV = env.COURSE_KV || env.KV;
+    var KV = env.COURSE_CACHE;
 
     // 레터 데이터 삭제
     await KV.delete('letter_' + month);
