@@ -3,13 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Udemy Letter 2026년 3월호 — 기술혁신을 넘어 강력한 시너지를 만드는 법">
 <title>Udemy Letter — 2026년 3월호</title>
 <link rel="stylesheet" href="css/letter.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<link rel="icon" href="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg" type="image/svg+xml">
 </head>
 <body>
 
-<header class="letter-header">
+<!-- 스크롤 프로그레스 바 -->
+<div class="scroll-progress" id="scroll-progress"></div>
+
+<!-- ═══ 헤더 ═══ -->
+<header class="letter-header" id="letter-header">
   <div class="header-inner">
     <div class="header-brand">
       <img src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg" alt="Udemy" class="udemy-logo" />
@@ -21,21 +26,26 @@
         <button class="lang-btn active" data-lang="ko">🇰🇷 KO</button>
         <button class="lang-btn" data-lang="en">🇺🇸 EN</button>
       </div>
-      <button class="btn-letter" id="btn-pdf">📥 PDF</button>
-      <a href="#" class="btn-letter btn-primary" id="btn-campus" data-ko="🚀 학습장 바로가기" data-en="🚀 Go to Learning Hub">🚀 학습장 바로가기</a>
+      <button class="btn-letter" id="btn-pdf" data-ko="📥 PDF" data-en="📥 PDF">📥 PDF</button>
+      <a href="#" class="btn-letter btn-primary" id="btn-campus" data-ko="🚀 학습장" data-en="🚀 Hub">🚀 학습장</a>
     </div>
   </div>
 </header>
 
+<!-- ═══ 메인 콘텐츠 ═══ -->
 <main id="letter-content">
 
   <!-- ═══ 표지 ═══ -->
   <section class="cover-section">
     <div class="cover-inner">
+      <div class="cover-image" id="cover-image">
+        <img src="src/img/Brand_Launch.jpg" alt="Udemy Letter 2026년 3월호" />
+      </div>
       <div class="cover-badge" data-ko="2026년 03월호" data-en="March 2026 Issue">2026년 03월호</div>
       <h1 class="cover-title" data-ko="기술혁신을 넘어<br>강력한 시너지를 만드는 법" data-en="Beyond Tech Innovation:<br>Building Powerful Synergies">기술혁신을 넘어<br>강력한 시너지를 만드는 법</h1>
       <p class="cover-subtitle" data-ko="AI 고도화와 장수경제, 세대 시너지" data-en="Advanced AI, Longevity Economy & Generational Synergy">AI 고도화와 장수경제, 세대 시너지</p>
       <p class="cover-company" id="company-greeting" data-ko="학습자님을 위한 이달의 레터" data-en="This month's letter for learners">학습자님을 위한 이달의 레터</p>
+      <p class="cover-reading-time" data-ko="📖 읽는 시간: 약 5분" data-en="📖 Reading time: ~5 min">📖 읽는 시간: 약 5분</p>
     </div>
   </section>
 
@@ -72,10 +82,14 @@
       <p data-ko="AI 고도화로 복잡해진 조직환경에서, 결국 '일을 해내는 사람'에 초점을 두었습니다." data-en="In an increasingly complex organizational environment driven by advanced AI, we focused on 'the people who get things done.'">AI 고도화로 복잡해진 조직환경에서, 결국 '일을 해내는 사람'에 초점을 두었습니다.</p>
     </div>
 
+    <!-- 트렌드 일러스트 -->
+    <div class="section-illustration">
+      <img src="src/img/Global_Learning.png" alt="글로벌 학습 환경" />
+    </div>
+
     <div class="insight-card">
       <h3 data-ko="장수경제(Longevity Economy)와 세대 시너지" data-en="Longevity Economy & Generational Synergy">장수경제(Longevity Economy)와 세대 시너지</h3>
       <p class="insight-subtitle" data-ko="기술의 고도화보다 중요한 것은 '사람과 사람의 결합'" data-en="More important than technological advancement is 'the connection between people'">기술의 고도화보다 중요한 것은 '사람과 사람의 결합'</p>
-
       <div class="insight-stats">
         <div class="stat-item">
           <div class="stat-icon">👴</div>
@@ -93,7 +107,6 @@
           <div class="stat-desc" data-ko="시니어의 암묵지를 데이터로 전환" data-en="Converting senior tacit knowledge into data">시니어의 암묵지를 데이터로 전환</div>
         </div>
       </div>
-
       <div class="insight-keywords">
         <span class="keyword">Reverse Mentoring</span>
         <span class="keyword">Senior Reskilling</span>
@@ -105,18 +118,17 @@
     <div class="insight-courses">
       <h3 data-ko="세대 공존을 위한 실천 전략" data-en="Practical Strategies for Generational Coexistence">세대 공존을 위한 실천 전략</h3>
       <p class="courses-subtitle" data-ko="AI가 대신할 수 없는 1% 휴먼 소프트 스킬" data-en="The 1% human soft skills AI cannot replace">AI가 대신할 수 없는 1% 휴먼 소프트 스킬</p>
-
       <div class="course-grid-4">
         <div class="course-mini-card">
           <div class="mini-icon">🗣️</div>
-          <h4 data-ko="리더의 관계경영 소통법" data-en="Leadership Communication for Relationship Management">리더의 관계경영 소통법</h4>
-          <p data-ko="세대 간 벽을 허물고 팀원의 마음을 움직이는 말하기" data-en="Breaking generational barriers and inspiring team members through communication">세대 간 벽을 허물고 팀원의 마음을 움직이는 말하기</p>
+          <h4 data-ko="리더의 관계경영 소통법" data-en="Leadership Communication">리더의 관계경영 소통법</h4>
+          <p data-ko="세대 간 벽을 허물고 팀원의 마음을 움직이는 말하기" data-en="Breaking generational barriers through communication">세대 간 벽을 허물고 팀원의 마음을 움직이는 말하기</p>
           <span class="mini-time">⏱️ 1.1hr</span>
           <a href="#" class="mini-link" data-slug="leadership-communication" data-ko="지금 수강하기 →" data-en="Start Now →">지금 수강하기 →</a>
         </div>
         <div class="course-mini-card">
           <div class="mini-icon">🤝</div>
-          <h4 data-ko="세대공존 조직문화" data-en="Multigenerational Organizational Culture">세대공존 조직문화</h4>
+          <h4 data-ko="세대공존 조직문화" data-en="Multigenerational Culture">세대공존 조직문화</h4>
           <p data-ko="서로의 가치관을 존중하며 성과내기" data-en="Achieving results while respecting each other's values">서로의 가치관을 존중하며 성과내기</p>
           <span class="mini-time">⏱️ 3.0hr</span>
           <a href="#" class="mini-link" data-slug="generational-culture" data-ko="지금 수강하기 →" data-en="Start Now →">지금 수강하기 →</a>
@@ -124,13 +136,13 @@
         <div class="course-mini-card">
           <div class="mini-icon">📊</div>
           <h4 data-ko="스마트한 성과평가" data-en="Smart Performance Evaluation">스마트한 성과평가</h4>
-          <p data-ko="데이터에 기반한 공정한 평가로 세대 간 공정성 확보" data-en="Ensuring fairness across generations with data-driven evaluation">데이터에 기반한 공정한 평가로 세대 간 공정성 확보</p>
+          <p data-ko="데이터에 기반한 공정한 평가로 세대 간 공정성 확보" data-en="Ensuring fairness with data-driven evaluation">데이터에 기반한 공정한 평가로 세대 간 공정성 확보</p>
           <span class="mini-time">⏱️ 1.0hr</span>
           <a href="#" class="mini-link" data-slug="smart-evaluation" data-ko="지금 수강하기 →" data-en="Start Now →">지금 수강하기 →</a>
         </div>
         <div class="course-mini-card">
           <div class="mini-icon">📝</div>
-          <h4 data-ko="암묵지 전수법" data-en="Tacit Knowledge Transfer Methods">암묵지 전수법</h4>
+          <h4 data-ko="암묵지 전수법" data-en="Tacit Knowledge Transfer">암묵지 전수법</h4>
           <p data-ko="시니어의 노하우를 조직의 자산으로 매뉴얼화하기" data-en="Documenting senior expertise as organizational assets">시니어의 노하우를 조직의 자산으로 매뉴얼화하기</p>
           <span class="mini-time">⏱️ 1.0hr</span>
           <a href="#" class="mini-link" data-slug="tacit-knowledge" data-ko="지금 수강하기 →" data-en="Start Now →">지금 수강하기 →</a>
@@ -145,6 +157,11 @@
       <div class="section-tag">CONTENT 2</div>
       <h2 data-ko="✨ 신규 콘텐츠" data-en="✨ New Content">✨ 신규 콘텐츠</h2>
       <p data-ko="2026년을 리드하기 위한 신규 콘텐츠를 엄선했습니다." data-en="We've curated new content to lead in 2026.">2026년을 리드하기 위한 신규 콘텐츠를 엄선했습니다.</p>
+    </div>
+
+    <!-- 신규 콘텐츠 일러스트 -->
+    <div class="section-illustration">
+      <img src="src/img/Instructor_Journey.jpg" alt="콘텐츠 제작 여정" />
     </div>
 
     <div class="new-highlight">
@@ -167,7 +184,7 @@
       </div>
       <div class="new-highlight-card">
         <div class="highlight-badge">🌐 NEW</div>
-        <h3 data-ko="언어학습, 자기진단을 통해 커리어 재설계!" data-en="Redesign Your Career Through Language & Self-Assessment!">언어학습, 자기진단을 통해 커리어 재설계!</h3>
+        <h3 data-ko="언어학습, 자기진단을 통해 커리어 재설계!" data-en="Redesign Your Career!">언어학습, 자기진단을 통해 커리어 재설계!</h3>
         <div class="highlight-courses">
           <div class="h-course">
             <span class="h-title" data-ko="쉬운 동사 5개로 원어민처럼 말하기" data-en="Speak Like a Native with 5 Easy Verbs">쉬운 동사 5개로 원어민처럼 말하기</span>
@@ -183,13 +200,11 @@
       </div>
     </div>
 
-    <div class="new-summary" data-ko="이외에도 총 <strong>40개</strong>의 신규 한국어 강의가 이번 3월 UB 컬렉션에 추가 및 업데이트되어<br>총 <strong>30,485개</strong>의 강의를 UB 컬렉션에서 수강하실 수 있습니다." data-en="In addition, a total of <strong>40</strong> new Korean courses have been added and updated to the March UB Collection,<br>bringing the total to <strong>30,485</strong> courses available in the UB Collection.">
-      이외에도 총 <strong>40개</strong>의 신규 한국어 강의가 이번 3월 UB 컬렉션에 추가 및 업데이트되어<br>총 <strong>30,485개</strong>의 강의를 UB 컬렉션에서 수강하실 수 있습니다.
-    </div>
+    <div class="new-summary" data-ko="이외에도 총 <strong>40개</strong>의 신규 한국어 강의가 이번 3월 UB 컬렉션에 추가 및 업데이트되어<br>총 <strong>30,485개</strong>의 강의를 UB 컬렉션에서 수강하실 수 있습니다." data-en="In addition, <strong>40</strong> new Korean courses have been added,<br>bringing the total to <strong>30,485</strong> courses in the UB Collection.">이외에도 총 <strong>40개</strong>의 신규 한국어 강의가 이번 3월 UB 컬렉션에 추가 및 업데이트되어<br>총 <strong>30,485개</strong>의 강의를 UB 컬렉션에서 수강하실 수 있습니다.</div>
 
     <div class="cta-banner">
-      <p data-ko="✨ 신규 강의가 궁금하시다면? 학습장에서 바로 확인하세요!" data-en="✨ Curious about new courses? Check them out on the Learning Hub!">✨ 신규 강의가 궁금하시다면? 학습장에서 바로 확인하세요!</p>
-      <a href="#" class="cta-primary" id="btn-campus-mid1" data-ko="🚀 학습장에서 신규 강의 보기 <span class='cta-arrow'>→</span>" data-en="🚀 View New Courses on Hub <span class='cta-arrow'>→</span>">🚀 학습장에서 신규 강의 보기 <span class="cta-arrow">→</span></a>
+      <p data-ko="✨ 신규 강의가 궁금하시다면? 학습장에서 바로 확인하세요!" data-en="✨ Curious about new courses? Check them out now!">✨ 신규 강의가 궁금하시다면? 학습장에서 바로 확인하세요!</p>
+      <a href="#" class="cta-primary" id="btn-campus-mid1" data-ko="🚀 학습장에서 신규 강의 보기 <span class='cta-arrow'>→</span>" data-en="🚀 View New Courses <span class='cta-arrow'>→</span>">🚀 학습장에서 신규 강의 보기 <span class="cta-arrow">→</span></a>
     </div>
   </section>
 
@@ -198,152 +213,171 @@
     <div class="section-header">
       <div class="section-tag">CONTENT 3</div>
       <h2 data-ko="🎯 이달의 큐레이션" data-en="🎯 Monthly Curation">🎯 이달의 큐레이션</h2>
-      <p data-ko="Udemy Business가 선사하는 당신의 경쟁력을 높여줄 이달의 핵심 강의 제안" data-en="This month's essential course recommendations from Udemy Business to boost your competitiveness">Udemy Business가 선사하는 당신의 경쟁력을 높여줄 이달의 핵심 강의 제안</p>
+      <p data-ko="Udemy Business가 선사하는 당신의 경쟁력을 높여줄 이달의 핵심 강의 제안" data-en="Essential course recommendations to boost your competitiveness">Udemy Business가 선사하는 당신의 경쟁력을 높여줄 이달의 핵심 강의 제안</p>
+    </div>
+
+    <!-- 큐레이션 배너 이미지 -->
+    <div class="curation-banner-image">
+      <img src="src/img/Learning_at_Home.jpg" alt="편안한 학습 환경" />
     </div>
 
     <div class="curation-header">
-      <h3 data-ko="본격적으로 시작되는 업무, 반복적인 업무는 이렇게 처리합니다." data-en="Here's how to handle the repetitive tasks as work kicks into full gear.">본격적으로 시작되는 업무, 반복적인 업무는 이렇게 처리합니다.</h3>
+      <h3 data-ko="본격적으로 시작되는 업무, 반복적인 업무는 이렇게 처리합니다." data-en="Here's how to handle repetitive tasks as work kicks into gear.">본격적으로 시작되는 업무, 반복적인 업무는 이렇게 처리합니다.</h3>
       <div class="curation-tags">
         <span class="curation-tag" data-ko="내 일에 AI 활용하기" data-en="Leverage AI at Work">내 일에 AI 활용하기</span>
-        <span class="curation-tag" data-ko="자동화로 퇴근시간 앞당기기" data-en="Leave Work Earlier with Automation">자동화로 퇴근시간 앞당기기</span>
+        <span class="curation-tag" data-ko="자동화로 퇴근시간 앞당기기" data-en="Leave Earlier with Automation">자동화로 퇴근시간 앞당기기</span>
       </div>
     </div>
 
     <div class="curation-list">
-
+      <!-- 01 -->
       <div class="curation-rich-item">
         <div class="curation-rank">01</div>
         <div class="curation-rich-info">
+          <span class="course-badge badge-popular" data-ko="🔥 가장 인기" data-en="🔥 Most Popular">🔥 가장 인기</span>
           <a href="#" class="curation-rich-title" data-slug="chatgpt-advanced">ChatGPT 고급 활용법 - 남들보다 100배 더 잘 쓰는 프롬프트 엔지니어링 비법 클래스</a>
           <div class="curation-rich-meta">
-            <span>⭐ 4.5</span><span>⏱️ 3.5hr</span><span>👤 김AI 강사</span><span>🇰🇷 한국어</span>
+            <span>⭐ 4.5</span><span>⏱️ 3.5hr</span><span>👤 김AI 강사</span><span>📊 중급</span><span>📂 IT & 소프트웨어</span>
           </div>
-          <div class="curation-rich-comment" data-ko="업무 보고서, 이메일, 기획서를 ChatGPT로 10분 만에 완성하고 싶은 모든 직장인에게 추천! 프롬프트 하나로 결과물의 질이 달라집니다." data-en="Recommended for all professionals who want to complete reports, emails, and proposals in 10 minutes with ChatGPT! One prompt changes the quality of your output.">업무 보고서, 이메일, 기획서를 ChatGPT로 10분 만에 완성하고 싶은 모든 직장인에게 추천! 프롬프트 하나로 결과물의 질이 달라집니다.</div>
+          <div class="curation-rich-comment" data-ko="업무 보고서, 이메일, 기획서를 ChatGPT로 10분 만에 완성하고 싶은 모든 직장인에게 추천! 프롬프트 하나로 결과물의 질이 달라집니다." data-en="Recommended for all professionals who want to complete reports and proposals in 10 minutes with ChatGPT!">업무 보고서, 이메일, 기획서를 ChatGPT로 10분 만에 완성하고 싶은 모든 직장인에게 추천! 프롬프트 하나로 결과물의 질이 달라집니다.</div>
           <a href="#" class="curation-rich-cta" data-slug="chatgpt-advanced" data-ko="지금 바로 시작하기 →" data-en="Start Now →">지금 바로 시작하기 →</a>
         </div>
       </div>
 
+      <!-- 02 -->
       <div class="curation-rich-item">
         <div class="curation-rank">02</div>
         <div class="curation-rich-info">
+          <span class="course-badge badge-shortest" data-ko="⚡ 가장 짧은" data-en="⚡ Shortest">⚡ 가장 짧은</span>
           <a href="#" class="curation-rich-title" data-slug="chatgpt-smart">ChatGPT로 '내'가 똑똑해지기</a>
           <div class="curation-rich-meta">
-            <span>⭐ 4.6</span><span>⏱️ 2.0hr</span><span>👤 박스마트 강사</span><span>🇰🇷 한국어</span>
+            <span>⭐ 4.6</span><span>⏱️ 2.0hr</span><span>👤 박스마트 강사</span><span>📊 초급</span><span>📂 생산성</span>
           </div>
-          <div class="curation-rich-comment" data-ko="AI를 처음 접하는 분도 2시간이면 업무에 바로 활용 가능! 실무 예제 중심으로 배우는 가장 쉬운 ChatGPT 입문 강의." data-en="Even AI beginners can apply it to work in just 2 hours! The easiest ChatGPT introductory course focused on practical examples.">AI를 처음 접하는 분도 2시간이면 업무에 바로 활용 가능! 실무 예제 중심으로 배우는 가장 쉬운 ChatGPT 입문 강의.</div>
+          <div class="curation-rich-comment" data-ko="AI를 처음 접하는 분도 2시간이면 업무에 바로 활용 가능! 실무 예제 중심으로 배우는 가장 쉬운 ChatGPT 입문 강의." data-en="Even AI beginners can apply it to work in just 2 hours! The easiest ChatGPT intro course.">AI를 처음 접하는 분도 2시간이면 업무에 바로 활용 가능! 실무 예제 중심으로 배우는 가장 쉬운 ChatGPT 입문 강의.</div>
           <a href="#" class="curation-rich-cta" data-slug="chatgpt-smart" data-ko="지금 바로 시작하기 →" data-en="Start Now →">지금 바로 시작하기 →</a>
         </div>
       </div>
 
+      <!-- 03 -->
       <div class="curation-rich-item">
         <div class="curation-rank">03</div>
         <div class="curation-rich-info">
+          <span class="course-badge badge-top-rated" data-ko="🏆 평점 최고" data-en="🏆 Top Rated">🏆 평점 최고</span>
           <a href="#" class="curation-rich-title" data-slug="chatgpt-data-analyst">처음이지만 인공지능(AI)로 전문가처럼 – ChatGPT만 있으면 나도 데이터 분석가</a>
           <div class="curation-rich-meta">
-            <span>⭐ 4.7</span><span>⏱️ 4.0hr</span><span>👤 이데이터 강사</span><span>🇰🇷 한국어</span>
+            <span>⭐ 4.7</span><span>⏱️ 4.0hr</span><span>👤 이데이터 강사</span><span>📊 초급</span><span>📂 데이터 분석</span>
           </div>
-          <div class="curation-rich-comment" data-ko="엑셀만 쓰던 당신도 데이터 분석가가 될 수 있습니다. 코딩 없이 ChatGPT로 데이터를 읽고 인사이트를 뽑아내는 실전 스킬!" data-en="Even if you've only used Excel, you can become a data analyst. Practical skills to read data and extract insights with ChatGPT — no coding required!">엑셀만 쓰던 당신도 데이터 분석가가 될 수 있습니다. 코딩 없이 ChatGPT로 데이터를 읽고 인사이트를 뽑아내는 실전 스킬!</div>
+          <div class="curation-rich-comment" data-ko="엑셀만 쓰던 당신도 데이터 분석가가 될 수 있습니다. 코딩 없이 ChatGPT로 데이터를 읽고 인사이트를 뽑아내는 실전 스킬!" data-en="Even Excel-only users can become data analysts. Practical skills to extract insights with ChatGPT!">엑셀만 쓰던 당신도 데이터 분석가가 될 수 있습니다. 코딩 없이 ChatGPT로 데이터를 읽고 인사이트를 뽑아내는 실전 스킬!</div>
           <a href="#" class="curation-rich-cta" data-slug="chatgpt-data-analyst" data-ko="지금 바로 시작하기 →" data-en="Start Now →">지금 바로 시작하기 →</a>
         </div>
       </div>
 
       <!-- 중간 CTA -->
       <div class="cta-banner">
-        <p data-ko="💡 지금 바로 학습장에 접속하면 위 강의를 <strong>무료</strong>로 수강할 수 있습니다!" data-en="💡 Access the Learning Hub now and take the above courses for <strong>free</strong>!">💡 지금 바로 학습장에 접속하면 위 강의를 <strong>무료</strong>로 수강할 수 있습니다!</p>
+        <p data-ko="💡 지금 바로 학습장에 접속하면 위 강의를 <strong>무료</strong>로 수강할 수 있습니다!" data-en="💡 Access the Learning Hub now and take courses for <strong>free</strong>!">💡 지금 바로 학습장에 접속하면 위 강의를 <strong>무료</strong>로 수강할 수 있습니다!</p>
         <a href="#" class="cta-primary" id="btn-campus-mid2" data-ko="🚀 학습장 바로가기 <span class='cta-arrow'>→</span>" data-en="🚀 Go to Learning Hub <span class='cta-arrow'>→</span>">🚀 학습장 바로가기 <span class="cta-arrow">→</span></a>
       </div>
 
+      <!-- 04 -->
       <div class="curation-rich-item">
         <div class="curation-rank">04</div>
         <div class="curation-rich-info">
           <a href="#" class="curation-rich-title" data-slug="google-gemini">Google Workspace Gemini 업무 활용 방법</a>
           <div class="curation-rich-meta">
-            <span>⭐ 4.2</span><span>⏱️ 1.5hr</span><span>👤 정구글 강사</span><span>🇰🇷 한국어</span>
+            <span>⭐ 4.2</span><span>⏱️ 1.5hr</span><span>👤 정구글 강사</span><span>📊 초급</span><span>📂 생산성</span>
           </div>
-          <div class="curation-rich-comment" data-ko="Gmail, Docs, Sheets에 내장된 Gemini AI를 200% 활용하는 법! 이미 쓰고 있는 도구에서 바로 생산성을 높이세요." data-en="Learn to leverage Gemini AI built into Gmail, Docs, and Sheets at 200%! Boost productivity with tools you already use.">Gmail, Docs, Sheets에 내장된 Gemini AI를 200% 활용하는 법! 이미 쓰고 있는 도구에서 바로 생산성을 높이세요.</div>
+          <div class="curation-rich-comment" data-ko="Gmail, Docs, Sheets에 내장된 Gemini AI를 200% 활용하는 법! 이미 쓰고 있는 도구에서 바로 생산성을 높이세요." data-en="Learn to leverage Gemini AI built into Gmail, Docs, and Sheets!">Gmail, Docs, Sheets에 내장된 Gemini AI를 200% 활용하는 법! 이미 쓰고 있는 도구에서 바로 생산성을 높이세요.</div>
           <a href="#" class="curation-rich-cta" data-slug="google-gemini" data-ko="지금 바로 시작하기 →" data-en="Start Now →">지금 바로 시작하기 →</a>
         </div>
       </div>
 
+      <!-- 05 -->
       <div class="curation-rich-item">
         <div class="curation-rank">05</div>
         <div class="curation-rich-info">
+          <span class="course-badge badge-essential" data-ko="💼 실무 필수" data-en="💼 Essential">💼 실무 필수</span>
           <a href="#" class="curation-rich-title" data-slug="ai-tools-complete">ChatGPT 및 AI 도구 - 초보자부터 전문가까지</a>
           <div class="curation-rich-meta">
-            <span>⭐ 4.5</span><span>⏱️ 5.0hr</span><span>👤 최AI 강사</span><span>🇰🇷 한국어자막</span>
+            <span>⭐ 4.5</span><span>⏱️ 5.0hr</span><span>👤 최AI 강사</span><span>📊 모든 수준</span><span>📂 IT & 소프트웨어</span>
           </div>
-          <div class="curation-rich-comment" data-ko="ChatGPT뿐 아니라 Midjourney, Claude, Perplexity까지! AI 도구 전체를 한 강의에서 마스터하고 싶은 분에게 딱!" data-en="Not just ChatGPT — Midjourney, Claude, Perplexity and more! Perfect for anyone who wants to master all AI tools in one course!">ChatGPT뿐 아니라 Midjourney, Claude, Perplexity까지! AI 도구 전체를 한 강의에서 마스터하고 싶은 분에게 딱!</div>
+          <div class="curation-rich-comment" data-ko="ChatGPT뿐 아니라 Midjourney, Claude, Perplexity까지! AI 도구 전체를 한 강의에서 마스터하고 싶은 분에게 딱!" data-en="Not just ChatGPT — master all AI tools in one course!">ChatGPT뿐 아니라 Midjourney, Claude, Perplexity까지! AI 도구 전체를 한 강의에서 마스터하고 싶은 분에게 딱!</div>
           <a href="#" class="curation-rich-cta" data-slug="ai-tools-complete" data-ko="지금 바로 시작하기 →" data-en="Start Now →">지금 바로 시작하기 →</a>
         </div>
       </div>
 
+      <!-- 06 -->
       <div class="curation-rich-item">
         <div class="curation-rank">06</div>
         <div class="curation-rich-info">
+          <span class="course-badge badge-new" data-ko="🆕 신규" data-en="🆕 New">🆕 신규</span>
           <a href="#" class="curation-rich-title" data-slug="n8n-ai-agent">n8n으로 완성하는 AI 에이전트(Agent) - 나를 대신할 업무 자동화 입문</a>
           <div class="curation-rich-meta">
-            <span>⭐ 4.4</span><span>⏱️ 3.0hr</span><span>👤 한자동화 강사</span><span>🇰🇷 한국어</span>
+            <span>⭐ 4.4</span><span>⏱️ 3.0hr</span><span>👤 한자동화 강사</span><span>📊 중급</span><span>📂 자동화</span>
           </div>
-          <div class="curation-rich-comment" data-ko="반복 업무에 지친 당신을 위한 구원자! 코딩 없이 AI 에이전트를 만들어 이메일, 보고서, 데이터 수집을 자동화하세요." data-en="A lifesaver for those tired of repetitive tasks! Build AI agents without coding to automate emails, reports, and data collection.">반복 업무에 지친 당신을 위한 구원자! 코딩 없이 AI 에이전트를 만들어 이메일, 보고서, 데이터 수집을 자동화하세요.</div>
+          <div class="curation-rich-comment" data-ko="반복 업무에 지친 당신을 위한 구원자! 코딩 없이 AI 에이전트를 만들어 이메일, 보고서, 데이터 수집을 자동화하세요." data-en="A lifesaver for those tired of repetitive tasks! Build AI agents without coding.">반복 업무에 지친 당신을 위한 구원자! 코딩 없이 AI 에이전트를 만들어 이메일, 보고서, 데이터 수집을 자동화하세요.</div>
           <a href="#" class="curation-rich-cta" data-slug="n8n-ai-agent" data-ko="지금 바로 시작하기 →" data-en="Start Now →">지금 바로 시작하기 →</a>
         </div>
       </div>
 
+      <!-- 07 -->
       <div class="curation-rich-item">
         <div class="curation-rank">07</div>
         <div class="curation-rich-info">
           <a href="#" class="curation-rich-title" data-slug="gpt-master-automation">왕초보도 OK! 3년차 GPT 마스터에게 배우는 실전 업무 자동화</a>
           <div class="curation-rich-meta">
-            <span>⭐ 4.0</span><span>⏱️ 2.5hr</span><span>👤 윤GPT 강사</span><span>🇰🇷 한국어</span>
+            <span>⭐ 4.0</span><span>⏱️ 2.5hr</span><span>👤 윤GPT 강사</span><span>📊 초급</span><span>📂 생산성</span>
           </div>
-          <div class="curation-rich-comment" data-ko="GPT를 3년간 실무에 써온 강사의 노하우 총정리! '이렇게 쓰면 되는 거였어?' 하는 순간이 올 거예요." data-en="A complete summary of know-how from an instructor who's used GPT in practice for 3 years! You'll have that 'So this is how it's done!' moment.">GPT를 3년간 실무에 써온 강사의 노하우 총정리! "이렇게 쓰면 되는 거였어?" 하는 순간이 올 거예요.</div>
+          <div class="curation-rich-comment" data-ko="GPT를 3년간 실무에 써온 강사의 노하우 총정리! '이렇게 쓰면 되는 거였어?' 하는 순간이 올 거예요." data-en="Complete know-how from an instructor who's used GPT for 3 years!">GPT를 3년간 실무에 써온 강사의 노하우 총정리! "이렇게 쓰면 되는 거였어?" 하는 순간이 올 거예요.</div>
           <a href="#" class="curation-rich-cta" data-slug="gpt-master-automation" data-ko="지금 바로 시작하기 →" data-en="Start Now →">지금 바로 시작하기 →</a>
         </div>
       </div>
 
+      <!-- 08 -->
       <div class="curation-rich-item">
         <div class="curation-rank">08</div>
         <div class="curation-rich-info">
-          <a href="#" class="curation-rich-title" data-slug="mcp-automation-cursor">모두를 위한 MCP를 이용한 업무 자동화 - 다양한 사례로 배우는 MCP 활용 (feat. Cursor)</a>
+          <span class="course-badge badge-new" data-ko="🆕 신규" data-en="🆕 New">🆕 신규</span>
+          <a href="#" class="curation-rich-title" data-slug="mcp-automation-cursor">모두를 위한 MCP를 이용한 업무 자동화 (feat. Cursor)</a>
           <div class="curation-rich-meta">
-            <span>⭐ 4.4</span><span>⏱️ 2.0hr</span><span>👤 강MCP 강사</span><span>🇰🇷 한국어</span>
+            <span>⭐ 4.4</span><span>⏱️ 2.0hr</span><span>👤 강MCP 강사</span><span>📊 중급</span><span>📂 개발 도구</span>
           </div>
-          <div class="curation-rich-comment" data-ko="2026년 가장 핫한 AI 도구 MCP! Cursor와 함께 사용하면 개발자가 아니어도 업무 자동화를 뚝딱 만들 수 있습니다." data-en="MCP — the hottest AI tool of 2026! Combined with Cursor, even non-developers can build work automation in no time.">2026년 가장 핫한 AI 도구 MCP! Cursor와 함께 사용하면 개발자가 아니어도 업무 자동화를 뚝딱 만들 수 있습니다.</div>
+          <div class="curation-rich-comment" data-ko="2026년 가장 핫한 AI 도구 MCP! Cursor와 함께 사용하면 개발자가 아니어도 업무 자동화를 뚝딱 만들 수 있습니다." data-en="MCP — the hottest AI tool of 2026! Even non-developers can build automation.">2026년 가장 핫한 AI 도구 MCP! Cursor와 함께 사용하면 개발자가 아니어도 업무 자동화를 뚝딱 만들 수 있습니다.</div>
           <a href="#" class="curation-rich-cta" data-slug="mcp-automation-cursor" data-ko="지금 바로 시작하기 →" data-en="Start Now →">지금 바로 시작하기 →</a>
         </div>
       </div>
 
+      <!-- 09 -->
       <div class="curation-rich-item">
         <div class="curation-rank">09</div>
         <div class="curation-rich-info">
+          <span class="course-badge badge-top-rated" data-ko="🏆 평점 최고" data-en="🏆 Top Rated">🏆 평점 최고</span>
           <a href="#" class="curation-rich-title" data-slug="make-nocode-automation">노코드로 시작하는 MAKE 자동화 마스터</a>
           <div class="curation-rich-meta">
-            <span>⭐ 4.9</span><span>⏱️ 3.5hr</span><span>👤 송노코드 강사</span><span>🇰🇷 한국어</span>
+            <span>⭐ 4.9</span><span>⏱️ 3.5hr</span><span>👤 송노코드 강사</span><span>📊 초급</span><span>📂 자동화</span>
           </div>
-          <div class="curation-rich-comment" data-ko="평점 4.9! 수강생이 극찬한 노코드 자동화의 정석. 슬랙 알림, 구글시트 연동, 이메일 자동 발송까지 한 번에!" data-en="Rated 4.9! The gold standard of no-code automation, praised by students. Slack notifications, Google Sheets integration, and auto-emails — all in one!">평점 4.9! 수강생이 극찬한 노코드 자동화의 정석. 슬랙 알림, 구글시트 연동, 이메일 자동 발송까지 한 번에!</div>
+          <div class="curation-rich-comment" data-ko="평점 4.9! 수강생이 극찬한 노코드 자동화의 정석. 슬랙 알림, 구글시트 연동, 이메일 자동 발송까지 한 번에!" data-en="Rated 4.9! The gold standard of no-code automation.">평점 4.9! 수강생이 극찬한 노코드 자동화의 정석. 슬랙 알림, 구글시트 연동, 이메일 자동 발송까지 한 번에!</div>
           <a href="#" class="curation-rich-cta" data-slug="make-nocode-automation" data-ko="지금 바로 시작하기 →" data-en="Start Now →">지금 바로 시작하기 →</a>
         </div>
       </div>
 
+      <!-- 10 -->
       <div class="curation-rich-item">
         <div class="curation-rank">10</div>
         <div class="curation-rich-info">
           <a href="#" class="curation-rich-title" data-slug="power-automate-intro">Power Automate로 시작하는 업무 자동화 입문 클래스</a>
           <div class="curation-rich-meta">
-            <span>⭐ 4.7</span><span>⏱️ 2.0hr</span><span>👤 임파워 강사</span><span>🇰🇷 한국어</span>
+            <span>⭐ 4.7</span><span>⏱️ 2.0hr</span><span>👤 임파워 강사</span><span>📊 초급</span><span>📂 Microsoft</span>
           </div>
-          <div class="curation-rich-comment" data-ko="이미 회사에서 Microsoft 365를 쓰고 있다면? Power Automate로 승인 프로세스, 파일 관리, 알림을 자동화하세요!" data-en="Already using Microsoft 365 at work? Automate approval processes, file management, and notifications with Power Automate!">이미 회사에서 Microsoft 365를 쓰고 있다면? Power Automate로 승인 프로세스, 파일 관리, 알림을 자동화하세요!</div>
+          <div class="curation-rich-comment" data-ko="이미 회사에서 Microsoft 365를 쓰고 있다면? Power Automate로 승인 프로세스, 파일 관리, 알림을 자동화하세요!" data-en="Already using Microsoft 365? Automate approvals, files, and notifications!">이미 회사에서 Microsoft 365를 쓰고 있다면? Power Automate로 승인 프로세스, 파일 관리, 알림을 자동화하세요!</div>
           <a href="#" class="curation-rich-cta" data-slug="power-automate-intro" data-ko="지금 바로 시작하기 →" data-en="Start Now →">지금 바로 시작하기 →</a>
         </div>
       </div>
-
     </div>
 
-    <p class="curation-note" data-ko="💡 강의명을 클릭하면 해당 강의 페이지로 연결됩니다. 모든 강의는 Udemy Business 학습장에서 무료로 수강 가능합니다." data-en="💡 Click on a course title to go to the course page. All courses are available for free on the Udemy Business Learning Hub.">💡 강의명을 클릭하면 해당 강의 페이지로 연결됩니다. 모든 강의는 Udemy Business 학습장에서 무료로 수강 가능합니다.</p>
+    <p class="curation-note" data-ko="💡 강의명을 클릭하면 해당 강의 페이지로 연결됩니다. 모든 강의는 Udemy Business 학습장에서 무료로 수강 가능합니다." data-en="💡 Click a course title to visit the course page. All courses are free on the Udemy Business Learning Hub.">💡 강의명을 클릭하면 해당 강의 페이지로 연결됩니다. 모든 강의는 Udemy Business 학습장에서 무료로 수강 가능합니다.</p>
 
-    <!-- 하단 CTA -->
     <div class="cta-banner" style="margin-top: 2rem;">
-      <p data-ko="🎯 이번 달 추천 강의가 마음에 드셨나요?<br>학습장에서 더 많은 <strong>30,000개+</strong> 강의를 만나보세요!" data-en="🎯 Did you enjoy this month's recommendations?<br>Discover <strong>30,000+</strong> more courses on the Learning Hub!">🎯 이번 달 추천 강의가 마음에 드셨나요?<br>학습장에서 더 많은 <strong>30,000개+</strong> 강의를 만나보세요!</p>
+      <p data-ko="🎯 이번 달 추천 강의가 마음에 드셨나요?<br>학습장에서 더 많은 <strong>30,000개+</strong> 강의를 만나보세요!" data-en="🎯 Enjoyed this month's picks?<br>Discover <strong>30,000+</strong> more courses!">🎯 이번 달 추천 강의가 마음에 드셨나요?<br>학습장에서 더 많은 <strong>30,000개+</strong> 강의를 만나보세요!</p>
       <a href="#" class="cta-primary" id="btn-campus-bottom2" data-ko="🚀 학습장에서 더 많은 강의 보기 <span class='cta-arrow'>→</span>" data-en="🚀 Explore More Courses <span class='cta-arrow'>→</span>">🚀 학습장에서 더 많은 강의 보기 <span class="cta-arrow">→</span></a>
     </div>
   </section>
@@ -351,9 +385,14 @@
   <!-- ═══ 마무리 ═══ -->
   <section class="closing-section">
     <div class="closing-inner">
+      <!-- 마무리 일러스트 -->
+      <div class="closing-illustration">
+        <img src="src/img/Brand_Launch_2.png" alt="함께 성장하는 학습 커뮤니티" />
+      </div>
+
       <h2 data-ko="Udemy Letter는" data-en="Udemy Letter">Udemy Letter는</h2>
-      <p data-ko="매월 변화하는 업무 환경과 학습 트렌드에 맞춰,<br>바로 실무에 적용할 수 있는 콘텐츠와 인사이트를 엄선해 소개드립니다." data-en="Each month, we curate content and insights aligned with evolving work environments and learning trends<br>that you can immediately apply to your work.">매월 변화하는 업무 환경과 학습 트렌드에 맞춰,<br>바로 실무에 적용할 수 있는 콘텐츠와 인사이트를 엄선해 소개드립니다.</p>
-      <p data-ko="여러분의 성장과 성과에 도움이 되는 강의를 선별해<br>더 빠르고 효율적인 업무 역량 향상을 지원하겠습니다." data-en="We select courses that contribute to your growth and performance,<br>supporting faster and more efficient skill development.">여러분의 성장과 성과에 도움이 되는 강의를 선별해<br>더 빠르고 효율적인 업무 역량 향상을 지원하겠습니다.</p>
+      <p data-ko="매월 변화하는 업무 환경과 학습 트렌드에 맞춰,<br>바로 실무에 적용할 수 있는 콘텐츠와 인사이트를 엄선해 소개드립니다." data-en="Each month, we curate content and insights aligned with evolving work environments<br>that you can immediately apply to your work.">매월 변화하는 업무 환경과 학습 트렌드에 맞춰,<br>바로 실무에 적용할 수 있는 콘텐츠와 인사이트를 엄선해 소개드립니다.</p>
+      <p data-ko="여러분의 성장과 성과에 도움이 되는 강의를 선별해<br>더 빠르고 효율적인 업무 역량 향상을 지원하겠습니다." data-en="We select courses that contribute to your growth,<br>supporting faster and more efficient skill development.">여러분의 성장과 성과에 도움이 되는 강의를 선별해<br>더 빠르고 효율적인 업무 역량 향상을 지원하겠습니다.</p>
       <p class="closing-highlight" data-ko="앞으로도 여러분의 성장을 더 즐겁게 만드는<br>Udemy Letter로 함께하겠습니다. 🚀" data-en="We'll continue to make your growth more enjoyable<br>with Udemy Letter. 🚀">앞으로도 여러분의 성장을 더 즐겁게 만드는<br>Udemy Letter로 함께하겠습니다. 🚀</p>
     </div>
   </section>
@@ -368,12 +407,15 @@
       <a href="#" class="btn-letter btn-primary" id="btn-campus-bottom" data-ko="🚀 학습장 바로가기" data-en="🚀 Go to Learning Hub">🚀 학습장 바로가기</a>
     </div>
     <div class="footer-links">
-      <a href="#" class="footer-link" data-ko="📖 이전 호 보기" data-en="📖 View Previous Issues">📖 이전 호 보기</a>
+      <a href="#" class="footer-link" data-ko="📖 이전 호 보기" data-en="📖 Previous Issues">📖 이전 호 보기</a>
       <a href="#" class="footer-link" id="btn-unsubscribe" data-ko="수신거부" data-en="Unsubscribe">수신거부</a>
     </div>
     <p class="footer-copyright">Udemy Letter | 웅진씽크빅 © 2026</p>
   </div>
 </footer>
+
+<!-- 맨 위로 버튼 -->
+<button class="scroll-to-top" id="scroll-to-top" aria-label="맨 위로">↑</button>
 
 <script src="js/letter.js"></script>
 </body>
