@@ -1,27 +1,25 @@
 // ═══════════════════════════════════════════════════════════
-// letter.js — 서브도메인 변환 + PDF 다운로드 + 링크 처리
+// letter.js — 서브도메인 변환 + PDF + 링크 + 스크롤 애니메이션
 // ═══════════════════════════════════════════════════════════
-
 (function() {
-  // URL 파라미터에서 서브도메인 가져오기
   var params = new URLSearchParams(window.location.search);
   var sub = params.get('sub') || '';
   var baseUrl = sub ? 'https://' + sub + '.udemy.com/course/' : '#';
 
-  // 기업명 인사 (서브도메인 기반)
+  // 기업명 인사
   var greeting = document.getElementById('company-greeting');
   if (greeting && sub) {
     greeting.textContent = sub.toUpperCase() + ' 학습자님을 위한 이달의 레터';
   }
 
-  // 학습장 바로가기 링크
-  var campusLinks = document.querySelectorAll('#btn-campus, #btn-campus-bottom');
+  // 학습장 바로가기 링크 (모든 CTA 포함)
+  var campusLinks = document.querySelectorAll('#btn-campus, #btn-campus-bottom, #btn-campus-mid1, #btn-campus-mid2, #btn-campus-bottom2');
   for (var i = 0; i < campusLinks.length; i++) {
     if (sub) campusLinks[i].href = 'https://' + sub + '.udemy.com';
     else campusLinks[i].style.display = 'none';
   }
 
-  // 모든 강의 링크에 서브도메인 적용
+  // 모든 강의 링크에 서브도메인 적용 (mini-link, curation-rich-title, curation-rich-cta)
   var courseLinks = document.querySelectorAll('[data-slug]');
   for (var i = 0; i < courseLinks.length; i++) {
     var slug = courseLinks[i].getAttribute('data-slug');
@@ -50,7 +48,6 @@
     };
     html2pdf().set(opt).from(element).save();
   }
-
   var pdfBtns = document.querySelectorAll('#btn-pdf, #btn-pdf-bottom');
   for (var i = 0; i < pdfBtns.length; i++) {
     pdfBtns[i].addEventListener('click', downloadPDF);
@@ -63,12 +60,11 @@
       e.preventDefault();
       if (confirm('Udemy Letter 수신을 거부하시겠습니까?\n이후 레터를 받지 않게 됩니다.')) {
         alert('수신거부가 처리되었습니다.\n감사합니다.');
-        // TODO: 실제 수신거부 API 호출
       }
     });
   }
 
-  // 부드러운 스크롤
+  // 부드러운 스크롤 (INDEX 카드 클릭)
   var indexLinks = document.querySelectorAll('.index-card');
   for (var i = 0; i < indexLinks.length; i++) {
     indexLinks[i].addEventListener('click', function(e) {
@@ -77,12 +73,21 @@
       if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
-})();
 
-// ★ 스크롤 애니메이션
-  var animateElements = document.querySelectorAll('.content-section, .index-card, .insight-card, .course-mini-card, .new-highlight-card, .curation-item, .closing-section');
+  // ★ 스크롤 애니메이션
+  var animateElements = document.querySelectorAll(
+    '.content-section, .index-card, .insight-card, .course-mini-card, ' +
+    '.new-highlight-card, .curation-rich-item, .closing-section, ' +
+    '.cta-banner, .curation-header, .new-summary'
+  );
   for (var i = 0; i < animateElements.length; i++) {
     animateElements[i].classList.add('animate-on-scroll');
+  }
+
+  // 큐레이션 아이템 시차 애니메이션
+  var curationItems = document.querySelectorAll('.curation-rich-item');
+  for (var i = 0; i < curationItems.length; i++) {
+    curationItems[i].style.transitionDelay = (i * 0.05) + 's';
   }
 
   var observer = new IntersectionObserver(function(entries) {
@@ -97,3 +102,4 @@
   for (var i = 0; i < scrollElements.length; i++) {
     observer.observe(scrollElements[i]);
   }
+})();
