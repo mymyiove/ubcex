@@ -362,14 +362,18 @@
 
   function loadCoursesFromWorker() {
     if (allCoursesCache) return Promise.resolve(allCoursesCache);
-    return fetch(WORKER_URL + '/status', { headers: { 'Authorization': 'Bearer ' + ADMIN_SECRET } })
-      .then(function(r) { return r.json(); })
+    return fetch('/api/courses-proxy?action=status')
+      .then(function(r) {
+        if (!r.ok) throw new Error('status failed');
+        return r.json();
+      })
       .then(function(s) {
         var tc = s.totalChunks || 0;
+        if (tc === 0) throw new Error('no chunks');
         var ps = [];
         for (var i = 0; i < tc; i++) {
           ps.push(
-            fetch(WORKER_URL + '/get-courses?chunk=' + i, { headers: { 'Authorization': 'Bearer ' + ADMIN_SECRET } })
+            fetch('/api/courses-proxy?chunk=' + i)
               .then(function(r) { return r.ok ? r.json() : []; })
               .catch(function() { return []; })
           );
@@ -383,6 +387,10 @@
         }
         allCoursesCache = all;
         return all;
+      })
+      .catch(function(e) {
+        toast('강의 데이터 로드 실패 - 불러오기 버튼을 사용해주세요', 'error');
+        return [];
       });
   }
 
