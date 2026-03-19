@@ -147,34 +147,13 @@
   }
 
   function loadCourseData(ids) {
-    return fetch('/api/courses-proxy?action=status')
-      .then(function(r) { return r.json(); })
-      .then(function(status) {
-        var tc = status.totalChunks || 0;
-        if (tc === 0) return;
-        var promises = [];
-        for (var i = 0; i < tc; i++) {
-          promises.push(
-            fetch('/api/courses-proxy?chunk=' + i)
-              .then(function(r) { return r.ok ? r.json() : []; })
-              .catch(function() { return []; })
-          );
-        }
-        return Promise.all(promises);
-      })
-      .then(function(results) {
-        if (!results) return;
-        var all = [];
-        for (var i = 0; i < results.length; i++) {
-          if (Array.isArray(results[i])) all = all.concat(results[i]);
-        }
-        for (var i = 0; i < ids.length; i++) {
-          for (var j = 0; j < all.length; j++) {
-            if (String(all[j].id) === String(ids[i])) {
-              courseDataMap[ids[i]] = all[j];
-              break;
-            }
-          }
+    var idsParam = ids.join(',');
+    return fetch('/api/courses-proxy?ids=' + encodeURIComponent(idsParam))
+      .then(function(r) { return r.ok ? r.json() : []; })
+      .then(function(courses) {
+        if (!Array.isArray(courses)) return;
+        for (var i = 0; i < courses.length; i++) {
+          courseDataMap[String(courses[i].id)] = courses[i];
         }
       })
       .catch(function() {});
