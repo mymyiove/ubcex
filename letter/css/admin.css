@@ -988,3 +988,101 @@ body {
   transition: opacity 0.2s;
 }
 .admin-brand:hover { opacity: 0.8; }
+
+/* === AI & Translate Buttons === */
+.ai-actions-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  flex-wrap: wrap;
+}
+.btn-ai {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #7c6cf0, #ec4899);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: var(--font);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.btn-ai:hover {
+  box-shadow: 0 4px 16px rgba(124,108,240,0.3);
+  transform: translateY(-1px);
+}
+.btn-ai:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-translate {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: var(--font);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.btn-translate:hover {
+  box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+  transform: translateY(-1px);
+}
+.btn-translate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* === AI Progress === */
+.ai-progress {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.ai-progress.success { color: var(--success); }
+.ai-progress.error { color: var(--danger); }
+
+/* === Translation Preview === */
+.translate-preview {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--bg-warm);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xs);
+  max-height: 400px;
+  overflow-y: auto;
+}
+.translate-item {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-light);
+}
+.translate-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.translate-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 0.3rem;
+}
+.translate-ko {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.2rem;
+}
+.translate-en {
+  font-size: 0.8rem;
+  color: var(--text);
+  font-weight: 500;
+}
