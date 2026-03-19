@@ -589,4 +589,293 @@
     for (var key in editors) { if (editors[key]&&editors[key].root) editors[key].root.innerHTML=''; }
   }
 
+// ═══════════════════════════════════════
+  // AI Comment Generation
+  // ═══════════════════════════════════════
+  $('#btn-ai-comments').addEventListener('click', function() {
+    var btn = this;
+    
+    // Collect all courses from all sections
+    var allCourses = [];
+    var sections = ['insight', 'new', 'curation'];
+    
+    for (var s = 0; s < sections.length; s++) {
+      var sec = sections[s];
+      var ids = sectionCourses[sec].ids;
+      for (var i = 0; i < ids.length; i++) {
+        var c = courseCache[ids[i]];
+        if (c && !sectionCourses[sec].comments[ids[i]]) {
+          allCourses.push({
+            id: ids[i],
+            section: sec,
+            title: c.title || '',
+            rating: c.rating || '',
+            duration: c.contentLength ? formatDuration(c.contentLength) : '',
+            instructor: c.instructor || '',
+            category: c.category || '',
+            difficulty: c.difficulty || '',
+            headline: c.headline || ''
+          });
+        }
+      }
+    }
+
+    if (allCourses.length === 0) {
+      toast('코멘트가 없는 강의가 없습니다. 강의를 먼저 불러오세요!', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '🤖 생성 중...';
+
+    apiCall('/letter-ai-comment', 'POST', { courses: allCourses })
+      .then(function(res) {
+        btn.disabled = false;
+        btn.textContent = '🤖 AI 코멘트';
+
+        if (!res.success) {
+          toast('AI 코멘트 생성 실패: ' + (res.error || ''), 'error');
+          return;
+        }
+
+        var comments = res.comments || [];
+        var applied = 0;
+
+        for (var i = 0; i < comments.length; i++) {
+          var cm = comments[i];
+          var id = cm.id;
+          var text = cm.comment_ko || '';
+          if (!text) continue;
+
+          // Find which section this course belongs to
+          for (var s = 0; s < sections.length; s++) {
+            var sec = sections[s];
+            if (sectionCourses[sec].ids.indexOf(id) !== -1) {
+              if (!sectionCourses[sec].comments[id]) {
+                sectionCourses[sec].comments[id] = text;
+                applied++;
+              }
+              break;
+            }
+          }
+        }
+
+        // Re-render all previews
+        for (var s = 0; s < sections.length; s++) {
+          renderCoursePreview(sections[s]);
+        }
+
+        addLog('AI 코멘트 생성', applied + '개 강의');
+        toast('🤖 ' + applied + '개 강의에 AI 코멘트 적용!', 'success');
+      })
+      .catch(function(e) {
+        btn.disabled = false;
+        btn.textContent = '🤖 AI 코멘트';
+        toast('AI 코멘트 실패: ' + e.message, 'error');
+      });
+  });
+
+  // ═══════════════════════════════════════
+  // English Translation
+  // ═══════════════════════════════════════
+  $('#btn-translate').addEventListener('click', function() {
+    var btn = this;
+
+    // Collect all Korean texts
+    var texts = {};
+
+    // Basic info
+    var titleKo = $('#f-title-ko').value.trim();
+    var subtitleKo = $('#f-subtitle-ko').value.trim();
+    if (titleKo) texts['title'] = titleKo;
+    if (subtitleKo) texts['subtitle'] = subtitleKo;
+
+    // Curation intro
+    var curationIntro = $('#f-curation-intro-ko').value.trim();
+    if (curationIntro) texts['curation_intro'] = curationIntro;
+
+    // Curation tags
+    var tagsRaw = $('#f-curation-tags').value.trim();
+    if (tagsRaw) texts['curation_tags'] = tagsRaw;
+
+    // New content summary
+    var newSummary = $('#f-new-summary-ko').value.trim();
+    if (newSummary) texts['new_summary'] = newSummary;
+
+    // Editor contents
+    if (editors['insight-0'] && editors['insight-0'].root.innerHTML.replace(/<[^>]*>/g, '').trim()) {
+      texts['insight_page_0'] = editors['insight-0'].root.innerHTML;
+    }
+    if (editors['new'] && editors['new'].root.innerHTML.replace(/<[^>]*>/g, '').trim()) {
+      texts['new_editor'] = editors['new'].root.innerHTML;
+    }
+    if (editors['closing'] && editors['closing'].root.innerHTML.replace(/<[^>]*>/g, '').trim()) {
+      texts['closing'] = editors['closing'].root.innerHTML;
+    }
+
+    // Course comments
+    var sections = ['insight', 'new', 'curation'];
+    for (var s = 0; s < sections.length; s++) {
+      var sec = sections[s];
+      var comments = sectionCourses[sec].comments;
+      for (var id in comments) {
+        if (comments[id] && typeof comments[id] === 'string' && comments[id].trim()) {
+          texts['comment_' + sec + '_' + id] = comments[id];
+        }
+      }
+    }
+
+    var keys = Object.keys(texts);
+    if (keys.length === 0) {
+      toast('번역할 한국어 텍스트가 없습니다', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '🌐 번역 중... (' + keys.length + '개)';
+
+    apiCall('/letter-translate', 'POST', { texts: texts })
+      .then(function(res) {
+        btn.disabled = false;
+        btn.textContent = '🌐 영어 번역';
+
+        if (!res.success) {
+          toast('번역 실패: ' + (res.error || ''), 'error');
+          return;
+        }
+
+        var tr = res.translations || {};
+        var applied = 0;
+
+        // We need to save the letter with English translations
+        // First, let's store them and then save
+        var month = $('#f-month').value.trim();
+        if (!month) {
+          toast('호수를 먼저 입력해주세요', 'error');
+          return;
+        }
+
+        // Build save body with translations
+        var insightPages = [];
+        var insightWraps = $$('#insight-editors .editor-wrap');
+        for (var i = 0; i < insightWraps.length; i++) {
+          var pg = insightWraps[i].getAttribute('data-page');
+          var ed = editors['insight-' + pg];
+          if (ed) {
+            insightPages.push({
+              html_ko: ed.root.innerHTML,
+              html_en: tr['insight_page_' + pg] || ''
+            });
+            if (tr['insight_page_' + pg]) applied++;
+          }
+        }
+
+        var promoPages = [];
+        var promoWraps = $$('#promo-editors .editor-wrap');
+        for (var i = 0; i < promoWraps.length; i++) {
+          var pg = promoWraps[i].getAttribute('data-page');
+          var ed = editors['promo-' + pg];
+          if (ed) promoPages.push({ html_ko: ed.root.innerHTML, html_en: '' });
+        }
+
+        var tagsRaw2 = $('#f-curation-tags').value.trim();
+        var tags = [];
+        if (tagsRaw2) {
+          var tagParts = tagsRaw2.split(',');
+          var enTags = (tr['curation_tags'] || '').split(',');
+          for (var i = 0; i < tagParts.length; i++) {
+            var t = tagParts[i].trim();
+            if (t) tags.push({ ko: t, en: (enTags[i] || '').trim() });
+          }
+          if (tr['curation_tags']) applied++;
+        }
+
+        // Apply comment translations
+        for (var s = 0; s < sections.length; s++) {
+          var sec = sections[s];
+          var ids = sectionCourses[sec].ids;
+          for (var i = 0; i < ids.length; i++) {
+            var cid = ids[i];
+            var trKey = 'comment_' + sec + '_' + cid;
+            if (tr[trKey]) {
+              // Convert string comment to object with ko/en
+              var koComment = sectionCourses[sec].comments[cid] || '';
+              if (typeof koComment === 'string') {
+                sectionCourses[sec].comments[cid] = { ko: koComment, en: tr[trKey] };
+              } else {
+                sectionCourses[sec].comments[cid].en = tr[trKey];
+              }
+              applied++;
+            }
+          }
+        }
+
+        if (tr['title']) applied++;
+        if (tr['subtitle']) applied++;
+        if (tr['curation_intro']) applied++;
+        if (tr['new_summary']) applied++;
+        if (tr['new_editor']) applied++;
+        if (tr['closing']) applied++;
+
+        // Save with translations
+        var saveBody = {
+          month: month,
+          title_ko: $('#f-title-ko').value.trim(),
+          title_en: tr['title'] || '',
+          subtitle_ko: $('#f-subtitle-ko').value.trim(),
+          subtitle_en: tr['subtitle'] || '',
+          coverImage: $('#f-cover-image').value.trim(),
+          status: $('#f-status').value,
+          lastEditor: currentUser,
+
+          insight_image: $('#f-insight-image').value.trim(),
+          insight_pages: insightPages,
+          insight_courseIds: sectionCourses.insight.ids,
+          insight_courseComments: sectionCourses.insight.comments,
+          insight_courseBadges: sectionCourses.insight.badges,
+          insight_layout: sectionCourses.insight.layout,
+
+          newContent_image: $('#f-new-image').value.trim(),
+          newContent_editorHtml_ko: editors['new'] ? editors['new'].root.innerHTML : '',
+          newContent_editorHtml_en: tr['new_editor'] || '',
+          newContent_summary_ko: $('#f-new-summary-ko').value.trim(),
+          newContent_summary_en: tr['new_summary'] || '',
+          newContent_courseIds: sectionCourses.new.ids,
+          newContent_courseComments: sectionCourses.new.comments,
+          newContent_courseBadges: sectionCourses.new.badges,
+          newContent_layout: sectionCourses.new.layout,
+
+          curation_image: $('#f-curation-image').value.trim(),
+          curation_intro_ko: $('#f-curation-intro-ko').value.trim(),
+          curation_intro_en: tr['curation_intro'] || '',
+          curation_tags: tags,
+          curation_courseIds: sectionCourses.curation.ids,
+          curation_courseComments: sectionCourses.curation.comments,
+          curation_courseBadges: sectionCourses.curation.badges,
+          curation_layout: sectionCourses.curation.layout,
+
+          closing_image: $('#f-closing-image').value.trim(),
+          closing_ko: editors['closing'] ? editors['closing'].root.innerHTML : '',
+          closing_en: tr['closing'] || '',
+          promo_pages: promoPages
+        };
+
+        // Auto-save with translations
+        apiCall('/letter-save', 'POST', saveBody).then(function(saveRes) {
+          if (saveRes.success) {
+            addLog('영어 번역 생성 + 저장', month + '호 / ' + applied + '개 항목');
+            toast('🌐 ' + applied + '개 항목 번역 완료 + 저장!', 'success');
+            $('#last-saved-info').textContent = '💾 ' + new Date().toLocaleString('ko-KR') + ' by ' + currentUser + ' (번역 포함)';
+          } else {
+            toast('번역은 완료했지만 저장 실패', 'error');
+          }
+        });
+      })
+      .catch(function(e) {
+        btn.disabled = false;
+        btn.textContent = '🌐 영어 번역';
+        toast('번역 실패: ' + e.message, 'error');
+      });
+  });
+  
 })();
