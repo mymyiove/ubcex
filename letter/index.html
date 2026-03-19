@@ -21,16 +21,15 @@
     </div>
     <div class="header-actions">
       <div class="lang-toggle" id="lang-toggle">
-        <button class="lang-btn active" data-lang="ko">🇰🇷</button>
-        <button class="lang-btn" data-lang="en">🇺🇸</button>
+        <button class="lang-btn active" data-lang="ko">🇰🇷 KO</button>
+        <button class="lang-btn" data-lang="en">🇺🇸 EN</button>
       </div>
-      <button class="btn-letter" id="btn-pdf">📥 PDF</button>
+      <button class="btn-letter" id="btn-copy-link">🔗 링크 복사</button>
       <a href="#" class="btn-letter btn-primary" id="btn-campus">🚀 학습장</a>
     </div>
   </div>
 </header>
 
-<!-- Side Navigation -->
 <nav class="side-nav" id="side-nav"></nav>
 
 <main id="letter-content">
@@ -53,7 +52,13 @@
   </div>
 </footer>
 
-<button class="scroll-to-top" id="scroll-to-top" aria-label="Top">↑</button>
+<!-- Mobile Bottom Bar (replaces floating top button) -->
+<div class="mobile-bottom-bar" id="mobile-bottom-bar">
+  <button class="mobile-bar-item" id="mobile-top-btn" aria-label="Top">↑</button>
+</div>
+
+<!-- Desktop only top button -->
+<button class="scroll-to-top desktop-only" id="scroll-to-top" aria-label="Top">↑</button>
 
 <script src="js/letter-viewer.js"></script>
 </body>
