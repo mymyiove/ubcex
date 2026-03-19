@@ -648,7 +648,7 @@
         if (item.lastEditor) html += '<div class="letter-card-editor">✏️ ' + escHtml(item.lastEditor) + '</div>';
         html += '<div class="letter-card-actions">';
         html += '<button class="letter-card-action" data-month="' + item.month + '" data-action="edit">✏️ 편집</button>';
-        html += '<button class="letter-card-action translate-btn" data-month="' + item.month + '" data-action="translate">🌐 영어 번역</button>';
+        
         html += '</div>';
         html += '</div>';
       }
@@ -661,7 +661,7 @@
           var m = this.getAttribute('data-month');
           var action = this.getAttribute('data-action');
           if (action === 'edit') loadLetter(m);
-          else if (action === 'translate') translateLetter(m);
+
         });
       }
 
