@@ -27,15 +27,17 @@
 
   <header class="admin-header">
     <div class="admin-header-inner">
-      <div class="admin-brand">
+      <div class="admin-brand" id="admin-brand-home">
         <span class="admin-brand-icon">📮</span>
         <span class="admin-brand-text">Letter Admin</span>
       </div>
       <div class="admin-nav">
         <button class="admin-nav-btn active" data-panel="list">📋 목록</button>
         <button class="admin-nav-btn" data-panel="editor">✏️ 편집</button>
-        <a href="index.html" target="_blank" class="admin-nav-btn">👁️ 뷰어</a>
-        <button class="admin-nav-btn" id="btn-logout">🚪 나가기</button>
+        <button class="admin-nav-btn" data-panel="log">📝 로그</button>
+        <button class="admin-nav-btn" id="btn-preview-nav">👁️ 미리보기</button>
+        <span class="admin-nav-btn" id="current-user-display" style="border:none;cursor:default;color:var(--accent);font-weight:600;"></span>
+        <button class="admin-nav-btn" id="btn-logout">🚪</button>
       </div>
     </div>
   </header>
@@ -49,18 +51,20 @@
         <button class="btn-new-letter" id="btn-new-letter">+ 새 레터 만들기</button>
       </div>
       <div class="letter-grid" id="letter-grid">
-        <div class="empty-state"><div class="empty-state-icon">📭</div><p>아직 레터가 없습니다.<br>새 레터를 만들어보세요!</p></div>
+        <div class="empty-state"><div class="empty-state-icon">📭</div><p>아직 레터가 없습니다.</p></div>
       </div>
     </div>
 
     <!-- Panel: Editor -->
     <div class="admin-panel" id="panel-editor">
 
-      <div class="editor-header">
-        <h2 id="editor-title">✏️ 새 레터 만들기</h2>
-        <div class="editor-actions">
-          <button class="btn-editor" id="btn-back-list">← 목록</button>
-          <button class="btn-editor" id="btn-preview">👁️ 미리보기</button>
+      <!-- Sticky Actions -->
+      <div class="editor-actions-sticky" id="editor-sticky">
+        <div class="editor-actions-left">
+          <h2 id="editor-title" style="font-size:1.1rem;font-weight:800;">✏️ 새 레터</h2>
+          <span class="last-saved-info" id="last-saved-info"></span>
+        </div>
+        <div class="editor-actions-right">
           <button class="btn-editor btn-save" id="btn-save">💾 저장</button>
           <button class="btn-editor btn-danger" id="btn-delete" style="display:none;">🗑️ 삭제</button>
         </div>
@@ -68,10 +72,7 @@
 
       <!-- Basic Info -->
       <div class="section-card" id="sec-basic">
-        <div class="section-card-header">
-          <h3>📋 기본 정보</h3>
-          <span class="section-card-toggle">▼</span>
-        </div>
+        <div class="section-card-header"><h3>📋 기본 정보</h3><span class="section-card-toggle">▼</span></div>
         <div class="section-card-body">
           <div class="form-row">
             <div class="form-group">
@@ -98,46 +99,35 @@
           <div class="form-group">
             <label class="form-label">표지 이미지 URL</label>
             <input type="text" class="form-input" id="f-cover-image" placeholder="src/img/Brand_Launch.jpg" />
-            <div class="form-hint">비워두면 기본 이미지가 사용됩니다</div>
+            <div class="form-hint">비워두면 기본 이미지 사용</div>
           </div>
         </div>
       </div>
 
-      <!-- Trend Insight -->
+      <!-- Insight -->
       <div class="section-card" id="sec-insight">
-        <div class="section-card-header">
-          <h3>📊 트렌드 인사이트</h3>
-          <span class="section-card-toggle">▼</span>
-        </div>
+        <div class="section-card-header"><h3>📊 트렌드 인사이트</h3><span class="section-card-toggle">▼</span></div>
         <div class="section-card-body">
           <div class="form-group">
             <label class="form-label">섹션 이미지 URL</label>
             <input type="text" class="form-input" id="f-insight-image" placeholder="src/img/Global_Learning.png" />
-            <div class="form-hint">비워두면 기본 이미지가 사용됩니다</div>
           </div>
-
           <div class="form-group">
-            <label class="form-label">콘텐츠 (여러 페이지 가능)</label>
+            <label class="form-label">콘텐츠</label>
             <div class="page-tabs" id="insight-tabs">
               <button class="page-tab active" data-page="0">페이지 1</button>
               <button class="page-tab-add" id="insight-add-page">+ 추가</button>
             </div>
-            <div id="insight-editors">
-              <div class="editor-wrap" data-page="0">
-                <div id="insight-editor-0"></div>
-              </div>
-            </div>
+            <div id="insight-editors"><div class="editor-wrap" data-page="0"><div id="insight-editor-0"></div></div></div>
           </div>
-
-          <!-- Trend Course Recommendations -->
           <div class="course-section">
-            <div class="course-section-title">📚 트렌드 관련 추천 강의</div>
+            <div class="course-section-title">📚 추천 강의</div>
             <div class="layout-selector" id="insight-layout-selector">
-              <button class="layout-option active" data-layout="card">🃏 카드형</button>
-              <button class="layout-option" data-layout="list">📋 리스트형</button>
+              <button class="layout-option active" data-layout="card">🃏 카드</button>
+              <button class="layout-option" data-layout="list">📋 리스트</button>
             </div>
             <div class="course-id-row">
-              <input type="text" class="course-id-input" id="f-insight-course-ids" placeholder="강의 ID (쉼표 구분): 12345, 67890" />
+              <input type="text" class="course-id-input" id="f-insight-course-ids" placeholder="강의 ID: 8139 8324 8814" />
               <button class="btn-fetch-courses" id="btn-fetch-insight-courses">불러오기</button>
             </div>
             <div class="fetch-status" id="insight-fetch-status"></div>
@@ -148,74 +138,61 @@
 
       <!-- New Content -->
       <div class="section-card" id="sec-new">
-        <div class="section-card-header">
-          <h3>✨ 신규 콘텐츠</h3>
-          <span class="section-card-toggle">▼</span>
-        </div>
+        <div class="section-card-header"><h3>✨ 신규 콘텐츠</h3><span class="section-card-toggle">▼</span></div>
         <div class="section-card-body">
           <div class="form-group">
             <label class="form-label">섹션 이미지 URL</label>
             <input type="text" class="form-input" id="f-new-image" placeholder="src/img/Instructor_Journey.jpg" />
           </div>
-
           <div class="form-group">
-            <label class="form-label">콘텐츠 (자유 편집)</label>
-            <div class="editor-wrap">
-              <div id="new-editor"></div>
-            </div>
+            <label class="form-label">콘텐츠</label>
+            <div class="editor-wrap"><div id="new-editor"></div></div>
           </div>
-
-          <!-- New Content Courses -->
           <div class="course-section">
-            <div class="course-section-title">🆕 신규 강의 목록</div>
+            <div class="course-section-title">🆕 신규 강의</div>
             <div class="layout-selector" id="new-layout-selector">
-              <button class="layout-option active" data-layout="highlight">⭐ 하이라이트형</button>
-              <button class="layout-option" data-layout="card">🃏 카드형</button>
-              <button class="layout-option" data-layout="list">📋 리스트형</button>
+              <button class="layout-option active" data-layout="highlight">⭐ 하이라이트</button>
+              <button class="layout-option" data-layout="card">🃏 카드</button>
+              <button class="layout-option" data-layout="list">📋 리스트</button>
             </div>
             <div class="course-id-row">
-              <input type="text" class="course-id-input" id="f-new-course-ids" placeholder="강의 ID (쉼표 구분): 12345, 67890" />
+              <input type="text" class="course-id-input" id="f-new-course-ids" placeholder="강의 ID: 12345 67890" />
               <button class="btn-fetch-courses" id="btn-fetch-new-courses">불러오기</button>
             </div>
             <div class="fetch-status" id="new-fetch-status"></div>
             <div class="preview-grid layout-highlight" id="new-course-preview"></div>
           </div>
-
           <div class="form-group" style="margin-top:1rem;">
-            <label class="form-label">요약 문구 (한국어)</label>
-            <input type="text" class="form-input" id="f-new-summary-ko" placeholder="이외에도 총 40개의 신규 한국어 강의가..." />
+            <label class="form-label">요약 문구</label>
+            <input type="text" class="form-input" id="f-new-summary-ko" placeholder="총 40개의 신규 강의가..." />
           </div>
         </div>
       </div>
 
       <!-- Curation -->
       <div class="section-card" id="sec-curation">
-        <div class="section-card-header">
-          <h3>🎯 이달의 큐레이션</h3>
-          <span class="section-card-toggle">▼</span>
-        </div>
+        <div class="section-card-header"><h3>🎯 큐레이션</h3><span class="section-card-toggle">▼</span></div>
         <div class="section-card-body">
           <div class="form-group">
             <label class="form-label">섹션 이미지 URL</label>
             <input type="text" class="form-input" id="f-curation-image" placeholder="src/img/Learning_at_Home.jpg" />
           </div>
           <div class="form-group">
-            <label class="form-label">소개 문구 (한국어)</label>
-            <input type="text" class="form-input" id="f-curation-intro-ko" placeholder="본격적으로 시작되는 업무, 반복적인 업무는 이렇게 처리합니다." />
+            <label class="form-label">소개 문구</label>
+            <input type="text" class="form-input" id="f-curation-intro-ko" placeholder="반복적인 업무는 이렇게 처리합니다." />
           </div>
           <div class="form-group">
             <label class="form-label">태그 (쉼표 구분)</label>
-            <input type="text" class="form-input" id="f-curation-tags" placeholder="내 일에 AI 활용하기, 자동화로 퇴근시간 앞당기기" />
+            <input type="text" class="form-input" id="f-curation-tags" placeholder="AI 활용하기, 자동화" />
           </div>
-
           <div class="course-section">
-            <div class="course-section-title">🎯 큐레이션 강의 목록</div>
+            <div class="course-section-title">🎯 큐레이션 강의</div>
             <div class="layout-selector" id="curation-layout-selector">
-              <button class="layout-option active" data-layout="list">📋 리스트형</button>
-              <button class="layout-option" data-layout="card">🃏 카드형</button>
+              <button class="layout-option active" data-layout="list">📋 리스트</button>
+              <button class="layout-option" data-layout="card">🃏 카드</button>
             </div>
             <div class="course-id-row">
-              <input type="text" class="course-id-input" id="f-curation-ids" placeholder="강의 ID (쉼표 구분): 12345, 67890, 11111" />
+              <input type="text" class="course-id-input" id="f-curation-ids" placeholder="강의 ID: 55555 66666 77777" />
               <button class="btn-fetch-courses" id="btn-fetch-curation-courses">불러오기</button>
             </div>
             <div class="fetch-status" id="curation-fetch-status"></div>
@@ -226,32 +203,19 @@
 
       <!-- Promo -->
       <div class="section-card" id="sec-promo">
-        <div class="section-card-header">
-          <h3>📢 홍보</h3>
-          <span class="section-card-toggle">▼</span>
-        </div>
+        <div class="section-card-header"><h3>📢 홍보</h3><span class="section-card-toggle">▼</span></div>
         <div class="section-card-body">
-          <div class="form-group">
-            <label class="form-label">콘텐츠 (여러 페이지 가능)</label>
-            <div class="page-tabs" id="promo-tabs">
-              <button class="page-tab active" data-page="0">페이지 1</button>
-              <button class="page-tab-add" id="promo-add-page">+ 추가</button>
-            </div>
-            <div id="promo-editors">
-              <div class="editor-wrap" data-page="0">
-                <div id="promo-editor-0"></div>
-              </div>
-            </div>
+          <div class="page-tabs" id="promo-tabs">
+            <button class="page-tab active" data-page="0">페이지 1</button>
+            <button class="page-tab-add" id="promo-add-page">+ 추가</button>
           </div>
+          <div id="promo-editors"><div class="editor-wrap" data-page="0"><div id="promo-editor-0"></div></div></div>
         </div>
       </div>
 
       <!-- Closing -->
       <div class="section-card" id="sec-closing">
-        <div class="section-card-header">
-          <h3>🚀 마무리</h3>
-          <span class="section-card-toggle">▼</span>
-        </div>
+        <div class="section-card-header"><h3>🚀 마무리</h3><span class="section-card-toggle">▼</span></div>
         <div class="section-card-body">
           <div class="form-group">
             <label class="form-label">마무리 이미지 URL</label>
@@ -259,18 +223,27 @@
           </div>
           <div class="form-group">
             <label class="form-label">마무리 메시지</label>
-            <div class="editor-wrap">
-              <div id="closing-editor"></div>
-            </div>
+            <div class="editor-wrap"><div id="closing-editor"></div></div>
           </div>
         </div>
       </div>
 
     </div>
+
+    <!-- Panel: Log -->
+    <div class="admin-panel" id="panel-log">
+      <div class="log-panel">
+        <h3>📝 활동 로그</h3>
+        <div class="log-list" id="log-list">
+          <div class="log-empty">로그를 불러오는 중...</div>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script src="js/admin.js"></script>
 </body>
-</html>
+</html
