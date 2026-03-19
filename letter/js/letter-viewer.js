@@ -226,7 +226,7 @@
       if (cm && cm.replace(/<[^>]*>/g, '').trim()) html += '<div style="margin-bottom:2rem;">' + cm + '</div>';
     }
     html += '<span class="closing-emoji">📮</span>';
-    html += '<h2>Udemy Letter\ub294</h2>';
+    html += '<h2>Udemy Letter</h2>';
     html += '<p>\ub9e4\uc6d4 \ubcc0\ud654\ud558\ub294 \uc5c5\ubb34 \ud658\uacbd\uacfc \ud559\uc2b5 \ud2b8\ub80c\ub4dc\uc5d0 \ub9de\ucdb0,<br>\ubc14\ub85c \uc2e4\ubb34\uc5d0 \uc801\uc6a9\ud560 \uc218 \uc788\ub294 \ucf58\ud150\uce20\uc640 \uc778\uc0ac\uc774\ud2b8\ub97c \uc5c4\uc120\ud574 \uc18c\uac1c\ub4dc\ub9bd\ub2c8\ub2e4.</p>';
     html += '<p>\uc5ec\ub7ec\ubd84\uc758 \uc131\uc7a5\uacfc \uc131\uacfc\uc5d0 \ub3c4\uc6c0\uc774 \ub418\ub294 \uac15\uc758\ub97c \uc120\ubcc4\ud574<br>\ub354 \ube60\ub974\uace0 \ud6a8\uc728\uc801\uc778 \uc5c5\ubb34 \uc5ed\ub7c9 \ud5a5\uc0c1\uc744 \uc9c0\uc6d0\ud558\uaca0\uc2b5\ub2c8\ub2e4.</p>';
     html += '<p style="font-weight:700;font-size:1rem;margin-top:1.5rem;">\uc55e\uc73c\ub85c\ub3c4 \uc5ec\ub7ec\ubd84\uc758 \uc131\uc7a5\uc744 \ub354 \uc990\uac81\uac8c \ub9cc\ub4dc\ub294<br>Udemy Letter\ub85c \ud568\uaed8\ud558\uaca0\uc2b5\ub2c8\ub2e4. 🚀</p>';
@@ -436,6 +436,8 @@
           restoreOriginal();
         }
       });
+
+      
     }
 
     function translatePageToEnglish() {
