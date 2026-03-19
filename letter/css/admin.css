@@ -1086,3 +1086,51 @@ body {
   color: var(--text);
   font-weight: 500;
 }
+
+
+/* === Per-course AI button === */
+.comment-row {
+  display: flex;
+  gap: 0.3rem;
+  align-items: flex-start;
+  margin-top: 0.4rem;
+}
+.comment-row .course-comment-input { flex: 1; }
+.btn-ai-single {
+  padding: 0.4rem 0.6rem;
+  background: linear-gradient(135deg, #7c6cf0, #ec4899);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  font-family: var(--font);
+  flex-shrink: 0;
+  margin-top: 0;
+}
+.btn-ai-single:hover { box-shadow: 0 2px 8px rgba(124,108,240,0.3); }
+.btn-ai-single:disabled { opacity: 0.5; cursor: wait; }
+
+/* === Letter Card Menu === */
+.letter-card-actions {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+.letter-card-action {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 10px;
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font);
+}
+.letter-card-action:hover { border-color: var(--accent); color: var(--accent); }
+.letter-card-action.translate-btn { color: #10b981; }
+.letter-card-action.translate-btn:hover { border-color: #10b981; }
