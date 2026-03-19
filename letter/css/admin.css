@@ -1134,3 +1134,88 @@ body {
 .letter-card-action:hover { border-color: var(--accent); color: var(--accent); }
 .letter-card-action.translate-btn { color: #10b981; }
 .letter-card-action.translate-btn:hover { border-color: #10b981; }
+
+/* === AI button alignment === */
+.comment-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+  margin-top: 0.4rem;
+}
+.comment-row .course-comment-input {
+  flex: 1;
+  min-height: 45px;
+}
+.btn-ai-single {
+  padding: 0.4rem 0.5rem;
+  background: linear-gradient(135deg, #7c6cf0, #ec4899);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  font-family: var(--font);
+  flex-shrink: 0;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+}
+.btn-ai-single:hover { box-shadow: 0 2px 8px rgba(124,108,240,0.3); }
+.btn-ai-single:disabled { opacity: 0.5; cursor: wait; }
+
+/* === Badge delete === */
+.badge-opt {
+  position: relative;
+  padding-right: 1.2rem;
+}
+.badge-delete {
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 0.5rem;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+}
+.badge-opt:hover .badge-delete {
+  display: flex;
+}
+
+/* === Letter card actions === */
+.letter-card-actions {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+.letter-card-action {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 10px;
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font);
+}
+.letter-card-action:hover { border-color: var(--accent); color: var(--accent); }
+.letter-card-action.translate-btn { color: #10b981; }
+.letter-card-action.translate-btn:hover { border-color: #10b981; }
+.letter-card-editor {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
