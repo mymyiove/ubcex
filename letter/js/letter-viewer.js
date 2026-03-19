@@ -82,7 +82,7 @@
         html += '</div></section>';
 
         html += '<section style="max-width:780px;margin:2rem auto;padding:0 2rem;">';
-        html += '<div class="archive-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;">';
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;">';
 
         for (var i = 0; i < res.data.length; i++) {
           var item = res.data[i];
@@ -91,15 +91,14 @@
           var dateStr = item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('ko-KR') : '';
 
           html += '<a href="' + link + '" style="text-decoration:none;color:inherit;">';
-          html += '<div class="archive-card" style="background:#fff;border:1px solid rgba(124,108,240,0.12);border-radius:20px;padding:1.8rem;transition:all 0.35s cubic-bezier(0.4,0,0.2,1);cursor:pointer;position:relative;overflow:hidden;">';
+          html += '<div class="archive-card" style="background:#fff;border:1px solid rgba(124,108,240,0.12);border-radius:20px;padding:1.8rem;transition:all 0.35s cubic-bezier(0.4,0,0.2,1);cursor:pointer;">';
           html += '<div style="font-family:Inter,sans-serif;font-size:0.72rem;font-weight:700;color:#7c6cf0;letter-spacing:0.1em;margin-bottom:0.6rem;">' + item.month + '</div>';
           html += '<div class="archive-card-title" style="font-size:1.05rem;font-weight:700;margin-bottom:0.6rem;line-height:1.4;">' + esc(item.title_ko || '\uc81c\ubaa9 \uc5c6\uc74c') + '</div>';
-          html += '<div class="archive-card-meta" style="display:flex;gap:0.8rem;font-size:0.75rem;color:#9090aa;align-items:center;">';
+          html += '<div style="display:flex;gap:0.8rem;font-size:0.75rem;color:#9090aa;">';
           html += '<span class="archive-status">' + statusText + '</span>';
           if (dateStr) html += '<span>' + dateStr + '</span>';
           if (item.lastEditor) html += '<span>✏️ ' + esc(item.lastEditor) + '</span>';
-          html += '</div>';
-          html += '</div></a>';
+          html += '</div></div></a>';
         }
 
         html += '</div></section>';
@@ -171,9 +170,7 @@
     html += '<p class="cover-subtitle">' + t(d.subtitle) + '</p>';
     html += '<p class="cover-company" id="company-greeting">' + getGreeting() + '</p>';
     html += '<p class="cover-reading-time">' + t(d.readingTime) + '</p>';
-    html += '<div class="scroll-indicator" id="scroll-down">👇</div>';
-    html += '</div></section>';
-    
+    html += '</div><div class="scroll-indicator" id="scroll-down">👇</div></section>';
 
     var navItems = [];
     if (d.insight) navItems.push({ id: 'section-insight', num: '01', icon: '📊', ko: '트렌드 인사이트', en: 'Trend Insights' });
@@ -434,17 +431,6 @@
     var expBtn = document.getElementById('btn-explorer');
     if (expBtn) { expBtn.href = explorerUrl; expBtn.target = '_blank'; }
 
-    var scrollDown = document.getElementById('scroll-down');
-    if (scrollDown) {
-      scrollDown.addEventListener('click', function() {
-        var idx = document.querySelector('.index-section');
-        if (idx) {
-          var hh = document.querySelector('.letter-header');
-          window.scrollTo({ top: idx.getBoundingClientRect().top + window.scrollY - (hh ? hh.offsetHeight + 20 : 80), behavior: 'smooth' });
-        }
-      });
-    }
-
     var archiveBtn = document.getElementById('btn-archive');
     if (archiveBtn) {
       archiveBtn.addEventListener('click', function(e) {
@@ -453,6 +439,7 @@
       });
     }
 
+    // Link copy button
     var copyBtn = document.getElementById('btn-copy-link');
     if (copyBtn) {
       copyBtn.addEventListener('click', function() {
@@ -469,6 +456,18 @@
           document.execCommand('copy');
           document.body.removeChild(ta);
           showCopyToast('🔗 링크가 복사되었습니다!');
+        }
+      });
+    }
+
+    // Scroll down indicator
+    var scrollDown = document.getElementById('scroll-down');
+    if (scrollDown) {
+      scrollDown.addEventListener('click', function() {
+        var idx = document.querySelector('.index-section');
+        if (idx) {
+          var hh = document.querySelector('.letter-header');
+          window.scrollTo({ top: idx.getBoundingClientRect().top + window.scrollY - (hh ? hh.offsetHeight + 20 : 80), behavior: 'smooth' });
         }
       });
     }
@@ -493,6 +492,7 @@
       });
     }
 
+    // === Language Toggle ===
     var isTranslated = false;
     var originalTexts = [];
     var templateOriginals = [];
@@ -618,7 +618,7 @@
       templateOriginals = [];
       var pairs = [
         ['btn-campus', '🚀 Hub'],
-        ['btn-pdf', '📥 PDF'],
+        ['btn-copy-link', '🔗 Copy Link'],
         ['btn-archive', '📖 Previous Issues'],
         ['btn-unsubscribe', 'Unsubscribe'],
         ['btn-explorer', '🔭 Explore Courses']
@@ -701,6 +701,7 @@
       setTimeout(function() { el.remove(); }, 3000);
     }
 
+    // Auto-translate if lang=en
     if (lang === 'en') {
       setTimeout(function() {
         var enBtn = document.querySelector('.lang-btn[data-lang="en"]');
@@ -712,6 +713,7 @@
       }, 1500);
     }
 
+    // === Scroll events ===
     var pBar = document.getElementById('scroll-progress');
     var hdr = document.getElementById('letter-header');
     var topBtn = document.getElementById('scroll-to-top');
@@ -737,6 +739,7 @@
       }
     });
 
+    // === Scroll animations ===
     var aEls = document.querySelectorAll('.content-section, .index-card, .insight-card, .course-mini-card, .new-highlight-card, .curation-rich-item, .closing-template, .cta-banner, .curation-header, .new-summary, .section-illustration, .closing-illustration, .curation-banner-image, .archive-card');
     for (var i = 0; i < aEls.length; i++) aEls[i].classList.add('animate-on-scroll');
     var cItems = document.querySelectorAll('.curation-rich-item');
@@ -751,6 +754,7 @@
     for (var i = 0; i < sEls.length; i++) obs.observe(sEls[i]);
   }
 
+  // === Utils ===
   function t(obj) {
     if (!obj) return '';
     if (typeof obj === 'string') return obj;
