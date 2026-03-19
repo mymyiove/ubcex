@@ -76,13 +76,13 @@
 
         var html = '<section class="cover-section" style="min-height:280px;padding:3rem 2rem;">';
         html += '<div class="cover-inner">';
-        html += '<span class="closing-emoji" style="display:block;font-size:3rem;margin-bottom:1rem;">📚</span>';
+        html += '<span style="display:block;font-size:3rem;margin-bottom:1rem;">📚</span>';
         html += '<h1 class="cover-title" style="font-size:2rem;">Udemy Letter Archive</h1>';
-        html += '<p class="cover-subtitle">\uc774\uc804 \ud638 \ubaa8\uc544\ubcf4\uae30</p>';
+        html += '<p class="cover-subtitle archive-subtitle">\uc774\uc804 \ud638 \ubaa8\uc544\ubcf4\uae30</p>';
         html += '</div></section>';
 
         html += '<section style="max-width:780px;margin:2rem auto;padding:0 2rem;">';
-        html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;">';
+        html += '<div class="archive-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;">';
 
         for (var i = 0; i < res.data.length; i++) {
           var item = res.data[i];
@@ -90,13 +90,12 @@
           var link = 'index.html?m=' + item.month + (sub ? '&sub=' + sub : '');
           var dateStr = item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('ko-KR') : '';
 
-          html += '<a href="' + link + '" class="archive-card-link" style="text-decoration:none;color:inherit;">';
+          html += '<a href="' + link + '" style="text-decoration:none;color:inherit;">';
           html += '<div class="archive-card" style="background:#fff;border:1px solid rgba(124,108,240,0.12);border-radius:20px;padding:1.8rem;transition:all 0.35s cubic-bezier(0.4,0,0.2,1);cursor:pointer;position:relative;overflow:hidden;">';
-          html += '<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(135deg,#7c6cf0,#a78bfa,#c084fc,#ec4899);opacity:0;transition:opacity 0.3s;"></div>';
           html += '<div style="font-family:Inter,sans-serif;font-size:0.72rem;font-weight:700;color:#7c6cf0;letter-spacing:0.1em;margin-bottom:0.6rem;">' + item.month + '</div>';
-          html += '<div style="font-size:1.05rem;font-weight:700;margin-bottom:0.6rem;line-height:1.4;">' + esc(item.title_ko || '\uc81c\ubaa9 \uc5c6\uc74c') + '</div>';
-          html += '<div style="display:flex;gap:0.8rem;font-size:0.75rem;color:#9090aa;align-items:center;">';
-          html += '<span>' + statusText + '</span>';
+          html += '<div class="archive-card-title" style="font-size:1.05rem;font-weight:700;margin-bottom:0.6rem;line-height:1.4;">' + esc(item.title_ko || '\uc81c\ubaa9 \uc5c6\uc74c') + '</div>';
+          html += '<div class="archive-card-meta" style="display:flex;gap:0.8rem;font-size:0.75rem;color:#9090aa;align-items:center;">';
+          html += '<span class="archive-status">' + statusText + '</span>';
           if (dateStr) html += '<span>' + dateStr + '</span>';
           if (item.lastEditor) html += '<span>✏️ ' + esc(item.lastEditor) + '</span>';
           html += '</div>';
@@ -108,18 +107,15 @@
         document.getElementById('letter-content').innerHTML = html;
         document.getElementById('letter-footer').style.display = '';
 
-        // Hover effects
         var archiveCards = document.querySelectorAll('.archive-card');
         for (var i = 0; i < archiveCards.length; i++) {
           archiveCards[i].addEventListener('mouseenter', function() {
             this.style.transform = 'translateY(-5px)';
             this.style.boxShadow = '0 16px 48px rgba(124,108,240,0.16)';
-            this.querySelector('div').style.opacity = '1';
           });
           archiveCards[i].addEventListener('mouseleave', function() {
             this.style.transform = '';
             this.style.boxShadow = '';
-            this.querySelector('div').style.opacity = '0';
           });
         }
 
@@ -527,7 +523,8 @@
         '#letter-content .cta-banner > p, #letter-content .course-mini-card h4 a, ' +
         '#letter-content .course-mini-card > div, #letter-content .new-highlight-card h3 a, ' +
         '#letter-content .new-highlight-card > div, #letter-content .new-highlight-card > p, ' +
-        '#letter-content .course-badge'
+        '#letter-content .course-badge, ' +
+        '#letter-content .archive-subtitle, #letter-content .archive-card-title, #letter-content .archive-status'
       );
 
       var toTranslate = [];
@@ -629,7 +626,6 @@
         var el = document.getElementById(pairs[i][0]);
         if (el) { templateOriginals.push({ el: el, html: el.innerHTML }); el.innerHTML = pairs[i][1]; }
       }
-
       var ctaPrimaries = document.querySelectorAll('.cta-primary');
       for (var i = 0; i < ctaPrimaries.length; i++) {
         templateOriginals.push({ el: ctaPrimaries[i], html: ctaPrimaries[i].innerHTML });
@@ -724,7 +720,7 @@
       }
     });
 
-    var aEls = document.querySelectorAll('.content-section, .index-card, .insight-card, .course-mini-card, .new-highlight-card, .curation-rich-item, .closing-template, .cta-banner, .curation-header, .new-summary, .section-illustration, .closing-illustration, .curation-banner-image');
+    var aEls = document.querySelectorAll('.content-section, .index-card, .insight-card, .course-mini-card, .new-highlight-card, .curation-rich-item, .closing-template, .cta-banner, .curation-header, .new-summary, .section-illustration, .closing-illustration, .curation-banner-image, .archive-card');
     for (var i = 0; i < aEls.length; i++) aEls[i].classList.add('animate-on-scroll');
     var cItems = document.querySelectorAll('.curation-rich-item');
     for (var i = 0; i < cItems.length; i++) cItems[i].style.transitionDelay = (i * 0.06) + 's';
