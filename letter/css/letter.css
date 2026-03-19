@@ -1105,3 +1105,210 @@ body > * { position: relative; z-index: 1; }
   a[data-slug]::after { content: " (" attr(href) ")"; font-size: 0.6rem; color: #888; word-break: break-all; }
   .section-illustration, .closing-illustration, .curation-banner-image { box-shadow: none !important; page-break-inside: avoid; }
 }
+
+/* ═══ Mobile Bottom Bar (INDEX + Top + Lang) ═══ */
+.mobile-bottom-bar {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  /* Hide desktop top button on mobile */
+  .scroll-to-top.desktop-only { display: none !important; }
+
+  /* Hide header lang toggle on mobile - moved to bottom bar */
+  .lang-toggle { display: none; }
+
+  /* Mobile bottom bar */
+  .mobile-bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 90;
+    display: none;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border-light);
+    padding: 0.4rem 0.5rem;
+    padding-bottom: calc(0.4rem + env(safe-area-inset-bottom, 0px));
+    gap: 0;
+    align-items: center;
+    justify-content: center;
+  }
+  .mobile-bottom-bar.visible {
+    display: flex;
+  }
+
+  .mobile-bar-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem 0.65rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-family: var(--font);
+    gap: 0.2rem;
+    min-width: 36px;
+    min-height: 36px;
+  }
+  .mobile-bar-item:hover,
+  .mobile-bar-item:active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .mobile-bar-item.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  /* Side nav becomes part of bottom bar */
+  .side-nav {
+    position: fixed;
+    right: auto;
+    left: 0;
+    top: auto;
+    bottom: 0;
+    transform: none;
+    flex-direction: row;
+    width: 100%;
+    justify-content: center;
+    padding: 0.4rem 0.5rem;
+    padding-bottom: calc(0.4rem + env(safe-area-inset-bottom, 0px));
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border-light);
+    gap: 0.25rem;
+    border-radius: 0;
+    z-index: 91;
+  }
+  .side-nav .side-nav-label { display: none; }
+  .side-nav-item {
+    padding: 0.4rem 0.55rem;
+    border-radius: 12px;
+    font-size: 0.65rem;
+    min-width: 36px;
+    min-height: 36px;
+    justify-content: center;
+  }
+
+  /* Hide mobile-bottom-bar when side-nav is visible */
+  .side-nav.visible ~ .mobile-bottom-bar { display: none; }
+
+  /* Mobile link copy button */
+  .btn-letter#btn-copy-link {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.7rem;
+  }
+}
+
+/* ═══ Desktop: hide mobile bar ═══ */
+@media (min-width: 901px) {
+  .mobile-bottom-bar { display: none !important; }
+}
+
+/* ═══ Link Copy Toast ═══ */
+.copy-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  padding: 1rem 2rem;
+  background: rgba(26,26,46,0.95);
+  color: white;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 2000;
+  opacity: 0;
+  transition: all 0.3s var(--transition);
+  pointer-events: none;
+  text-align: center;
+}
+.copy-toast.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* ═══ Scroll Down Indicator (Cover) ═══ */
+.scroll-indicator {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  animation: bounce-subtle 2s ease-in-out infinite;
+  opacity: 0.6;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+.scroll-indicator:hover { opacity: 1; }
+
+/* ═══ Course Card Thumbnail Ratio ═══ */
+.course-mini-card img,
+.new-highlight-card img {
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 0.6rem;
+  position: relative;
+}
+.course-mini-card a > img,
+.new-highlight-card a > img {
+  height: auto;
+  padding-bottom: 0;
+  aspect-ratio: 16/9;
+}
+
+/* ═══ Touch Feedback ═══ */
+@media (hover: none) {
+  .course-mini-card:active,
+  .new-highlight-card:active,
+  .curation-rich-item:active,
+  .index-card:active,
+  .cta-primary:active {
+    transform: scale(0.97);
+    transition: transform 0.1s;
+  }
+}
+
+/* ═══ CTA Pulse Enhancement ═══ */
+.cta-primary {
+  position: relative;
+}
+.cta-primary::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 30px;
+  background: var(--gradient-main);
+  opacity: 0;
+  z-index: -1;
+  animation: ctaPulse 3s ease-in-out infinite;
+}
+@keyframes ctaPulse {
+  0%, 100% { opacity: 0; transform: scale(1); }
+  50% { opacity: 0.15; transform: scale(1.05); }
+}
+
+/* ═══ Course Card Hover Zoom ═══ */
+.course-mini-card a > img,
+.new-highlight-card a > img {
+  transition: transform 0.4s var(--transition);
+}
+.course-mini-card:hover a > img,
+.new-highlight-card:hover a > img {
+  transform: scale(1.05);
+}
