@@ -15,6 +15,7 @@
   var sub = params.get('sub') || '';
   var lang = params.get('lang') || 'ko';
   var month = params.get('m') || '';
+  var isArchive = params.get('archive') === 'true';
   var baseUrl = sub ? 'https://' + sub + '.udemy.com/course/' : '#';
   var campusUrl = sub ? 'https://' + sub + '.udemy.com' : 'https://www.udemy.com';
   var explorerUrl = EXPLORER_BASE + (sub ? '?sub=' + sub : '');
@@ -55,7 +56,77 @@
       '<div class="letter-loading"><div class="letter-loading-icon">😢</div><div class="letter-loading-text">' + msg + '</div></div>';
   }
 
-  loadLetter();
+  if (isArchive) {
+    loadArchive();
+  } else {
+    loadLetter();
+  }
+
+  function loadArchive() {
+    document.getElementById('letter-loading').innerHTML =
+      '<div class="letter-loading"><div class="letter-loading-icon">📚</div><div class="letter-loading-text">아카이브를 불러오는 중...</div></div>';
+
+    fetch(API_BASE + '/letter-list')
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (!res.success || res.total === 0) {
+          showError('아직 발행된 레터가 없습니다.');
+          return;
+        }
+
+        var html = '<section class="cover-section" style="min-height:280px;padding:3rem 2rem;">';
+        html += '<div class="cover-inner">';
+        html += '<span class="closing-emoji" style="display:block;font-size:3rem;margin-bottom:1rem;">📚</span>';
+        html += '<h1 class="cover-title" style="font-size:2rem;">Udemy Letter Archive</h1>';
+        html += '<p class="cover-subtitle">\uc774\uc804 \ud638 \ubaa8\uc544\ubcf4\uae30</p>';
+        html += '</div></section>';
+
+        html += '<section style="max-width:780px;margin:2rem auto;padding:0 2rem;">';
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;">';
+
+        for (var i = 0; i < res.data.length; i++) {
+          var item = res.data[i];
+          var statusText = item.status === 'published' ? '✅ 발행' : item.status === 'sent' ? '📧 발송' : '📝 초안';
+          var link = 'index.html?m=' + item.month + (sub ? '&sub=' + sub : '');
+          var dateStr = item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('ko-KR') : '';
+
+          html += '<a href="' + link + '" class="archive-card-link" style="text-decoration:none;color:inherit;">';
+          html += '<div class="archive-card" style="background:#fff;border:1px solid rgba(124,108,240,0.12);border-radius:20px;padding:1.8rem;transition:all 0.35s cubic-bezier(0.4,0,0.2,1);cursor:pointer;position:relative;overflow:hidden;">';
+          html += '<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(135deg,#7c6cf0,#a78bfa,#c084fc,#ec4899);opacity:0;transition:opacity 0.3s;"></div>';
+          html += '<div style="font-family:Inter,sans-serif;font-size:0.72rem;font-weight:700;color:#7c6cf0;letter-spacing:0.1em;margin-bottom:0.6rem;">' + item.month + '</div>';
+          html += '<div style="font-size:1.05rem;font-weight:700;margin-bottom:0.6rem;line-height:1.4;">' + esc(item.title_ko || '\uc81c\ubaa9 \uc5c6\uc74c') + '</div>';
+          html += '<div style="display:flex;gap:0.8rem;font-size:0.75rem;color:#9090aa;align-items:center;">';
+          html += '<span>' + statusText + '</span>';
+          if (dateStr) html += '<span>' + dateStr + '</span>';
+          if (item.lastEditor) html += '<span>✏️ ' + esc(item.lastEditor) + '</span>';
+          html += '</div>';
+          html += '</div></a>';
+        }
+
+        html += '</div></section>';
+
+        document.getElementById('letter-content').innerHTML = html;
+        document.getElementById('letter-footer').style.display = '';
+
+        // Hover effects
+        var archiveCards = document.querySelectorAll('.archive-card');
+        for (var i = 0; i < archiveCards.length; i++) {
+          archiveCards[i].addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 16px 48px rgba(124,108,240,0.16)';
+            this.querySelector('div').style.opacity = '1';
+          });
+          archiveCards[i].addEventListener('mouseleave', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '';
+            this.querySelector('div').style.opacity = '0';
+          });
+        }
+
+        initInteractions();
+      })
+      .catch(function(e) { showError('\ub85c\ub4dc \uc2e4\ud328: ' + e.message); });
+  }
 
   function loadLetter() {
     showLoadingSequence();
@@ -76,7 +147,7 @@
           renderLetter();
         }
       })
-      .catch(function(e) { showError('로드 실패: ' + e.message); });
+      .catch(function(e) { showError('\ub85c\ub4dc \uc2e4\ud328: ' + e.message); });
   }
 
   function loadCourseData(ids) {
@@ -386,6 +457,14 @@
     var expBtn = document.getElementById('btn-explorer');
     if (expBtn) { expBtn.href = explorerUrl; expBtn.target = '_blank'; }
 
+    var archiveBtn = document.getElementById('btn-archive');
+    if (archiveBtn) {
+      archiveBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = 'index.html?archive=true' + (sub ? '&sub=' + sub : '');
+      });
+    }
+
     var pdfBtns = document.querySelectorAll('#btn-pdf, #btn-pdf-bottom');
     for (var i = 0; i < pdfBtns.length; i++) {
       pdfBtns[i].addEventListener('click', function() {
@@ -437,31 +516,17 @@
 
     function translatePageToEnglish() {
       var targets = document.querySelectorAll(
-        '#letter-content .cover-title, ' +
-        '#letter-content .cover-subtitle, ' +
-        '#letter-content .cover-company, ' +
-        '#letter-content .cover-badge, ' +
-        '#letter-content .cover-reading-time, ' +
-        '#letter-content .section-header h2, ' +
-        '#letter-content .section-header p, ' +
-        '#letter-content .insight-card h3, ' +
-        '#letter-content .insight-card p, ' +
-        '#letter-content .insight-subtitle, ' +
-        '#letter-content .curation-header h3, ' +
-        '#letter-content .curation-tag, ' +
-        '#letter-content .curation-rich-comment, ' +
-        '#letter-content .curation-rich-meta span, ' +
-        '#letter-content .curation-note, ' +
-        '#letter-content .ai-comment, ' +
-        '#letter-content .new-summary, ' +
-        '#letter-content .closing-template h2, ' +
-        '#letter-content .closing-template p, ' +
-        '#letter-content .cta-banner > p, ' +
-        '#letter-content .course-mini-card h4 a, ' +
-        '#letter-content .course-mini-card > div, ' +
-        '#letter-content .new-highlight-card h3 a, ' +
-        '#letter-content .new-highlight-card > div, ' +
-        '#letter-content .new-highlight-card > p, ' +
+        '#letter-content .cover-title, #letter-content .cover-subtitle, #letter-content .cover-company, ' +
+        '#letter-content .cover-badge, #letter-content .cover-reading-time, ' +
+        '#letter-content .section-header h2, #letter-content .section-header p, ' +
+        '#letter-content .insight-card h3, #letter-content .insight-card p, #letter-content .insight-subtitle, ' +
+        '#letter-content .curation-header h3, #letter-content .curation-tag, ' +
+        '#letter-content .curation-rich-comment, #letter-content .curation-rich-meta span, ' +
+        '#letter-content .curation-note, #letter-content .ai-comment, #letter-content .new-summary, ' +
+        '#letter-content .closing-template h2, #letter-content .closing-template p, ' +
+        '#letter-content .cta-banner > p, #letter-content .course-mini-card h4 a, ' +
+        '#letter-content .course-mini-card > div, #letter-content .new-highlight-card h3 a, ' +
+        '#letter-content .new-highlight-card > div, #letter-content .new-highlight-card > p, ' +
         '#letter-content .course-badge'
       );
 
@@ -488,31 +553,22 @@
       showToast('🌐 Translating... (' + toTranslate.length + ' items)');
 
       var separator = '\n\u00a7\u00a7\u00a7\n';
-      var combinedText = '';
-      for (var i = 0; i < toTranslate.length; i++) {
-        if (i > 0) combinedText += separator;
-        combinedText += toTranslate[i].text.substring(0, 800);
-      }
-
       var chunks = [];
-      if (combinedText.length <= 4000) {
-        chunks.push({ text: combinedText, items: toTranslate });
-      } else {
-        var currentChunk = '';
-        var currentItems = [];
-        for (var i = 0; i < toTranslate.length; i++) {
-          var addition = (currentItems.length > 0 ? separator : '') + toTranslate[i].text.substring(0, 800);
-          if (currentChunk.length + addition.length > 4000 && currentItems.length > 0) {
-            chunks.push({ text: currentChunk, items: currentItems.slice() });
-            currentChunk = toTranslate[i].text.substring(0, 800);
-            currentItems = [toTranslate[i]];
-          } else {
-            currentChunk += addition;
-            currentItems.push(toTranslate[i]);
-          }
+      var currentChunk = '';
+      var currentItems = [];
+
+      for (var i = 0; i < toTranslate.length; i++) {
+        var addition = (currentItems.length > 0 ? separator : '') + toTranslate[i].text.substring(0, 800);
+        if (currentChunk.length + addition.length > 4000 && currentItems.length > 0) {
+          chunks.push({ text: currentChunk, items: currentItems.slice() });
+          currentChunk = toTranslate[i].text.substring(0, 800);
+          currentItems = [toTranslate[i]];
+        } else {
+          currentChunk += addition;
+          currentItems.push(toTranslate[i]);
         }
-        if (currentItems.length > 0) chunks.push({ text: currentChunk, items: currentItems });
       }
+      if (currentItems.length > 0) chunks.push({ text: currentChunk, items: currentItems });
 
       var translateChunk = function(chunk) {
         return fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=en&dt=t&q=' + encodeURIComponent(chunk.text))
@@ -541,10 +597,7 @@
           var parts = results[r].translation.split(/\u00a7\u00a7\u00a7/);
           for (var i = 0; i < Math.min(parts.length, results[r].items.length); i++) {
             var tr = parts[i].trim();
-            if (tr) {
-              results[r].items[i].el.textContent = tr;
-              translated++;
-            }
+            if (tr) { results[r].items[i].el.textContent = tr; translated++; }
           }
         }
         translateTemplateToEnglish();
@@ -565,72 +618,59 @@
 
     function translateTemplateToEnglish() {
       templateOriginals = [];
-
-      var campusBtn = document.getElementById('btn-campus');
-      if (campusBtn) { templateOriginals.push({ el: campusBtn, html: campusBtn.innerHTML }); campusBtn.innerHTML = '🚀 Hub'; }
-
-      var pdfBtn = document.getElementById('btn-pdf');
-      if (pdfBtn) { templateOriginals.push({ el: pdfBtn, html: pdfBtn.innerHTML }); pdfBtn.innerHTML = '📥 PDF'; }
-
-      var archiveBtn = document.getElementById('btn-archive');
-      if (archiveBtn) { templateOriginals.push({ el: archiveBtn, html: archiveBtn.innerHTML }); archiveBtn.textContent = '📖 Previous Issues'; }
-
-      var unsubBtn2 = document.getElementById('btn-unsubscribe');
-      if (unsubBtn2) { templateOriginals.push({ el: unsubBtn2, html: unsubBtn2.innerHTML }); unsubBtn2.textContent = 'Unsubscribe'; }
-
-      var expBtn2 = document.getElementById('btn-explorer');
-      if (expBtn2) { templateOriginals.push({ el: expBtn2, html: expBtn2.innerHTML }); expBtn2.innerHTML = '🔭 Explore Courses'; }
+      var pairs = [
+        ['btn-campus', '🚀 Hub'],
+        ['btn-pdf', '📥 PDF'],
+        ['btn-archive', '📖 Previous Issues'],
+        ['btn-unsubscribe', 'Unsubscribe'],
+        ['btn-explorer', '🔭 Explore Courses']
+      ];
+      for (var i = 0; i < pairs.length; i++) {
+        var el = document.getElementById(pairs[i][0]);
+        if (el) { templateOriginals.push({ el: el, html: el.innerHTML }); el.innerHTML = pairs[i][1]; }
+      }
 
       var ctaPrimaries = document.querySelectorAll('.cta-primary');
       for (var i = 0; i < ctaPrimaries.length; i++) {
         templateOriginals.push({ el: ctaPrimaries[i], html: ctaPrimaries[i].innerHTML });
         ctaPrimaries[i].innerHTML = '🚀 Go to Learning Hub <span class="cta-arrow">\u2192</span>';
       }
-
       var ctaExplorers = document.querySelectorAll('.cta-buttons-row .btn-explorer');
       for (var i = 0; i < ctaExplorers.length; i++) {
         templateOriginals.push({ el: ctaExplorers[i], html: ctaExplorers[i].innerHTML });
         ctaExplorers[i].innerHTML = '🔭 Explore Courses';
       }
-
       var miniLinks = document.querySelectorAll('.mini-link');
       for (var i = 0; i < miniLinks.length; i++) {
         templateOriginals.push({ el: miniLinks[i], html: miniLinks[i].innerHTML });
         miniLinks[i].textContent = 'Start Now \u2192';
       }
-
       var richCtas = document.querySelectorAll('.curation-rich-cta');
       for (var i = 0; i < richCtas.length; i++) {
         templateOriginals.push({ el: richCtas[i], html: richCtas[i].innerHTML });
         richCtas[i].textContent = 'Start Now \u2192';
       }
-
       var sideNavLabels = document.querySelectorAll('.side-nav-label');
       var enLabels = ['Trend Insights', 'New Content', 'Monthly Curation', 'Promotion'];
       for (var i = 0; i < sideNavLabels.length; i++) {
         templateOriginals.push({ el: sideNavLabels[i], html: sideNavLabels[i].innerHTML });
         if (enLabels[i]) sideNavLabels[i].textContent = enLabels[i];
       }
-
       var indexTitles = document.querySelectorAll('.index-title');
-      var enIndexTitles = ['Trend Insights', 'New Content', 'Monthly Curation', 'Promotion'];
       for (var i = 0; i < indexTitles.length; i++) {
         templateOriginals.push({ el: indexTitles[i], html: indexTitles[i].innerHTML });
-        if (enIndexTitles[i]) indexTitles[i].textContent = enIndexTitles[i];
+        if (enLabels[i]) indexTitles[i].textContent = enLabels[i];
       }
-
       var readingTime = document.querySelector('.cover-reading-time');
       if (readingTime && readingTime.textContent.indexOf('\uc77d') !== -1) {
         templateOriginals.push({ el: readingTime, html: readingTime.innerHTML });
         readingTime.textContent = '📖 Reading time: ~5 min';
       }
-
       var cNote = document.querySelector('.curation-note');
       if (cNote) {
         templateOriginals.push({ el: cNote, html: cNote.innerHTML });
-        cNote.textContent = '💡 Click a course title to visit the course page. All courses are free on the Udemy Business Learning Hub.';
+        cNote.textContent = '💡 Click a course title to visit the course page.';
       }
-
       var footerCopyright = document.querySelector('.footer-copyright');
       if (footerCopyright) {
         templateOriginals.push({ el: footerCopyright, html: footerCopyright.innerHTML });
@@ -653,7 +693,6 @@
       setTimeout(function() { el.remove(); }, 3000);
     }
 
-    // Auto-translate if lang=en
     if (lang === 'en') {
       setTimeout(function() {
         var enBtn = document.querySelector('.lang-btn[data-lang="en"]');
