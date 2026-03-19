@@ -82,20 +82,23 @@
   }
 
   function loadCourseData(ids) {
-    return fetch(WORKER_URL + '/status', { headers: { 'Authorization': 'Bearer ' + WORKER_SECRET } })
+    return fetch('/api/courses-proxy?action=status')
       .then(function(r) { return r.json(); })
       .then(function(status) {
         var tc = status.totalChunks || 0;
+        if (tc === 0) return;
         var promises = [];
         for (var i = 0; i < tc; i++) {
           promises.push(
-            fetch(WORKER_URL + '/get-courses?chunk=' + i, { headers: { 'Authorization': 'Bearer ' + WORKER_SECRET } })
-              .then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; })
+            fetch('/api/courses-proxy?chunk=' + i)
+              .then(function(r) { return r.ok ? r.json() : []; })
+              .catch(function() { return []; })
           );
         }
         return Promise.all(promises);
       })
       .then(function(results) {
+        if (!results) return;
         var all = [];
         for (var i = 0; i < results.length; i++) {
           if (Array.isArray(results[i])) all = all.concat(results[i]);
@@ -108,7 +111,8 @@
             }
           }
         }
-      }).catch(function() {});
+      })
+      .catch(function() {});
   }
 
   function renderLetter() {
