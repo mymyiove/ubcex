@@ -7,13 +7,13 @@
 
   // Admin accounts
   var ADMINS = {
-    'jhj11': 'jeongjh',
-    'jkl': 'jkl',
-    'ellie.yang': 'ellie.yang',
-    'jeongjh': 'jeongjh',
-    'yjpark': 'yjpark',
-    'min.song': 'min.song',
-    'wnsghgg123': 'wnsghgg123'
+    'jhj11': '휴',
+    'jkl': '제임스',
+    'ellie.yang': '엘리',
+    'jeongjh': '지니',
+    'yjpark': '클레어',
+    'min.song': '콜린',
+    'wnsghgg123': '가빈'
   };
 
   var DEFAULT_IMAGES = {
