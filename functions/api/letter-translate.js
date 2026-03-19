@@ -15,21 +15,18 @@ export async function onRequestPost(context) {
     var body = await request.json();
     var texts = body.texts || {};
 
-    // texts = { key1: "한국어 텍스트", key2: "한국어 텍스트", ... }
     var keys = Object.keys(texts);
     if (keys.length === 0) {
-      return new Response(JSON.stringify({ success: false, error: 'no texts to translate' }), {
+      return new Response(JSON.stringify({ success: false, error: 'no texts' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
     }
 
-    // Build prompt
     var textList = '';
     for (var i = 0; i < keys.length; i++) {
       var val = texts[keys[i]];
-      if (!val || !val.trim()) continue;
-      // Strip HTML tags for translation but keep structure info
+      if (!val || (typeof val === 'string' && !val.trim())) continue;
       textList += '[[KEY:' + keys[i] + ']]\n' + val + '\n\n';
     }
 
@@ -39,65 +36,90 @@ export async function onRequestPost(context) {
       });
     }
 
-    var prompt = 'You are a professional Korean-to-English translator for a corporate learning newsletter (Udemy Letter).\n' +
-      'Translate the following Korean texts to natural, professional English.\n' +
-      'IMPORTANT RULES:\n' +
-      '- Keep HTML tags as-is (do not translate HTML tags)\n' +
+    var prompt = 'You are a professional Korean-to-English translator for Udemy Letter (corporate learning newsletter).\n' +
+      'Translate the following Korean texts to natural, professional English.\n\n' +
+      'RULES:\n' +
+      '- Keep HTML tags as-is\n' +
       '- Keep brand names as-is (Udemy, ChatGPT, etc.)\n' +
-      '- Keep course titles in their original language\n' +
-      '- Use professional but friendly tone\n' +
-      '- Return JSON object format: {"key1":"translated text","key2":"translated text"}\n' +
-      '- Each key corresponds to the [[KEY:xxx]] marker\n\n' +
-      'Texts to translate:\n' + textList;
+      '- Keep course titles in original language\n' +
+      '- Professional but friendly tone\n' +
+      '- Return ONLY a JSON object: {"key1":"translated","key2":"translated"}\n' +
+      '- Each key matches the [[KEY:xxx]] marker\n' +
+      '- No markdown, no code blocks, pure JSON only\n\n' +
+      'Texts:\n' + textList;
 
-    var GEMINI_KEY = env.GEMINI_API_KEY || '';
-    if (!GEMINI_KEY) {
-      return new Response(JSON.stringify({ success: false, error: 'Gemini API key not configured' }), {
+    var apiKey = env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return new Response(JSON.stringify({ success: false, error: 'GEMINI_API_KEY not configured' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
     }
 
-    var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY;
+    var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
 
-    var geminiRes = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 8192
-        }
-      })
-    });
+    var geminiRes = null;
+    var retries = 0;
+    var maxRetries = 3;
+
+    while (retries <= maxRetries) {
+      geminiRes = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.3, maxOutputTokens: 8192 }
+        })
+      });
+
+      if (geminiRes.status === 429) {
+        retries++;
+        if (retries > maxRetries) break;
+        await new Promise(function(r) { setTimeout(r, Math.pow(2, retries) * 5000); });
+        continue;
+      }
+      break;
+    }
+
+    if (!geminiRes || !geminiRes.ok) {
+      var fallbackUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=' + apiKey;
+      geminiRes = await fetch(fallbackUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.3, maxOutputTokens: 8192 }
+        })
+      });
+
+      if (!geminiRes.ok) {
+        var errText = await geminiRes.text();
+        return new Response(JSON.stringify({ success: false, error: 'Gemini ' + geminiRes.status + ': ' + errText.substring(0, 300) }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
+      }
+    }
 
     var geminiData = await geminiRes.json();
 
     if (!geminiData.candidates || !geminiData.candidates[0]) {
-      return new Response(JSON.stringify({ success: false, error: 'Gemini returned no candidates' }), {
+      return new Response(JSON.stringify({ success: false, error: 'No candidates', raw: JSON.stringify(geminiData).substring(0, 500) }), {
         status: 500,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
     }
 
     var rawText = geminiData.candidates[0].content.parts[0].text || '';
-
-    // Extract JSON
-    var jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    var cleaned = rawText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    var jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     var translations = {};
+
     if (jsonMatch) {
-      try {
-        translations = JSON.parse(jsonMatch[0]);
-      } catch (e) {
-        translations = {};
-      }
+      try { translations = JSON.parse(jsonMatch[0]); } catch (e) { translations = {}; }
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      translations: translations
-    }), {
+    return new Response(JSON.stringify({ success: true, translations: translations }), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
     });
 
