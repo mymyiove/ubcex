@@ -40,17 +40,17 @@ export async function onRequestPost(context) {
       if (c.description) courseInfo.push("상세설명: " + c.description.substring(0, 1500));
       if (c.objectives) courseInfo.push("학습목표: " + c.objectives.substring(0, 500));
 
-      const prompt = `너는 기업 교육 뉴스레터 에디터야. 아래 Udemy 강의를 기업 학습자에게 추천하려고 해.
+      const prompt = `너는 기업 교육 뉴스레터 에디터야. 아래 Udemy 강의를 기업 학습자에게 추천하는 코멘트를 작성해줘.
 
-이 강의를 왜 들어야 하는지 추천 이유를 한국어로 2~3줄로 써줘.
-- 누구에게 특히 좋은지 (직무, 상황)
-- 이 강의만의 차별점이나 매력 포인트
-- 실무에 어떻게 도움이 되는지
-
-톤: 친근하면서도 전문적, 힙하고 매력적으로!
-강의 제목은 포함하지 마.
-마크다운, 따옴표, 번호 없이 순수 텍스트만.
-
+요구사항:
+- 한국어로 150~200자 분량으로 써줘 (공백 포함)
+- 첫 문장: 이 강의가 누구에게 특히 좋은지 (직무, 상황, 고민)
+- 두번째 문장: 이 강의만의 차별점이나 핵심 매력 포인트
+- 세번째 문장: 수강 후 실무에서 어떤 변화가 생기는지
+- 톤: 친근하면서도 전문적, 읽으면 바로 듣고 싶어지게!
+- 핵심은 듣고 싶게 만드는거야! 
+- 강의 제목은 절대 포함하지 마
+- 마크다운, 따옴표, 번호, 특수기호 없이 순수 텍스트만
 강의 정보:
 ${courseInfo.join("\n")}
 
@@ -66,7 +66,7 @@ ${courseInfo.join("\n")}
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               temperature: 0.85,
-              maxOutputTokens: 1024
+              maxOutputTokens: 2048
             }
           })
         });
@@ -80,7 +80,7 @@ ${courseInfo.join("\n")}
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: {
                 temperature: 0.85,
-                maxOutputTokens: 1024
+                maxOutputTokens: 2048
               }
             })
           });
