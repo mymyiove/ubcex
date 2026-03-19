@@ -6,13 +6,13 @@
   var EXPLORER_BASE = 'https://ubcexp.pages.dev';
 
   var ADMINS = {
-    'jhj11': '휴',
-    'jkl': '제임스',
-    'ellie.yang': '엘리',
-    'jeongjh': '지니',
-    'yjpark': '클레어',
-    'min.song': '콜린',
-    'wnsghgg123': '가빈'
+    'jhj11': 'jhj11',
+    'jkl': 'jkl',
+    'ellie.yang': 'ellie.yang',
+    'jeongjh': 'jeongjh',
+    'yjpark': 'yjpark',
+    'min.song': 'min.song',
+    'wnsghgg123': 'wnsghgg123'
   };
 
   var DEFAULT_IMAGES = {
@@ -302,7 +302,7 @@
         for (var i=0;i<rs.length;i++) if (Array.isArray(rs[i])) all=all.concat(rs[i]);
         allCoursesCache=all; return all;
       });
-// === Render Course Preview ===
+  // === Render Course Preview ===
   function renderCoursePreview(sec) {
     var container=$('#'+sec+'-course-preview');
     var ids=sectionCourses[sec].ids;
@@ -757,5 +757,3 @@
   }
 
 })();
-
- 
