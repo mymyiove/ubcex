@@ -51,6 +51,10 @@
   function $(s) { return document.querySelector(s); }
   function $$(s) { return document.querySelectorAll(s); }
 
+  function escHtml(s) {
+    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   function toast(msg, type) {
     var el = $('#admin-toast');
     el.textContent = msg;
@@ -64,9 +68,7 @@
   function apiCall(ep, method, body) {
     var opts = { method: method || 'GET', headers: { 'Content-Type': 'application/json' } };
     if (method === 'POST') {
-      if (ep.indexOf('/letter-save') !== -1 || ep.indexOf('/letter-delete') !== -1) {
-        opts.headers['Authorization'] = 'Bearer ' + ADMIN_SECRET;
-      }
+      opts.headers['Authorization'] = 'Bearer ' + ADMIN_SECRET;
       opts.body = JSON.stringify(body);
     }
     return fetch(API_BASE + ep, opts).then(function(r) { return r.json(); });
@@ -133,7 +135,6 @@
       toast('코드가 틀렸습니다', 'error');
     }
   });
-
   $('#gate-code').addEventListener('keyup', function(e) {
     if (e.key === 'Enter') $('#gate-submit').click();
   });
@@ -194,17 +195,17 @@
   }
 
   function initImageTemplates() {
-    setupImageField('f-cover-image', DEFAULT_IMAGES.cover);
-    setupImageField('f-insight-image', DEFAULT_IMAGES.insight);
-    setupImageField('f-new-image', DEFAULT_IMAGES.newContent);
-    setupImageField('f-curation-image', DEFAULT_IMAGES.curation);
-    setupImageField('f-closing-image', DEFAULT_IMAGES.closing);
-  }
-
-  function setupImageField(inputId, defaultUrl) {
-    var input = $('#' + inputId);
-    if (!input) return;
-    if (!input.value) input.value = defaultUrl;
+    var fields = [
+      ['f-cover-image', DEFAULT_IMAGES.cover],
+      ['f-insight-image', DEFAULT_IMAGES.insight],
+      ['f-new-image', DEFAULT_IMAGES.newContent],
+      ['f-curation-image', DEFAULT_IMAGES.curation],
+      ['f-closing-image', DEFAULT_IMAGES.closing]
+    ];
+    for (var i = 0; i < fields.length; i++) {
+      var input = $('#' + fields[i][0]);
+      if (input && !input.value) input.value = fields[i][1];
+    }
   }
 
   function createQuill(sel, ph) {
@@ -323,10 +324,7 @@
   function fetchCourses(sec) {
     var inputId = sec === 'curation' ? 'f-curation-ids' : 'f-' + sec + '-course-ids';
     var ids = parseIds($('#' + inputId).value);
-    if (ids.length === 0) {
-      toast('강의 ID를 입력해주세요', 'error');
-      return;
-    }
+    if (ids.length === 0) { toast('강의 ID를 입력해주세요', 'error'); return; }
     $('#' + inputId).value = ids.join(', ');
     var statusEl = $('#' + sec + '-fetch-status');
     statusEl.textContent = '⏳ ' + ids.length + '개 불러오는 중...';
@@ -468,7 +466,13 @@
     for (var i = 0; i < BADGE_OPTIONS.length; i++) {
       var b = BADGE_OPTIONS[i];
       var sel = cur === b.id ? ' selected' : '';
+      var isCustom = b.id.indexOf('custom_') === 0;
+      h += '<span class="badge-opt-wrap">';
       h += '<button class="badge-opt' + sel + '" data-section="' + sec + '" data-id="' + id + '" data-badge="' + b.id + '">' + b.ko + '</button>';
+      if (isCustom) {
+        h += '<button class="badge-delete-btn" data-badge-id="' + b.id + '" title="뱃지 삭제">✕</button>';
+      }
+      h += '</span>';
     }
     h += '<div class="custom-badge-row">' +
       '<input class="custom-badge-input" data-section="' + sec + '" data-id="' + id + '" placeholder="+ 커스텀" />' +
@@ -478,6 +482,7 @@
   }
 
   function bindPreviewEvents(sec) {
+    // Remove course
     var removeBtns = $$('#' + sec + '-course-preview .preview-mini-card-remove');
     for (var i = 0; i < removeBtns.length; i++) {
       removeBtns[i].addEventListener('click', function() {
@@ -492,6 +497,7 @@
       });
     }
 
+    // Badge select
     var badgeBtns = $$('#' + sec + '-course-preview .badge-opt');
     for (var i = 0; i < badgeBtns.length; i++) {
       badgeBtns[i].addEventListener('click', function() {
@@ -507,6 +513,7 @@
       });
     }
 
+    // Custom badge add
     var addBBtns = $$('#' + sec + '-course-preview .btn-add-badge');
     for (var i = 0; i < addBBtns.length; i++) {
       addBBtns[i].addEventListener('click', function() {
@@ -525,6 +532,34 @@
       });
     }
 
+    // Badge delete
+    var badgeDelBtns = $$('#' + sec + '-course-preview .badge-delete-btn');
+    for (var i = 0; i < badgeDelBtns.length; i++) {
+      badgeDelBtns[i].addEventListener('click', function(e) {
+        e.stopPropagation();
+        var badgeId = this.getAttribute('data-badge-id');
+        if (!confirm('이 뱃지를 삭제하시겠습니까?')) return;
+        for (var j = BADGE_OPTIONS.length - 1; j >= 0; j--) {
+          if (BADGE_OPTIONS[j].id === badgeId) { BADGE_OPTIONS.splice(j, 1); break; }
+        }
+        for (var j = customBadges.length - 1; j >= 0; j--) {
+          if (customBadges[j].id === badgeId) { customBadges.splice(j, 1); break; }
+        }
+        localStorage.setItem('letter_custom_badges', JSON.stringify(customBadges));
+        var allSecs = ['insight', 'new', 'curation'];
+        for (var si = 0; si < allSecs.length; si++) {
+          for (var cid in sectionCourses[allSecs[si]].badges) {
+            if (sectionCourses[allSecs[si]].badges[cid] === badgeId) {
+              delete sectionCourses[allSecs[si]].badges[cid];
+            }
+          }
+          renderCoursePreview(allSecs[si]);
+        }
+        toast('뱃지 삭제됨!', 'success');
+      });
+    }
+
+    // Comment input
     var cInputs = $$('#' + sec + '-course-preview .course-comment-input');
     for (var i = 0; i < cInputs.length; i++) {
       cInputs[i].addEventListener('input', function() {
@@ -532,6 +567,7 @@
       });
     }
 
+    // AI single comment
     var aiSingleBtns = $$('#' + sec + '-course-preview .btn-ai-single');
     for (var i = 0; i < aiSingleBtns.length; i++) {
       aiSingleBtns[i].addEventListener('click', function() {
@@ -547,7 +583,7 @@
           courses: [{
             id: id,
             title: c.title || '',
-            rating: c.rating || '',
+            rating: c.rating ? String(c.rating) : '',
             duration: c.contentLength ? formatDuration(c.contentLength) : '',
             instructor: c.instructor || '',
             category: c.category || '',
@@ -558,13 +594,17 @@
           btn.disabled = false;
           btn.textContent = '🤖';
           if (res.success && res.comments && res.comments.length > 0) {
-            var comment = res.comments[0].comment_ko || '';
-            sectionCourses[s].comments[id] = comment;
-            var ta = document.querySelector('#' + s + '-course-preview .course-comment-input[data-id="' + id + '"]');
-            if (ta) ta.value = comment;
-            toast('🤖 AI 코멘트 생성!', 'success');
+            var commentText = res.comments[0].comment_ko || '';
+            if (commentText) {
+              sectionCourses[s].comments[id] = commentText;
+              var ta = document.querySelector('#' + s + '-course-preview .course-comment-input[data-id="' + id + '"]');
+              if (ta) ta.value = commentText;
+              toast('🤖 AI 코멘트 생성!', 'success');
+            } else {
+              toast('AI가 빈 응답을 반환했습니다', 'error');
+            }
           } else {
-            toast('AI 실패: ' + (res.error || ''), 'error');
+            toast('AI 실패: ' + (res.error || 'unknown'), 'error');
           }
         }).catch(function(e) {
           btn.disabled = false;
@@ -590,7 +630,7 @@
         var st = item.status === 'draft' ? '📝 초안' : item.status === 'published' ? '✅ 발행' : '📧 발송';
         html += '<div class="letter-card" data-month="' + item.month + '">';
         html += '<div class="letter-card-month">' + item.month + '</div>';
-        html += '<div class="letter-card-title">' + (item.title_ko || '제목 없음') + '</div>';
+        html += '<div class="letter-card-title">' + escHtml(item.title_ko || '제목 없음') + '</div>';
         html += '<div class="letter-card-meta">';
         html += '<span class="status-badge ' + sc + '">' + st + '</span>';
         html += '<span>' + (item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('ko-KR') : '') + '</span>';
@@ -646,33 +686,15 @@
       $('#f-month').value = d.month;
       $('#f-month').disabled = true;
       $('#f-status').value = d.status || 'draft';
-      $('#f-title-ko').value = d.title ? d.title.ko : '';
-      $('#f-subtitle-ko').value = d.subtitle ? d.subtitle.ko : '';
+      $('#f-title-ko').value = (d.title && d.title.ko) ? d.title.ko : '';
+      $('#f-subtitle-ko').value = (d.subtitle && d.subtitle.ko) ? d.subtitle.ko : '';
       $('#f-cover-image').value = d.coverImage || DEFAULT_IMAGES.cover;
-
-      var insImg = DEFAULT_IMAGES.insight;
-      if (d.insight && d.insight.image) insImg = d.insight.image;
-      $('#f-insight-image').value = insImg;
-
-      var newImg = DEFAULT_IMAGES.newContent;
-      if (d.newContent && d.newContent.image) newImg = d.newContent.image;
-      $('#f-new-image').value = newImg;
-
-      var newSum = '';
-      if (d.newContent && d.newContent.summary && d.newContent.summary.ko) newSum = d.newContent.summary.ko;
-      $('#f-new-summary-ko').value = newSum;
-
-      var curImg = DEFAULT_IMAGES.curation;
-      if (d.curation && d.curation.image) curImg = d.curation.image;
-      $('#f-curation-image').value = curImg;
-
-      var curIntro = '';
-      if (d.curation && d.curation.intro && d.curation.intro.ko) curIntro = d.curation.intro.ko;
-      $('#f-curation-intro-ko').value = curIntro;
-
-      var closImg = DEFAULT_IMAGES.closing;
-      if (d.closing && d.closing.image) closImg = d.closing.image;
-      $('#f-closing-image').value = closImg;
+      $('#f-insight-image').value = (d.insight && d.insight.image) ? d.insight.image : DEFAULT_IMAGES.insight;
+      $('#f-new-image').value = (d.newContent && d.newContent.image) ? d.newContent.image : DEFAULT_IMAGES.newContent;
+      $('#f-new-summary-ko').value = (d.newContent && d.newContent.summary && d.newContent.summary.ko) ? d.newContent.summary.ko : '';
+      $('#f-curation-image').value = (d.curation && d.curation.image) ? d.curation.image : DEFAULT_IMAGES.curation;
+      $('#f-curation-intro-ko').value = (d.curation && d.curation.intro && d.curation.intro.ko) ? d.curation.intro.ko : '';
+      $('#f-closing-image').value = (d.closing && d.closing.image) ? d.closing.image : DEFAULT_IMAGES.closing;
 
       if (d.curation && d.curation.tags) {
         var tt = [];
@@ -689,7 +711,6 @@
         sectionCourses.insight.badges = d.insight.courseBadges || {};
         if (d.insight.layout) sectionCourses.insight.layout = d.insight.layout;
       }
-
       if (d.newContent && d.newContent.courseIds && d.newContent.courseIds.length > 0) {
         $('#f-new-course-ids').value = d.newContent.courseIds.join(', ');
         sectionCourses.new.ids = d.newContent.courseIds;
@@ -697,7 +718,6 @@
         sectionCourses.new.badges = d.newContent.courseBadges || {};
         if (d.newContent.layout) sectionCourses.new.layout = d.newContent.layout;
       }
-
       if (d.curation && d.curation.courseIds && d.curation.courseIds.length > 0) {
         $('#f-curation-ids').value = d.curation.courseIds.join(', ');
         sectionCourses.curation.ids = d.curation.courseIds;
@@ -718,13 +738,11 @@
 
       $('#editor-title').textContent = '✏️ ' + d.month + '호 편집';
       $('#btn-delete').style.display = '';
-
       if (d.updatedAt) {
         var info = new Date(d.updatedAt).toLocaleString('ko-KR');
         if (d.lastEditor) info += ' by ' + d.lastEditor;
         $('#last-saved-info').textContent = '💾 ' + info;
       }
-
       switchPanel('editor');
       addLog('레터 열기', d.month + '호');
       toast(d.month + '호를 불러왔습니다');
@@ -854,14 +872,8 @@
 
       if (d.title && d.title.ko) texts['title'] = d.title.ko;
       if (d.subtitle && d.subtitle.ko) texts['subtitle'] = d.subtitle.ko;
-
-      if (d.curation && d.curation.intro && d.curation.intro.ko) {
-        texts['curation_intro'] = d.curation.intro.ko;
-      }
-
-      if (d.newContent && d.newContent.summary && d.newContent.summary.ko) {
-        texts['new_summary'] = d.newContent.summary.ko;
-      }
+      if (d.curation && d.curation.intro && d.curation.intro.ko) texts['curation_intro'] = d.curation.intro.ko;
+      if (d.newContent && d.newContent.summary && d.newContent.summary.ko) texts['new_summary'] = d.newContent.summary.ko;
 
       if (d.curation && d.curation.tags) {
         var tagTexts = [];
@@ -876,24 +888,17 @@
           if (d.insight.pages[i].html_ko) texts['insight_page_' + i] = d.insight.pages[i].html_ko;
         }
       }
-
-      if (d.newContent && d.newContent.editorHtml && d.newContent.editorHtml.ko) {
-        texts['new_editor'] = d.newContent.editorHtml.ko;
-      }
-
-      if (d.closing && d.closing.message && d.closing.message.ko) {
-        texts['closing'] = d.closing.message.ko;
-      }
+      if (d.newContent && d.newContent.editorHtml && d.newContent.editorHtml.ko) texts['new_editor'] = d.newContent.editorHtml.ko;
+      if (d.closing && d.closing.message && d.closing.message.ko) texts['closing'] = d.closing.message.ko;
 
       var sectionNames = ['insight', 'newContent', 'curation'];
       for (var s = 0; s < sectionNames.length; s++) {
-        var secName = sectionNames[s];
-        var secData = d[secName];
+        var secData = d[sectionNames[s]];
         if (secData && secData.courseComments) {
           for (var cid in secData.courseComments) {
             var cm = secData.courseComments[cid];
-            var koText = typeof cm === 'string' ? cm : (cm.ko || '');
-            if (koText) texts['comment_' + secName + '_' + cid] = koText;
+            var koText = typeof cm === 'string' ? cm : (cm && cm.ko ? cm.ko : '');
+            if (koText) texts['comment_' + sectionNames[s] + '_' + cid] = koText;
           }
         }
       }
@@ -914,16 +919,10 @@
 
         var tr = trRes.translations || {};
 
-        if (tr['title']) d.title.en = tr['title'];
-        if (tr['subtitle']) d.subtitle.en = tr['subtitle'];
-
-        if (tr['curation_intro'] && d.curation && d.curation.intro) {
-          d.curation.intro.en = tr['curation_intro'];
-        }
-
-        if (tr['new_summary'] && d.newContent && d.newContent.summary) {
-          d.newContent.summary.en = tr['new_summary'];
-        }
+        if (tr['title'] && d.title) d.title.en = tr['title'];
+        if (tr['subtitle'] && d.subtitle) d.subtitle.en = tr['subtitle'];
+        if (tr['curation_intro'] && d.curation && d.curation.intro) d.curation.intro.en = tr['curation_intro'];
+        if (tr['new_summary'] && d.newContent && d.newContent.summary) d.newContent.summary.en = tr['new_summary'];
 
         if (tr['curation_tags'] && d.curation && d.curation.tags) {
           var enTags = tr['curation_tags'].split(',');
@@ -937,27 +936,20 @@
             if (tr['insight_page_' + i]) d.insight.pages[i].html_en = tr['insight_page_' + i];
           }
         }
-
-        if (tr['new_editor'] && d.newContent && d.newContent.editorHtml) {
-          d.newContent.editorHtml.en = tr['new_editor'];
-        }
-
-        if (tr['closing'] && d.closing && d.closing.message) {
-          d.closing.message.en = tr['closing'];
-        }
+        if (tr['new_editor'] && d.newContent && d.newContent.editorHtml) d.newContent.editorHtml.en = tr['new_editor'];
+        if (tr['closing'] && d.closing && d.closing.message) d.closing.message.en = tr['closing'];
 
         for (var s = 0; s < sectionNames.length; s++) {
-          var secName = sectionNames[s];
-          var secData = d[secName];
+          var secData = d[sectionNames[s]];
           if (secData && secData.courseComments) {
             for (var cid in secData.courseComments) {
-              var trKey = 'comment_' + secName + '_' + cid;
+              var trKey = 'comment_' + sectionNames[s] + '_' + cid;
               if (tr[trKey]) {
                 var existing = secData.courseComments[cid];
                 if (typeof existing === 'string') {
                   secData.courseComments[cid] = { ko: existing, en: tr[trKey] };
-                } else {
-                  secData.courseComments[cid].en = tr[trKey];
+                } else if (existing) {
+                  existing.en = tr[trKey];
                 }
               }
             }
@@ -966,40 +958,40 @@
 
         var saveBody = {
           month: d.month,
-          title_ko: d.title.ko,
-          title_en: d.title.en || '',
-          subtitle_ko: d.subtitle.ko,
-          subtitle_en: d.subtitle.en || '',
-          coverImage: d.coverImage,
-          status: d.status,
+          title_ko: d.title ? d.title.ko || '' : '',
+          title_en: d.title ? d.title.en || '' : '',
+          subtitle_ko: d.subtitle ? d.subtitle.ko || '' : '',
+          subtitle_en: d.subtitle ? d.subtitle.en || '' : '',
+          coverImage: d.coverImage || '',
+          status: d.status || 'draft',
           lastEditor: currentUser,
-          insight_image: d.insight ? d.insight.image : '',
-          insight_pages: d.insight ? d.insight.pages : [],
-          insight_courseIds: d.insight ? d.insight.courseIds : [],
-          insight_courseComments: d.insight ? d.insight.courseComments : {},
-          insight_courseBadges: d.insight ? d.insight.courseBadges : {},
-          insight_layout: d.insight ? d.insight.layout : 'card',
-          newContent_image: d.newContent ? d.newContent.image : '',
-          newContent_editorHtml_ko: d.newContent && d.newContent.editorHtml ? d.newContent.editorHtml.ko : '',
-          newContent_editorHtml_en: d.newContent && d.newContent.editorHtml ? d.newContent.editorHtml.en : '',
-          newContent_summary_ko: d.newContent && d.newContent.summary ? d.newContent.summary.ko : '',
-          newContent_summary_en: d.newContent && d.newContent.summary ? d.newContent.summary.en : '',
-          newContent_courseIds: d.newContent ? d.newContent.courseIds : [],
-          newContent_courseComments: d.newContent ? d.newContent.courseComments : {},
-          newContent_courseBadges: d.newContent ? d.newContent.courseBadges : {},
-          newContent_layout: d.newContent ? d.newContent.layout : 'highlight',
-          curation_image: d.curation ? d.curation.image : '',
-          curation_intro_ko: d.curation && d.curation.intro ? d.curation.intro.ko : '',
-          curation_intro_en: d.curation && d.curation.intro ? d.curation.intro.en : '',
-          curation_tags: d.curation ? d.curation.tags : [],
-          curation_courseIds: d.curation ? d.curation.courseIds : [],
-          curation_courseComments: d.curation ? d.curation.courseComments : {},
-          curation_courseBadges: d.curation ? d.curation.courseBadges : {},
-          curation_layout: d.curation ? d.curation.layout : 'list',
-          closing_image: d.closing ? d.closing.image : '',
-          closing_ko: d.closing && d.closing.message ? d.closing.message.ko : '',
-          closing_en: d.closing && d.closing.message ? d.closing.message.en : '',
-          promo_pages: d.promo ? d.promo.pages : []
+          insight_image: d.insight ? d.insight.image || '' : '',
+          insight_pages: d.insight ? d.insight.pages || [] : [],
+          insight_courseIds: d.insight ? d.insight.courseIds || [] : [],
+          insight_courseComments: d.insight ? d.insight.courseComments || {} : {},
+          insight_courseBadges: d.insight ? d.insight.courseBadges || {} : {},
+          insight_layout: d.insight ? d.insight.layout || 'card' : 'card',
+          newContent_image: d.newContent ? d.newContent.image || '' : '',
+          newContent_editorHtml_ko: d.newContent && d.newContent.editorHtml ? d.newContent.editorHtml.ko || '' : '',
+          newContent_editorHtml_en: d.newContent && d.newContent.editorHtml ? d.newContent.editorHtml.en || '' : '',
+          newContent_summary_ko: d.newContent && d.newContent.summary ? d.newContent.summary.ko || '' : '',
+          newContent_summary_en: d.newContent && d.newContent.summary ? d.newContent.summary.en || '' : '',
+          newContent_courseIds: d.newContent ? d.newContent.courseIds || [] : [],
+          newContent_courseComments: d.newContent ? d.newContent.courseComments || {} : {},
+          newContent_courseBadges: d.newContent ? d.newContent.courseBadges || {} : {},
+          newContent_layout: d.newContent ? d.newContent.layout || 'highlight' : 'highlight',
+          curation_image: d.curation ? d.curation.image || '' : '',
+          curation_intro_ko: d.curation && d.curation.intro ? d.curation.intro.ko || '' : '',
+          curation_intro_en: d.curation && d.curation.intro ? d.curation.intro.en || '' : '',
+          curation_tags: d.curation ? d.curation.tags || [] : [],
+          curation_courseIds: d.curation ? d.curation.courseIds || [] : [],
+          curation_courseComments: d.curation ? d.curation.courseComments || {} : {},
+          curation_courseBadges: d.curation ? d.curation.courseBadges || {} : {},
+          curation_layout: d.curation ? d.curation.layout || 'list' : 'list',
+          closing_image: d.closing ? d.closing.image || '' : '',
+          closing_ko: d.closing && d.closing.message ? d.closing.message.ko || '' : '',
+          closing_en: d.closing && d.closing.message ? d.closing.message.en || '' : '',
+          promo_pages: d.promo ? d.promo.pages || [] : []
         };
 
         apiCall('/letter-save', 'POST', saveBody).then(function(saveRes) {
