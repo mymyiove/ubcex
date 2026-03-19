@@ -23,12 +23,46 @@
 
   var letterData = null;
   var courseDataMap = {};
-  var sectionIds = [];
 
-  loadLetter();
+  var LOADING_STEPS = [
+    { icon: '📬', text: '우편함을 여는 중...' },
+    { icon: '✉️', text: '봉투를 뜯는 중...' },
+    { icon: '📄', text: '편지지를 꺼내는 중...' },
+    { icon: '📖', text: '펼치는 중...' }
+  ];
+
+  function showLoadingSequence() {
+    var el = document.getElementById('letter-loading');
+    el.innerHTML = '<div class="letter-loading">' +
+      '<div class="letter-loading-icon" id="loading-icon">📬</div>' +
+      '<div class="letter-loading-text" id="loading-text">우편함을 여는 중...</div>' +
+      '<div class="letter-loading-bar"><div class="letter-loading-fill" id="loading-fill"></div></div>' +
+      '</div>';
+
+    var step = 0;
+    var interval = setInterval(function() {
+      step++;
+      if (step >= LOADING_STEPS.length) { clearInterval(interval); return; }
+      var s = LOADING_STEPS[step];
+      var icon = document.getElementById('loading-icon');
+      var text = document.getElementById('loading-text');
+      var fill = document.getElementById('loading-fill');
+      if (icon) icon.textContent = s.icon;
+      if (text) text.textContent = s.text;
+      if (fill) fill.style.width = ((step + 1) / LOADING_STEPS.length * 100) + '%';
+    }, 600);
+  }
+
+  function showError(msg) {
+    document.getElementById('letter-loading').innerHTML =
+      '<div class="letter-loading"><div class="letter-loading-icon">😢</div><div class="letter-loading-text">' + msg + '</div></div>';
+  }
 
   // === Load ===
+  loadLetter();
+
   function loadLetter() {
+    showLoadingSequence();
     var endpoint = month ? '/letter-get?month=' + month : '/letter-get';
     fetch(API_BASE + endpoint)
       .then(function(r) { return r.json(); })
@@ -67,17 +101,18 @@
       })
       .then(function(results) {
         var all = [];
-        for (var i = 0; i < results.length; i++) { if (Array.isArray(results[i])) all = all.concat(results[i]); }
+        for (var i = 0; i < results.length; i++) {
+          if (Array.isArray(results[i])) all = all.concat(results[i]);
+        }
         for (var i = 0; i < ids.length; i++) {
           for (var j = 0; j < all.length; j++) {
-            if (String(all[j].id) === String(ids[i])) { courseDataMap[ids[i]] = all[j]; break; }
+            if (String(all[j].id) === String(ids[i])) {
+              courseDataMap[ids[i]] = all[j];
+              break;
+            }
           }
         }
       }).catch(function() {});
-  }
-
-  function showError(msg) {
-    document.getElementById('letter-loading').innerHTML = '<div style="font-size:2rem;margin-bottom:1rem;">😢</div><div>' + msg + '</div>';
   }
 
   // === Render ===
@@ -85,7 +120,6 @@
     var d = letterData;
     var L = lang;
     var html = '';
-    sectionIds = [];
 
     // Cover
     var coverImg = d.coverImage || DEFAULT_IMAGES.cover;
@@ -98,17 +132,17 @@
     html += '<p class="cover-reading-time">' + t(d.readingTime) + '</p>';
     html += '</div></section>';
 
-    // Collect sections for INDEX + nav
+    // Nav items
     var navItems = [];
     if (d.insight) navItems.push({ id: 'section-insight', num: '01', icon: '📊', ko: '트렌드 인사이트', en: 'Trend Insights' });
     if (d.newContent) navItems.push({ id: 'section-new', num: '02', icon: '✨', ko: '신규 콘텐츠', en: 'New Content' });
     if (d.curation) navItems.push({ id: 'section-curation', num: '03', icon: '🎯', ko: '이달의 큐레이션', en: 'Monthly Curation' });
     if (d.promo && d.promo.pages && d.promo.pages.length > 0) {
-      var hasPromoContent = false;
+      var hasPromo = false;
       for (var i = 0; i < d.promo.pages.length; i++) {
-        if (d.promo.pages[i].html_ko && d.promo.pages[i].html_ko.replace(/<[^>]*>/g, '').trim()) { hasPromoContent = true; break; }
+        if (d.promo.pages[i].html_ko && d.promo.pages[i].html_ko.replace(/<[^>]*>/g, '').trim()) { hasPromo = true; break; }
       }
-      if (hasPromoContent) navItems.push({ id: 'section-promo', num: String(navItems.length + 1).padStart(2, '0'), icon: '📢', ko: '홍보', en: 'Promotion' });
+      if (hasPromo) navItems.push({ id: 'section-promo', num: String(navItems.length + 1).padStart(2, '0'), icon: '📢', ko: '홍보', en: 'Promotion' });
     }
 
     // INDEX
@@ -183,7 +217,7 @@
       }
       if (hasPromo) {
         html += '<section class="content-section" id="section-promo">';
-        html += sectionHeader('CONTENT ' + (navItems.length), '📢', L === 'en' ? 'Promotion' : '홍보');
+        html += sectionHeader('CONTENT ' + navItems.length, '📢', L === 'en' ? 'Promotion' : '홍보');
         for (var i = 0; i < d.promo.pages.length; i++) {
           var ph = d.promo.pages[i]['html_' + L] || d.promo.pages[i].html_ko || '';
           if (ph && ph.replace(/<[^>]*>/g, '').trim()) html += '<div class="insight-card">' + ph + '</div>';
@@ -192,40 +226,32 @@
       }
     }
 
-    // Common Closing Template (always shown)
+    // Closing template (always)
     html += '<section class="closing-template">';
     html += '<div class="closing-inner" style="max-width:780px;margin:0 auto;">';
-
     var closingImg = (d.closing && d.closing.image) || DEFAULT_IMAGES.closing;
     if (closingImg) html += '<div class="closing-illustration"><img src="' + esc(closingImg) + '" alt="" /></div>';
-
-    // Custom closing message if exists
     if (d.closing && d.closing.message) {
       var cm = d.closing.message[L] || d.closing.message.ko || '';
-      if (cm && cm.replace(/<[^>]*>/g, '').trim()) {
-        html += '<div style="margin-bottom:2rem;">' + cm + '</div>';
-      }
+      if (cm && cm.replace(/<[^>]*>/g, '').trim()) html += '<div style="margin-bottom:2rem;">' + cm + '</div>';
     }
-
-    // Fixed template message
     html += '<span class="closing-emoji">📮</span>';
     if (L === 'en') {
       html += '<h2>About Udemy Letter</h2>';
       html += '<p>Every month, we curate the latest learning trends and practical courses<br>to help you grow faster and work smarter.</p>';
-      html += '<p>Udemy Letter delivers curated insights and top courses<br>directly to you — so you never miss what matters.</p>';
+      html += '<p>Udemy Letter delivers curated insights and top courses<br>directly to you \u2014 so you never miss what matters.</p>';
       html += '<p style="font-weight:700;font-size:1rem;margin-top:1.5rem;">See you next month! 🚀</p>';
     } else {
-      html += '<h2>Udemy Letter는</h2>';
-      html += '<p>매월 변화하는 업무 환경과 학습 트렌드에 맞춰,<br>바로 실무에 적용할 수 있는 콘텐츠와 인사이트를 엄선해 소개드립니다.</p>';
-      html += '<p>여러분의 성장과 성과에 도움이 되는 강의를 선별해<br>더 빠르고 효율적인 업무 역량 향상을 지원하겠습니다.</p>';
-      html += '<p style="font-weight:700;font-size:1rem;margin-top:1.5rem;">앞으로도 여러분의 성장을 더 즐겁게 만드는<br>Udemy Letter로 함께하겠습니다. 🚀</p>';
+      html += '<h2>Udemy Letter\ub294</h2>';
+      html += '<p>\ub9e4\uc6d4 \ubcc0\ud654\ud558\ub294 \uc5c5\ubb34 \ud658\uacbd\uacfc \ud559\uc2b5 \ud2b8\ub80c\ub4dc\uc5d0 \ub9de\ucdb0,<br>\ubc14\ub85c \uc2e4\ubb34\uc5d0 \uc801\uc6a9\ud560 \uc218 \uc788\ub294 \ucf58\ud150\uce20\uc640 \uc778\uc0ac\uc774\ud2b8\ub97c \uc5c4\uc120\ud574 \uc18c\uac1c\ub4dc\ub9bd\ub2c8\ub2e4.</p>';
+      html += '<p>\uc5ec\ub7ec\ubd84\uc758 \uc131\uc7a5\uacfc \uc131\uacfc\uc5d0 \ub3c4\uc6c0\uc774 \ub418\ub294 \uac15\uc758\ub97c \uc120\ubcc4\ud574<br>\ub354 \ube60\ub974\uace0 \ud6a8\uc728\uc801\uc778 \uc5c5\ubb34 \uc5ed\ub7c9 \ud5a5\uc0c1\uc744 \uc9c0\uc6d0\ud558\uaca0\uc2b5\ub2c8\ub2e4.</p>';
+      html += '<p style="font-weight:700;font-size:1rem;margin-top:1.5rem;">\uc55e\uc73c\ub85c\ub3c4 \uc5ec\ub7ec\ubd84\uc758 \uc131\uc7a5\uc744 \ub354 \uc990\uac81\uac8c \ub9cc\ub4dc\ub294<br>Udemy Letter\ub85c \ud568\uaed8\ud558\uaca0\uc2b5\ub2c8\ub2e4. 🚀</p>';
     }
     html += '</div></section>';
 
     document.getElementById('letter-content').innerHTML = html;
     document.getElementById('letter-footer').style.display = '';
 
-    // Build side nav
     buildSideNav(navItems);
     initInteractions();
   }
@@ -243,7 +269,6 @@
     }
     nav.innerHTML = html;
 
-    // Click events
     var items = nav.querySelectorAll('.side-nav-item');
     for (var i = 0; i < items.length; i++) {
       items[i].addEventListener('click', function(e) {
@@ -257,7 +282,6 @@
       });
     }
 
-    // Show/hide on scroll + active highlight
     var sections = [];
     for (var i = 0; i < navItems.length; i++) {
       var el = document.getElementById(navItems[i].id);
@@ -265,13 +289,9 @@
     }
 
     window.addEventListener('scroll', function() {
-      // Show nav after cover
       var coverEnd = document.querySelector('.index-section');
-      if (coverEnd) {
-        nav.classList.toggle('visible', window.scrollY > coverEnd.offsetTop - 100);
-      }
+      if (coverEnd) nav.classList.toggle('visible', window.scrollY > coverEnd.offsetTop - 100);
 
-      // Active section
       var scrollPos = window.scrollY + 200;
       var activeId = '';
       for (var i = 0; i < sections.length; i++) {
@@ -312,36 +332,39 @@
   }
 
   function renderMiniCard(id, comment, badge) {
-    var c = courseDataMap[id]; if (!c) return '';
+    var c = courseDataMap[id];
+    if (!c) return '';
     var cm = getComment(comment);
     var html = '<div class="course-mini-card">';
-    if (c.image) html += '<img src="' + esc(c.image) + '" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:0.6rem;" alt="" />';
+    if (c.image) html += '<img src="' + esc(c.image) + '" alt="" />';
     if (badge) html += badgeHtml(badge);
     html += '<h4>' + esc((c.title || '').substring(0, 50)) + '</h4>';
     html += '<div style="font-size:0.72rem;color:#9090aa;margin-bottom:0.4rem;">' + metaLine(c) + '</div>';
-    if (cm) html += '<div style="font-size:0.75rem;padding:0.4rem 0.6rem;background:#f5f3ff;border-left:3px solid #a78bfa;border-radius:0 6px 6px 0;margin-bottom:0.4rem;">💡 ' + esc(cm) + '</div>';
-    html += '<a href="' + courseUrl(c) + '" target="_blank" class="mini-link">' + (lang === 'en' ? 'Start Now →' : '지금 수강하기 →') + '</a>';
+    if (cm) html += '<div class="ai-comment">💡 ' + esc(cm) + '</div>';
+    html += '<a href="' + courseUrl(c) + '" target="_blank" class="mini-link">' + (lang === 'en' ? 'Start Now \u2192' : '\uc9c0\uae08 \uc218\uac15\ud558\uae30 \u2192') + '</a>';
     html += '</div>';
     return html;
   }
 
   function renderHighlightCard(id, comment, badge) {
-    var c = courseDataMap[id]; if (!c) return '';
+    var c = courseDataMap[id];
+    if (!c) return '';
     var cm = getComment(comment);
     var html = '<div class="new-highlight-card">';
     if (badge) html += badgeHtml(badge);
     else html += '<div class="highlight-badge">🆕 NEW</div>';
-    if (c.image) html += '<img src="' + esc(c.image) + '" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:0.8rem;" alt="" />';
+    if (c.image) html += '<img src="' + esc(c.image) + '" alt="" />';
     html += '<h3>' + esc(c.title || '') + '</h3>';
     html += '<div style="font-size:0.78rem;color:#4a4a6a;margin-bottom:0.5rem;">' + metaLine(c) + '</div>';
     if (cm) html += '<p style="font-size:0.82rem;color:#4a4a6a;margin-bottom:0.8rem;">💡 ' + esc(cm) + '</p>';
-    html += '<a href="' + courseUrl(c) + '" target="_blank" class="mini-link">' + (lang === 'en' ? 'Enroll →' : '수강하기 →') + '</a>';
+    html += '<a href="' + courseUrl(c) + '" target="_blank" class="mini-link">' + (lang === 'en' ? 'Enroll \u2192' : '\uc218\uac15\ud558\uae30 \u2192') + '</a>';
     html += '</div>';
     return html;
   }
 
   function renderListItem(id, comment, badge, idx) {
-    var c = courseDataMap[id]; if (!c) return '';
+    var c = courseDataMap[id];
+    if (!c) return '';
     var cm = getComment(comment);
     var html = '<div class="curation-rich-item">';
     html += '<div class="curation-rank">' + String(idx + 1).padStart(2, '0') + '</div>';
@@ -350,7 +373,7 @@
     html += '<a href="' + courseUrl(c) + '" target="_blank" class="curation-rich-title">' + esc(c.title || '') + '</a>';
     html += '<div class="curation-rich-meta">' + metaSpans(c) + '</div>';
     if (cm) html += '<div class="curation-rich-comment">' + esc(cm) + '</div>';
-    html += '<a href="' + courseUrl(c) + '" target="_blank" class="curation-rich-cta">' + (lang === 'en' ? 'Start Now →' : '지금 바로 시작하기 →') + '</a>';
+    html += '<a href="' + courseUrl(c) + '" target="_blank" class="curation-rich-cta">' + (lang === 'en' ? 'Start Now \u2192' : '\uc9c0\uae08 \ubc14\ub85c \uc2dc\uc791\ud558\uae30 \u2192') + '</a>';
     html += '</div></div>';
     return html;
   }
@@ -362,51 +385,52 @@
     var html = '';
     for (var i = 0; i < ids.length; i++) {
       html += renderListItem(ids[i], comments[ids[i]], badges[ids[i]], i);
-      if (i === 2 && ids.length > 4) html += ctaBanner(lang === 'en' ? '💡 Take courses for free!' : '💡 지금 바로 학습장에서 무료로 수강하세요!');
+      if (i === 2 && ids.length > 4) {
+        html += ctaBanner(lang === 'en' ? '💡 Take courses for free!' : '💡 \uc9c0\uae08 \ubc14\ub85c \ud559\uc2b5\uc7a5\uc5d0\uc11c \ubb34\ub8cc\ub85c \uc218\uac15\ud558\uc138\uc694!');
+      }
     }
     return html;
   }
 
   function ctaBanner(text) {
+    var L = lang;
     return '<div class="cta-banner"><p>' + text + '</p>' +
-      '<a href="' + campusUrl + '" target="_blank" class="cta-primary">🚀 ' +
-      (lang === 'en' ? 'Go to Learning Hub' : '학습장 바로가기') +
-      ' <span class="cta-arrow">→</span></a></div>';
+      '<div class="cta-buttons-row">' +
+      '<a href="' + campusUrl + '" target="_blank" class="cta-primary">🚀 ' + (L === 'en' ? 'Learning Hub' : '\ud559\uc2b5\uc7a5 \ubc14\ub85c\uac00\uae30') + ' <span class="cta-arrow">\u2192</span></a>' +
+      '<a href="' + explorerUrl + '" target="_blank" class="btn-explorer">🔭 ' + (L === 'en' ? 'Explore Courses' : '\uac15\uc758 \ud0d0\ud5d8\ud558\uae30') + '</a>' +
+      '</div></div>';
   }
 
   // === Interactions ===
   function initInteractions() {
-    // Campus links
     var cIds = ['btn-campus', 'btn-campus-bottom'];
     for (var i = 0; i < cIds.length; i++) {
       var el = document.getElementById(cIds[i]);
       if (el) { el.href = campusUrl; el.target = '_blank'; }
     }
 
-    // Explorer link
     var expBtn = document.getElementById('btn-explorer');
     if (expBtn) { expBtn.href = explorerUrl; expBtn.target = '_blank'; }
 
-    // PDF
     var pdfBtns = document.querySelectorAll('#btn-pdf, #btn-pdf-bottom');
     for (var i = 0; i < pdfBtns.length; i++) {
       pdfBtns[i].addEventListener('click', function() {
         var fn = (sub || 'general') + '_Udemy_Letter_' + (letterData ? letterData.month.replace('-', '') : '') + '.pdf';
         document.title = fn.replace('.pdf', '');
-        alert((lang === 'en' ? 'Select "Save as PDF".\nFilename: ' : 'PDF로 저장을 선택하세요.\n파일명: ') + fn);
+        alert((lang === 'en' ? 'Select "Save as PDF".\nFilename: ' : 'PDF\ub85c \uc800\uc7a5\uc744 \uc120\ud0dd\ud558\uc138\uc694.\n\ud30c\uc77c\uba85: ') + fn);
         window.print();
         setTimeout(function() { document.title = 'Udemy Letter'; }, 1000);
       });
     }
 
-    // Unsubscribe
     var unsub = document.getElementById('btn-unsubscribe');
     if (unsub) unsub.addEventListener('click', function(e) {
       e.preventDefault();
-      if (confirm(lang === 'en' ? 'Unsubscribe?' : '수신거부 하시겠습니까?')) alert(lang === 'en' ? 'Done.' : '처리되었습니다.');
+      if (confirm(lang === 'en' ? 'Unsubscribe?' : '\uc218\uc2e0\uac70\ubd80 \ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c?')) {
+        alert(lang === 'en' ? 'Done.' : '\ucc98\ub9ac\ub418\uc5c8\uc2b5\ub2c8\ub2e4.');
+      }
     });
 
-    // Index smooth scroll
     var idxCards = document.querySelectorAll('.index-card');
     for (var i = 0; i < idxCards.length; i++) {
       idxCards[i].addEventListener('click', function(e) {
@@ -419,7 +443,6 @@
       });
     }
 
-    // Language toggle (reload)
     var lBtns = document.querySelectorAll('.lang-btn');
     for (var i = 0; i < lBtns.length; i++) {
       lBtns[i].addEventListener('click', function() {
@@ -430,7 +453,6 @@
       });
     }
 
-    // Scroll: progress + header + top btn
     var pBar = document.getElementById('scroll-progress');
     var hdr = document.getElementById('letter-header');
     var topBtn = document.getElementById('scroll-to-top');
@@ -451,15 +473,18 @@
       }
     });
 
-    // Scroll animations
     var aEls = document.querySelectorAll('.content-section, .index-card, .insight-card, .course-mini-card, .new-highlight-card, .curation-rich-item, .closing-template, .cta-banner, .curation-header, .new-summary, .section-illustration, .closing-illustration, .curation-banner-image');
     for (var i = 0; i < aEls.length; i++) aEls[i].classList.add('animate-on-scroll');
+
     var cItems = document.querySelectorAll('.curation-rich-item');
     for (var i = 0; i < cItems.length; i++) cItems[i].style.transitionDelay = (i * 0.06) + 's';
 
     var obs = new IntersectionObserver(function(entries) {
-      for (var i = 0; i < entries.length; i++) { if (entries[i].isIntersecting) entries[i].target.classList.add('visible'); }
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].isIntersecting) entries[i].target.classList.add('visible');
+      }
     }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
+
     var sEls = document.querySelectorAll('.animate-on-scroll');
     for (var i = 0; i < sEls.length; i++) obs.observe(sEls[i]);
   }
@@ -470,21 +495,32 @@
     if (typeof obj === 'string') return obj;
     return obj[lang] || obj.ko || '';
   }
+
   function getGreeting() {
-    if (sub) return lang === 'en' ? 'This month\'s letter for ' + sub.toUpperCase() + ' learners' : sub.toUpperCase() + ' \ud559\uc2b5\uc790\ub2d8\uc744 \uc704\ud55c \uc774\ub2ec\uc758 \ub808\ud130';
+    if (sub) {
+      return lang === 'en'
+        ? 'This month\'s letter for ' + sub.toUpperCase() + ' learners'
+        : sub.toUpperCase() + ' \ud559\uc2b5\uc790\ub2d8\uc744 \uc704\ud55c \uc774\ub2ec\uc758 \ub808\ud130';
+    }
     return lang === 'en' ? 'This month\'s letter for learners' : '\ud559\uc2b5\uc790\ub2d8\uc744 \uc704\ud55c \uc774\ub2ec\uc758 \ub808\ud130';
   }
+
   function courseUrl(c) {
     if (!sub) return '#';
     var s = c.url || c.slug || '';
-    if (s) { if (s.indexOf('http') === 0) return s.replace('www.udemy.com', sub + '.udemy.com'); return baseUrl + s + '/'; }
+    if (s) {
+      if (s.indexOf('http') === 0) return s.replace('www.udemy.com', sub + '.udemy.com');
+      return baseUrl + s + '/';
+    }
     return campusUrl;
   }
+
   function getComment(c) {
     if (!c) return '';
     if (typeof c === 'string') return c;
     return c[lang] || c.ko || '';
   }
+
   function metaLine(c) {
     var p = [];
     if (c.rating) p.push('⭐ ' + Number(c.rating).toFixed(1));
@@ -493,6 +529,7 @@
     if (c.difficulty) p.push('📊 ' + mapD(c.difficulty));
     return p.join(' &nbsp; ');
   }
+
   function metaSpans(c) {
     var p = [];
     if (c.rating) p.push('<span>⭐ ' + Number(c.rating).toFixed(1) + '</span>');
@@ -502,22 +539,37 @@
     if (c.category) p.push('<span>📂 ' + esc(c.category.split(',')[0].trim()) + '</span>');
     return p.join('');
   }
+
   function badgeHtml(bid) {
     var B = { 'popular': '🔥 가장 인기', 'shortest': '⚡ 가장 짧은', 'top-rated': '🏆 평점 최고', 'new': '🆕 신규', 'essential': '💼 실무 필수' };
     var cls = { 'popular': 'badge-popular', 'shortest': 'badge-shortest', 'top-rated': 'badge-top-rated', 'new': 'badge-new', 'essential': 'badge-essential' };
     if (B[bid]) return '<span class="course-badge ' + (cls[bid] || 'badge-new') + '">' + B[bid] + '</span>';
     if (bid && bid.indexOf('custom_') === 0) {
       var customs = JSON.parse(localStorage.getItem('letter_custom_badges') || '[]');
-      for (var i = 0; i < customs.length; i++) { if (customs[i].id === bid) return '<span class="course-badge badge-new">' + esc(customs[i].ko) + '</span>'; }
+      for (var i = 0; i < customs.length; i++) {
+        if (customs[i].id === bid) return '<span class="course-badge badge-new">' + esc(customs[i].ko) + '</span>';
+      }
     }
     return '';
   }
-  function fmtDur(m) { if (!m) return ''; var h = Math.floor(m / 60); var mm = m % 60; if (h > 0 && mm > 0) return h + 'h ' + mm + 'm'; if (h > 0) return h + 'h'; return mm + 'm'; }
+
+  function fmtDur(m) {
+    if (!m) return '';
+    var h = Math.floor(m / 60);
+    var mm = m % 60;
+    if (h > 0 && mm > 0) return h + 'h ' + mm + 'm';
+    if (h > 0) return h + 'h';
+    return mm + 'm';
+  }
+
   function mapD(d) {
     if (lang === 'en') return d || '';
     var m = { 'Beginner': '초급', 'BEGINNER': '초급', 'Intermediate': '중급', 'INTERMEDIATE': '중급', 'Expert': '고급', 'EXPERT': '고급', 'All Levels': '모든 수준', 'ALL_LEVELS': '모든 수준' };
     return m[d] || d || '';
   }
-  function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+  function esc(s) {
+    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
 
 })();
