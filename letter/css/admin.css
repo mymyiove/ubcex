@@ -896,3 +896,95 @@ body {
 }
 .preview-mini-card-with-thumb:hover { border-color: var(--accent-light); }
 .preview-mini-card-body { flex: 1; }
+
+
+/* === Sticky Editor Actions === */
+.editor-actions-sticky {
+  position: sticky;
+  top: 52px;
+  z-index: 50;
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1.2rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.editor-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.editor-actions-right {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.last-saved-info {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* === Activity Log === */
+.log-panel {
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+.log-panel h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+.log-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.log-item {
+  display: flex;
+  gap: 0.8rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 0.78rem;
+  align-items: flex-start;
+}
+.log-item:last-child { border-bottom: none; }
+.log-time {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  min-width: 120px;
+  font-family: var(--font-en);
+}
+.log-user {
+  font-weight: 600;
+  color: var(--accent);
+  min-width: 80px;
+}
+.log-action { color: var(--text-secondary); flex: 1; }
+.log-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem;
+  font-size: 0.82rem;
+}
+
+/* === Letter Card Last Editor === */
+.letter-card-editor {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+
+/* === Admin Brand Clickable === */
+.admin-brand {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.admin-brand:hover { opacity: 0.8; }
