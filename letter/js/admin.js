@@ -5,7 +5,6 @@
   var WORKER_URL = 'https://udemy-sync.mymyiove882.workers.dev';
   var EXPLORER_BASE = 'https://ubcexp.pages.dev';
 
-  // Admin accounts
   var ADMINS = {
     'jhj11': '휴',
     'jkl': '제임스',
@@ -73,12 +72,7 @@
   // === Activity Log ===
   function addLog(action, detail) {
     var logs = JSON.parse(localStorage.getItem('letter_logs') || '[]');
-    logs.unshift({
-      time: new Date().toISOString(),
-      user: currentUser,
-      action: action,
-      detail: detail || ''
-    });
+    logs.unshift({ time: new Date().toISOString(), user: currentUser, action: action, detail: detail || '' });
     if (logs.length > 200) logs = logs.slice(0, 200);
     localStorage.setItem('letter_logs', JSON.stringify(logs));
   }
@@ -92,11 +86,7 @@
       var log = logs[i];
       var time = new Date(log.time);
       var timeStr = time.toLocaleDateString('ko-KR') + ' ' + time.toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'});
-      html += '<div class="log-item">';
-      html += '<span class="log-time">' + timeStr + '</span>';
-      html += '<span class="log-user">' + escHtml(log.user) + '</span>';
-      html += '<span class="log-action">' + escHtml(log.action) + (log.detail ? ' — ' + escHtml(log.detail) : '') + '</span>';
-      html += '</div>';
+      html += '<div class="log-item"><span class="log-time">' + timeStr + '</span><span class="log-user">' + escHtml(log.user) + '</span><span class="log-action">' + escHtml(log.action) + (log.detail ? ' — ' + escHtml(log.detail) : '') + '</span></div>';
     }
     el.innerHTML = html;
   }
@@ -130,7 +120,6 @@
     });
   }
 
-  // Brand click → list
   $('#admin-brand-home').addEventListener('click', function() {
     for (var j = 0; j < navBtns.length; j++) navBtns[j].classList.remove('active');
     $$('.admin-nav-btn[data-panel="list"]')[0].classList.add('active');
@@ -140,7 +129,6 @@
     loadLetterList();
   });
 
-  // Preview nav button
   $('#btn-preview-nav').addEventListener('click', function() {
     var m = currentMonth || $('#f-month').value.trim() || '';
     var url = 'index.html?sub=woongjindemo';
@@ -156,7 +144,6 @@
     currentUser = '';
   });
 
-  // Section toggle
   var sHeaders = $$('.section-card-header');
   for (var i = 0; i < sHeaders.length; i++) {
     sHeaders[i].addEventListener('click', function() { this.parentElement.classList.toggle('collapsed'); });
@@ -200,7 +187,7 @@
     editors['closing'] = createQuill('#closing-editor', '마무리...');
   }
 
-  // Multi-page
+  // === Multi-page ===
   function setupPageTabs(section) {
     var tabsEl = $('#' + section + '-tabs');
     var editorsEl = $('#' + section + '-editors');
@@ -243,7 +230,7 @@
   setupPageTabs('insight');
   setupPageTabs('promo');
 
-  // Layout selectors
+  // === Layout Selectors ===
   function initLayoutSelectors() {
     ['insight','new','curation'].forEach(function(sec) {
       var sel = $('#'+sec+'-layout-selector');
@@ -251,17 +238,20 @@
       var opts = sel.querySelectorAll('.layout-option');
       for (var i=0;i<opts.length;i++) {
         opts[i].addEventListener('click', function() {
-          for (var j=0;j<opts.length;j++) opts[j].classList.remove('active');
+          var parent = this.parentElement;
+          var siblings = parent.querySelectorAll('.layout-option');
+          for (var j=0;j<siblings.length;j++) siblings[j].classList.remove('active');
           this.classList.add('active');
-          sectionCourses[sec].layout = this.getAttribute('data-layout');
-          $('#'+sec+'-course-preview').className = 'preview-grid layout-'+sectionCourses[sec].layout;
-          renderCoursePreview(sec);
+          var secName = parent.id.replace('-layout-selector','');
+          sectionCourses[secName].layout = this.getAttribute('data-layout');
+          $('#'+secName+'-course-preview').className = 'preview-grid layout-'+sectionCourses[secName].layout;
+          renderCoursePreview(secName);
         });
       }
     });
   }
 
-  // Fetch courses
+  // === Fetch Courses ===
   function initFetchButtons() {
     $('#btn-fetch-insight-courses').addEventListener('click', function() { fetchCourses('insight'); });
     $('#btn-fetch-new-courses').addEventListener('click', function() { fetchCourses('new'); });
@@ -312,9 +302,7 @@
         for (var i=0;i<rs.length;i++) if (Array.isArray(rs[i])) all=all.concat(rs[i]);
         allCoursesCache=all; return all;
       });
-  }
-
-  // Render course preview (same as before - keeping compact)
+// === Render Course Preview ===
   function renderCoursePreview(sec) {
     var container=$('#'+sec+'-course-preview');
     var ids=sectionCourses[sec].ids;
@@ -324,6 +312,7 @@
     for (var i=0;i<ids.length;i++) {
       var id=ids[i], c=courseCache[id];
       var comment=sectionCourses[sec].comments[id]||'';
+      if (typeof comment === 'object') comment = comment.ko || '';
       var badge=sectionCourses[sec].badges[id]||'';
       if (!c) { html+='<div class="preview-list-item"><div style="color:var(--danger);font-size:0.8rem;">❌ ID '+id+'</div></div>'; continue; }
       var title=c.title||'', thumb=c.image||'';
@@ -331,7 +320,7 @@
       var thumbH=thumb?'<div class="preview-thumb"><img src="'+escHtml(thumb)+'" onerror="this.parentElement.style.display=\'none\'" /></div>':'';
       var removeH='<span class="preview-mini-card-remove" data-section="'+sec+'" data-id="'+id+'">✕</span>';
       var badgeH=renderBadgeSelector(id,badge,sec);
-      var commentH='<textarea class="course-comment-input" data-section="'+sec+'" data-id="'+id+'" placeholder="추천 사유...">'+escHtml(comment)+'</textarea>';
+      var commentH='<div class="comment-row"><textarea class="course-comment-input" data-section="'+sec+'" data-id="'+id+'" placeholder="추천 사유를 입력하세요...">'+escHtml(comment)+'</textarea><button class="btn-ai-single" data-section="'+sec+'" data-id="'+id+'" title="AI 코멘트 생성">🤖</button></div>';
 
       if (layout==='card') {
         html+='<div class="preview-mini-card-with-thumb" data-id="'+id+'">'+thumbH+'<div class="preview-mini-card-body"><div style="display:flex;justify-content:space-between;"><div class="preview-mini-card-title">'+escHtml(title.substring(0,50))+'</div>'+removeH+'</div><div class="preview-mini-card-meta">'+meta+'</div>'+badgeH+commentH+'</div></div>';
@@ -356,6 +345,7 @@
   }
 
   function bindPreviewEvents(sec) {
+    // Remove
     var removeBtns=$$('#'+sec+'-course-preview .preview-mini-card-remove');
     for (var i=0;i<removeBtns.length;i++) removeBtns[i].addEventListener('click',function(){
       var s=this.getAttribute('data-section'),id=this.getAttribute('data-id');
@@ -365,12 +355,16 @@
       $('#'+iid).value=sectionCourses[s].ids.join(', ');
       renderCoursePreview(s);
     });
+
+    // Badge
     var badgeBtns=$$('#'+sec+'-course-preview .badge-opt');
     for (var i=0;i<badgeBtns.length;i++) badgeBtns[i].addEventListener('click',function(){
       var s=this.getAttribute('data-section'),id=this.getAttribute('data-id'),b=this.getAttribute('data-badge');
       if (sectionCourses[s].badges[id]===b) delete sectionCourses[s].badges[id]; else sectionCourses[s].badges[id]=b;
       renderCoursePreview(s);
     });
+
+    // Custom badge
     var addBBtns=$$('#'+sec+'-course-preview .btn-add-badge');
     for (var i=0;i<addBBtns.length;i++) addBBtns[i].addEventListener('click',function(){
       var s=this.getAttribute('data-section'),id=this.getAttribute('data-id');
@@ -380,10 +374,48 @@
       customBadges.push({id:nid,ko:val}); localStorage.setItem('letter_custom_badges',JSON.stringify(customBadges));
       sectionCourses[s].badges[id]=nid; toast('뱃지 추가!','success'); renderCoursePreview(s);
     });
+
+    // Comment input
     var cInputs=$$('#'+sec+'-course-preview .course-comment-input');
     for (var i=0;i<cInputs.length;i++) cInputs[i].addEventListener('input',function(){
       sectionCourses[this.getAttribute('data-section')].comments[this.getAttribute('data-id')]=this.value;
     });
+
+    // AI single comment
+    var aiSingleBtns=$$('#'+sec+'-course-preview .btn-ai-single');
+    for (var i=0;i<aiSingleBtns.length;i++) {
+      aiSingleBtns[i].addEventListener('click',function(){
+        var s=this.getAttribute('data-section');
+        var id=this.getAttribute('data-id');
+        var c=courseCache[id];
+        if (!c) { toast('강의 데이터 없음','error'); return; }
+        var btn=this;
+        btn.disabled=true; btn.textContent='⏳';
+
+        apiCall('/letter-ai-comment','POST',{
+          courses: [{
+            id: id, title: c.title||'', rating: c.rating||'',
+            duration: c.contentLength ? formatDuration(c.contentLength) : '',
+            instructor: c.instructor||'', category: c.category||'',
+            difficulty: c.difficulty||'', headline: c.headline||''
+          }]
+        }).then(function(res) {
+          btn.disabled=false; btn.textContent='🤖';
+          if (res.success && res.comments && res.comments.length>0) {
+            var comment = res.comments[0].comment_ko || '';
+            sectionCourses[s].comments[id] = comment;
+            var ta = document.querySelector('#'+s+'-course-preview .course-comment-input[data-id="'+id+'"]');
+            if (ta) ta.value = comment;
+            toast('🤖 AI 코멘트 생성!','success');
+          } else {
+            toast('AI 실패: '+(res.error||''),'error');
+          }
+        }).catch(function(e) {
+          btn.disabled=false; btn.textContent='🤖';
+          toast('AI 실패: '+e.message,'error');
+        });
+      });
+    }
   }
 
   // === Letter List ===
@@ -402,11 +434,31 @@
         html+='<div class="letter-card-meta"><span class="status-badge '+sc+'">'+st+'</span>';
         html+='<span>'+(item.updatedAt?new Date(item.updatedAt).toLocaleDateString('ko-KR'):'')+'</span></div>';
         if (item.lastEditor) html+='<div class="letter-card-editor">✏️ '+escHtml(item.lastEditor)+'</div>';
+        html+='<div class="letter-card-actions">';
+        html+='<button class="letter-card-action" data-month="'+item.month+'" data-action="edit">✏️ 편집</button>';
+        html+='<button class="letter-card-action translate-btn" data-month="'+item.month+'" data-action="translate">🌐 영어 번역</button>';
+        html+='</div>';
         html+='</div>';
       }
       grid.innerHTML=html;
+
+      var actionBtns=$$('.letter-card-action');
+      for (var i=0;i<actionBtns.length;i++) {
+        actionBtns[i].addEventListener('click',function(e){
+          e.stopPropagation();
+          var m=this.getAttribute('data-month');
+          var action=this.getAttribute('data-action');
+          if (action==='edit') loadLetter(m);
+          else if (action==='translate') translateLetter(m);
+        });
+      }
       var cards=$$('.letter-card');
-      for (var i=0;i<cards.length;i++) cards[i].addEventListener('click',function(){loadLetter(this.getAttribute('data-month'));});
+      for (var i=0;i<cards.length;i++) {
+        cards[i].addEventListener('click',function(e){
+          if (e.target.closest('.letter-card-action')) return;
+          loadLetter(this.getAttribute('data-month'));
+        });
+      }
     });
   }
 
@@ -435,7 +487,7 @@
       $('#f-new-image').value=d.newContent?(d.newContent.image||DEFAULT_IMAGES.newContent):DEFAULT_IMAGES.newContent;
       $('#f-new-summary-ko').value=d.newContent&&d.newContent.summary?d.newContent.summary.ko:'';
       $('#f-curation-image').value=d.curation?(d.curation.image||DEFAULT_IMAGES.curation):DEFAULT_IMAGES.curation;
-      $('#f-curation-intro-ko').value=d.curation&&d.curation.intro?d.curation.intro.ko:'';
+      $('#f-curation-intro-ko').value=d.curation&&d.curation.intro?&&d.curation.intro?d.curation.intro.ko:'';
       $('#f-closing-image').value=d.closing?(d.closing.image||DEFAULT_IMAGES.closing):DEFAULT_IMAGES.closing;
 
       if (d.curation&&d.curation.tags) {
@@ -497,14 +549,12 @@
       coverImage: $('#f-cover-image').value.trim(),
       status: $('#f-status').value,
       lastEditor: currentUser,
-
       insight_image: $('#f-insight-image').value.trim(),
       insight_pages: insightPages,
       insight_courseIds: sectionCourses.insight.ids,
       insight_courseComments: sectionCourses.insight.comments,
       insight_courseBadges: sectionCourses.insight.badges,
       insight_layout: sectionCourses.insight.layout,
-
       newContent_image: $('#f-new-image').value.trim(),
       newContent_editorHtml_ko: editors['new']?editors['new'].root.innerHTML:'',
       newContent_summary_ko: $('#f-new-summary-ko').value.trim(),
@@ -512,7 +562,6 @@
       newContent_courseComments: sectionCourses.new.comments,
       newContent_courseBadges: sectionCourses.new.badges,
       newContent_layout: sectionCourses.new.layout,
-
       curation_image: $('#f-curation-image').value.trim(),
       curation_intro_ko: $('#f-curation-intro-ko').value.trim(),
       curation_tags: tags,
@@ -520,7 +569,6 @@
       curation_courseComments: sectionCourses.curation.comments,
       curation_courseBadges: sectionCourses.curation.badges,
       curation_layout: sectionCourses.curation.layout,
-
       closing_image: $('#f-closing-image').value.trim(),
       closing_ko: editors['closing']?editors['closing'].root.innerHTML:'',
       promo_pages: promoPages
@@ -550,6 +598,125 @@
       } else { toast('삭제 실패','error'); }
     });
   });
+
+  // === Translate Letter (from list) ===
+  function translateLetter(month) {
+    if (!confirm(month+'호의 영어 번역본을 생성하시겠습니까?')) return;
+    showLoading();
+    toast('🌐 번역 시작...');
+
+    apiCall('/letter-get?month='+month).then(function(res) {
+      if (!res.success) { hideLoading(); toast('레터 로드 실패','error'); return; }
+      var d=res.data;
+      var texts={};
+      if (d.title&&d.title.ko) texts['title']=d.title.ko;
+      if (d.subtitle&&d.subtitle.ko) texts['subtitle']=d.subtitle.ko;
+      if (d.curation&&d.curation.intro&&d.curation.intro.ko) texts['curation_intro']=d.curation.intro.ko;
+      if (d.newContent&&d.newContent.summary&&d.newContent.summary.ko) texts['new_summary']=d.newContent.summary.ko;
+      if (d.curation&&d.curation.tags) {
+        var tagTexts=[];
+        for (var i=0;i<d.curation.tags.length;i++) { if (d.curation.tags[i].ko) tagTexts.push(d.curation.tags[i].ko); }
+        if (tagTexts.length>0) texts['curation_tags']=tagTexts.join(', ');
+      }
+      if (d.insight&&d.insight.pages) {
+        for (var i=0;i<d.insight.pages.length;i++) { if (d.insight.pages[i].html_ko) texts['insight_page_'+i]=d.insight.pages[i].html_ko; }
+      }
+      if (d.newContent&&d.newContent.editorHtml&&d.newContent.editorHtml.ko) texts['new_editor']=d.newContent.editorHtml.ko;
+      if (d.closing&&d.closing.message&&d.closing.message.ko) texts['closing']=d.closing.message.ko;
+
+      var sections=['insight','newContent','curation'];
+      for (var s=0;s<sections.length;s++) {
+        var sec=sections[s]; var secData=d[sec];
+        if (secData&&secData.courseComments) {
+          for (var cid in secData.courseComments) {
+            var cm=secData.courseComments[cid];
+            var koText=typeof cm==='string'?cm:(cm.ko||'');
+            if (koText) texts['comment_'+sec+'_'+cid]=koText;
+          }
+        }
+      }
+
+      var keys=Object.keys(texts);
+      if (keys.length===0) { hideLoading(); toast('번역할 텍스트 없음','error'); return; }
+
+      apiCall('/letter-translate','POST',{texts:texts}).then(function(trRes) {
+        if (!trRes.success) { hideLoading(); toast('번역 실패: '+(trRes.error||''),'error'); return; }
+        var tr=trRes.translations||{};
+
+        if (tr['title']) d.title.en=tr['title'];
+        if (tr['subtitle']) d.subtitle.en=tr['subtitle'];
+        if (tr['curation_intro']&&d.curation) d.curation.intro.en=tr['curation_intro'];
+        if (tr['new_summary']&&d.newContent) d.newContent.summary.en=tr['new_summary'];
+        if (tr['curation_tags']&&d.curation&&d.curation.tags) {
+          var enTags=tr['curation_tags'].split(',');
+          for (var i=0;i<d.curation.tags.length&&i<enTags.length;i++) d.curation.tags[i].en=enTags[i].trim();
+        }
+        if (d.insight&&d.insight.pages) {
+          for (var i=0;i<d.insight.pages.length;i++) { if (tr['insight_page_'+i]) d.insight.pages[i].html_en=tr['insight_page_'+i]; }
+        }
+        if (tr['new_editor']&&d.newContent) d.newContent.editorHtml.en=tr['new_editor'];
+        if (tr['closing']&&d.closing) d.closing.message.en=tr['closing'];
+
+        for (var s=0;s<sections.length;s++) {
+          var sec=sections[s]; var secData=d[sec];
+          if (secData&&secData.courseComments) {
+            for (var cid in secData.courseComments) {
+              var trKey='comment_'+sec+'_'+cid;
+              if (tr[trKey]) {
+                var existing=secData.courseComments[cid];
+                if (typeof existing==='string') secData.courseComments[cid]={ko:existing,en:tr[trKey]};
+                else secData.courseComments[cid].en=tr[trKey];
+              }
+            }
+          }
+        }
+
+        var saveBody={
+          month:d.month,
+          title_ko:d.title.ko, title_en:d.title.en||'',
+          subtitle_ko:d.subtitle.ko, subtitle_en:d.subtitle.en||'',
+          coverImage:d.coverImage, status:d.status, lastEditor:currentUser,
+          insight_image:d.insight?d.insight.image:'',
+          insight_pages:d.insight?d.insight.pages:[],
+          insight_courseIds:d.insight?d.insight.courseIds:[],
+          insight_courseComments:d.insight?d.insight.courseComments:{},
+          insight_courseBadges:d.insight?d.insight.courseBadges:{},
+          insight_layout:d.insight?d.insight.layout:'card',
+          newContent_image:d.newContent?d.newContent.image:'',
+          newContent_editorHtml_ko:d.newContent&&d.newContent.editorHtml?d.newContent.editorHtml.ko:'',
+          newContent_editorHtml_en:d.newContent&&d.newContent.editorHtml?d.newContent.editorHtml.en:'',
+          newContent_summary_ko:d.newContent&&d.newContent.summary?d.newContent.summary.ko:'',
+          newContent_summary_en:d.newContent&&d.newContent.summary?d.newContent.summary.en:'',
+          newContent_courseIds:d.newContent?d.newContent.courseIds:[],
+          newContent_courseComments:d.newContent?d.newContent.courseComments:{},
+          newContent_courseBadges:d.newContent?d.newContent.courseBadges:{},
+          newContent_layout:d.newContent?d.newContent.layout:'highlight',
+          curation_image:d.curation?d.curation.image:'',
+          curation_intro_ko:d.curation&&d.curation.intro?d.curation.intro.ko:'',
+          curation_intro_en:d.curation&&d.curation.intro?d.curation.intro.en:'',
+          curation_tags:d.curation?d.curation.tags:[],
+          curation_courseIds:d.curation?d.curation.courseIds:[],
+          curation_courseComments:d.curation?d.curation.courseComments:{},
+          curation_courseBadges:d.curation?d.curation.courseBadges:{},
+          curation_layout:d.curation?d.curation.layout:'list',
+          closing_image:d.closing?d.closing.image:'',
+          closing_ko:d.closing&&d.closing.message?d.closing.message.ko:'',
+          closing_en:d.closing&&d.closing.message?d.closing.message.en:'',
+          promo_pages:d.promo?d.promo.pages:[]
+        };
+
+        apiCall('/letter-save','POST',saveBody).then(function(saveRes) {
+          hideLoading();
+          if (saveRes.success) {
+            var count=Object.keys(tr).length;
+            addLog('영어 번역',month+'호 / '+count+'개');
+            toast('🌐 '+count+'개 항목 번역 완료!','success');
+            loadLetterList();
+          } else { toast('저장 실패','error'); }
+        });
+      }).catch(function(e) { hideLoading(); toast('번역 실패: '+e.message,'error'); });
+    }).catch(function(e) { hideLoading(); toast('로드 실패: '+e.message,'error'); });
+  }
 
   // === Helpers ===
   function switchPanel(name) {
@@ -589,293 +756,6 @@
     for (var key in editors) { if (editors[key]&&editors[key].root) editors[key].root.innerHTML=''; }
   }
 
-// ═══════════════════════════════════════
-  // AI Comment Generation
-  // ═══════════════════════════════════════
-  $('#btn-ai-comments').addEventListener('click', function() {
-    var btn = this;
-    
-    // Collect all courses from all sections
-    var allCourses = [];
-    var sections = ['insight', 'new', 'curation'];
-    
-    for (var s = 0; s < sections.length; s++) {
-      var sec = sections[s];
-      var ids = sectionCourses[sec].ids;
-      for (var i = 0; i < ids.length; i++) {
-        var c = courseCache[ids[i]];
-        if (c && !sectionCourses[sec].comments[ids[i]]) {
-          allCourses.push({
-            id: ids[i],
-            section: sec,
-            title: c.title || '',
-            rating: c.rating || '',
-            duration: c.contentLength ? formatDuration(c.contentLength) : '',
-            instructor: c.instructor || '',
-            category: c.category || '',
-            difficulty: c.difficulty || '',
-            headline: c.headline || ''
-          });
-        }
-      }
-    }
-
-    if (allCourses.length === 0) {
-      toast('코멘트가 없는 강의가 없습니다. 강의를 먼저 불러오세요!', 'error');
-      return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = '🤖 생성 중...';
-
-    apiCall('/letter-ai-comment', 'POST', { courses: allCourses })
-      .then(function(res) {
-        btn.disabled = false;
-        btn.textContent = '🤖 AI 코멘트';
-
-        if (!res.success) {
-          toast('AI 코멘트 생성 실패: ' + (res.error || ''), 'error');
-          return;
-        }
-
-        var comments = res.comments || [];
-        var applied = 0;
-
-        for (var i = 0; i < comments.length; i++) {
-          var cm = comments[i];
-          var id = cm.id;
-          var text = cm.comment_ko || '';
-          if (!text) continue;
-
-          // Find which section this course belongs to
-          for (var s = 0; s < sections.length; s++) {
-            var sec = sections[s];
-            if (sectionCourses[sec].ids.indexOf(id) !== -1) {
-              if (!sectionCourses[sec].comments[id]) {
-                sectionCourses[sec].comments[id] = text;
-                applied++;
-              }
-              break;
-            }
-          }
-        }
-
-        // Re-render all previews
-        for (var s = 0; s < sections.length; s++) {
-          renderCoursePreview(sections[s]);
-        }
-
-        addLog('AI 코멘트 생성', applied + '개 강의');
-        toast('🤖 ' + applied + '개 강의에 AI 코멘트 적용!', 'success');
-      })
-      .catch(function(e) {
-        btn.disabled = false;
-        btn.textContent = '🤖 AI 코멘트';
-        toast('AI 코멘트 실패: ' + e.message, 'error');
-      });
-  });
-
-  // ═══════════════════════════════════════
-  // English Translation
-  // ═══════════════════════════════════════
-  $('#btn-translate').addEventListener('click', function() {
-    var btn = this;
-
-    // Collect all Korean texts
-    var texts = {};
-
-    // Basic info
-    var titleKo = $('#f-title-ko').value.trim();
-    var subtitleKo = $('#f-subtitle-ko').value.trim();
-    if (titleKo) texts['title'] = titleKo;
-    if (subtitleKo) texts['subtitle'] = subtitleKo;
-
-    // Curation intro
-    var curationIntro = $('#f-curation-intro-ko').value.trim();
-    if (curationIntro) texts['curation_intro'] = curationIntro;
-
-    // Curation tags
-    var tagsRaw = $('#f-curation-tags').value.trim();
-    if (tagsRaw) texts['curation_tags'] = tagsRaw;
-
-    // New content summary
-    var newSummary = $('#f-new-summary-ko').value.trim();
-    if (newSummary) texts['new_summary'] = newSummary;
-
-    // Editor contents
-    if (editors['insight-0'] && editors['insight-0'].root.innerHTML.replace(/<[^>]*>/g, '').trim()) {
-      texts['insight_page_0'] = editors['insight-0'].root.innerHTML;
-    }
-    if (editors['new'] && editors['new'].root.innerHTML.replace(/<[^>]*>/g, '').trim()) {
-      texts['new_editor'] = editors['new'].root.innerHTML;
-    }
-    if (editors['closing'] && editors['closing'].root.innerHTML.replace(/<[^>]*>/g, '').trim()) {
-      texts['closing'] = editors['closing'].root.innerHTML;
-    }
-
-    // Course comments
-    var sections = ['insight', 'new', 'curation'];
-    for (var s = 0; s < sections.length; s++) {
-      var sec = sections[s];
-      var comments = sectionCourses[sec].comments;
-      for (var id in comments) {
-        if (comments[id] && typeof comments[id] === 'string' && comments[id].trim()) {
-          texts['comment_' + sec + '_' + id] = comments[id];
-        }
-      }
-    }
-
-    var keys = Object.keys(texts);
-    if (keys.length === 0) {
-      toast('번역할 한국어 텍스트가 없습니다', 'error');
-      return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = '🌐 번역 중... (' + keys.length + '개)';
-
-    apiCall('/letter-translate', 'POST', { texts: texts })
-      .then(function(res) {
-        btn.disabled = false;
-        btn.textContent = '🌐 영어 번역';
-
-        if (!res.success) {
-          toast('번역 실패: ' + (res.error || ''), 'error');
-          return;
-        }
-
-        var tr = res.translations || {};
-        var applied = 0;
-
-        // We need to save the letter with English translations
-        // First, let's store them and then save
-        var month = $('#f-month').value.trim();
-        if (!month) {
-          toast('호수를 먼저 입력해주세요', 'error');
-          return;
-        }
-
-        // Build save body with translations
-        var insightPages = [];
-        var insightWraps = $$('#insight-editors .editor-wrap');
-        for (var i = 0; i < insightWraps.length; i++) {
-          var pg = insightWraps[i].getAttribute('data-page');
-          var ed = editors['insight-' + pg];
-          if (ed) {
-            insightPages.push({
-              html_ko: ed.root.innerHTML,
-              html_en: tr['insight_page_' + pg] || ''
-            });
-            if (tr['insight_page_' + pg]) applied++;
-          }
-        }
-
-        var promoPages = [];
-        var promoWraps = $$('#promo-editors .editor-wrap');
-        for (var i = 0; i < promoWraps.length; i++) {
-          var pg = promoWraps[i].getAttribute('data-page');
-          var ed = editors['promo-' + pg];
-          if (ed) promoPages.push({ html_ko: ed.root.innerHTML, html_en: '' });
-        }
-
-        var tagsRaw2 = $('#f-curation-tags').value.trim();
-        var tags = [];
-        if (tagsRaw2) {
-          var tagParts = tagsRaw2.split(',');
-          var enTags = (tr['curation_tags'] || '').split(',');
-          for (var i = 0; i < tagParts.length; i++) {
-            var t = tagParts[i].trim();
-            if (t) tags.push({ ko: t, en: (enTags[i] || '').trim() });
-          }
-          if (tr['curation_tags']) applied++;
-        }
-
-        // Apply comment translations
-        for (var s = 0; s < sections.length; s++) {
-          var sec = sections[s];
-          var ids = sectionCourses[sec].ids;
-          for (var i = 0; i < ids.length; i++) {
-            var cid = ids[i];
-            var trKey = 'comment_' + sec + '_' + cid;
-            if (tr[trKey]) {
-              // Convert string comment to object with ko/en
-              var koComment = sectionCourses[sec].comments[cid] || '';
-              if (typeof koComment === 'string') {
-                sectionCourses[sec].comments[cid] = { ko: koComment, en: tr[trKey] };
-              } else {
-                sectionCourses[sec].comments[cid].en = tr[trKey];
-              }
-              applied++;
-            }
-          }
-        }
-
-        if (tr['title']) applied++;
-        if (tr['subtitle']) applied++;
-        if (tr['curation_intro']) applied++;
-        if (tr['new_summary']) applied++;
-        if (tr['new_editor']) applied++;
-        if (tr['closing']) applied++;
-
-        // Save with translations
-        var saveBody = {
-          month: month,
-          title_ko: $('#f-title-ko').value.trim(),
-          title_en: tr['title'] || '',
-          subtitle_ko: $('#f-subtitle-ko').value.trim(),
-          subtitle_en: tr['subtitle'] || '',
-          coverImage: $('#f-cover-image').value.trim(),
-          status: $('#f-status').value,
-          lastEditor: currentUser,
-
-          insight_image: $('#f-insight-image').value.trim(),
-          insight_pages: insightPages,
-          insight_courseIds: sectionCourses.insight.ids,
-          insight_courseComments: sectionCourses.insight.comments,
-          insight_courseBadges: sectionCourses.insight.badges,
-          insight_layout: sectionCourses.insight.layout,
-
-          newContent_image: $('#f-new-image').value.trim(),
-          newContent_editorHtml_ko: editors['new'] ? editors['new'].root.innerHTML : '',
-          newContent_editorHtml_en: tr['new_editor'] || '',
-          newContent_summary_ko: $('#f-new-summary-ko').value.trim(),
-          newContent_summary_en: tr['new_summary'] || '',
-          newContent_courseIds: sectionCourses.new.ids,
-          newContent_courseComments: sectionCourses.new.comments,
-          newContent_courseBadges: sectionCourses.new.badges,
-          newContent_layout: sectionCourses.new.layout,
-
-          curation_image: $('#f-curation-image').value.trim(),
-          curation_intro_ko: $('#f-curation-intro-ko').value.trim(),
-          curation_intro_en: tr['curation_intro'] || '',
-          curation_tags: tags,
-          curation_courseIds: sectionCourses.curation.ids,
-          curation_courseComments: sectionCourses.curation.comments,
-          curation_courseBadges: sectionCourses.curation.badges,
-          curation_layout: sectionCourses.curation.layout,
-
-          closing_image: $('#f-closing-image').value.trim(),
-          closing_ko: editors['closing'] ? editors['closing'].root.innerHTML : '',
-          closing_en: tr['closing'] || '',
-          promo_pages: promoPages
-        };
-
-        // Auto-save with translations
-        apiCall('/letter-save', 'POST', saveBody).then(function(saveRes) {
-          if (saveRes.success) {
-            addLog('영어 번역 생성 + 저장', month + '호 / ' + applied + '개 항목');
-            toast('🌐 ' + applied + '개 항목 번역 완료 + 저장!', 'success');
-            $('#last-saved-info').textContent = '💾 ' + new Date().toLocaleString('ko-KR') + ' by ' + currentUser + ' (번역 포함)';
-          } else {
-            toast('번역은 완료했지만 저장 실패', 'error');
-          }
-        });
-      })
-      .catch(function(e) {
-        btn.disabled = false;
-        btn.textContent = '🌐 영어 번역';
-        toast('번역 실패: ' + e.message, 'error');
-      });
-  });
-  
 })();
+
+ 
