@@ -1251,3 +1251,160 @@ body > * { position: relative; z-index: 1; }
   }
 }
 
+/* === Floating Side Nav === */
+.side-nav {
+  position: fixed;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.4s var(--transition);
+}
+.side-nav.visible {
+  opacity: 1;
+  visibility: visible;
+}
+.side-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  transition: all 0.25s var(--transition);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.side-nav-item:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateX(-4px);
+  box-shadow: var(--shadow);
+}
+.side-nav-item.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.side-nav-icon { font-size: 0.85rem; }
+.side-nav-label { display: inline; }
+
+/* Mobile: horizontal top bar */
+@media (max-width: 900px) {
+  .side-nav {
+    position: fixed;
+    right: auto;
+    left: 0;
+    top: auto;
+    bottom: 0;
+    transform: none;
+    flex-direction: row;
+    width: 100%;
+    justify-content: center;
+    padding: 0.5rem;
+    background: var(--bg-glass-strong);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border-light);
+    gap: 0.3rem;
+    border-radius: 0;
+  }
+  .side-nav-label { display: none; }
+  .side-nav-item {
+    padding: 0.4rem 0.6rem;
+    border-radius: 15px;
+    font-size: 0.65rem;
+  }
+}
+
+/* === Header Letter text alignment === */
+.header-title {
+  font-family: var(--font-en);
+  font-size: 0.95rem;
+  font-weight: 700;
+  background: var(--gradient-main);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  position: relative;
+  top: 1px;
+}
+
+/* === Quill editor images in viewer === */
+.insight-card img,
+.content-section .ql-editor img,
+.editor-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+  border-radius: var(--radius-sm);
+}
+
+/* === Common closing template === */
+.closing-template {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--gradient-soft);
+  position: relative;
+}
+.closing-template::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gradient-main);
+}
+.closing-template h2 {
+  font-size: 1.3rem;
+  background: var(--gradient-main);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1.2rem;
+  font-weight: 800;
+}
+.closing-template p {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.8rem;
+  line-height: 1.8;
+}
+.closing-template .closing-emoji {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* === Explorer link button === */
+.btn-explorer {
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all 0.3s var(--transition);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.btn-explorer:hover {
+  background: var(--accent);
+  color: white;
+  box-shadow: var(--shadow);
+}
