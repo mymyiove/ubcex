@@ -738,16 +738,54 @@
         editors['closing'].root.innerHTML = d.closing.message.ko || '';
       }
 
+      // Load promo editor
+      if (d.promo && d.promo.pages && d.promo.pages.length > 0 && editors['promo-0']) {
+        editors['promo-0'].root.innerHTML = d.promo.pages[0].html_ko || '';
+      }
+
       $('#editor-title').textContent = '✏️ ' + d.month + '호 편집';
       $('#btn-delete').style.display = '';
+
       if (d.updatedAt) {
         var info = new Date(d.updatedAt).toLocaleString('ko-KR');
         if (d.lastEditor) info += ' by ' + d.lastEditor;
         $('#last-saved-info').textContent = '💾 ' + info;
       }
+
+      // Auto-fetch course data
+      var sectionsToFetch = [];
+      if (sectionCourses.insight.ids.length > 0) sectionsToFetch.push('insight');
+      if (sectionCourses.new.ids.length > 0) sectionsToFetch.push('new');
+      if (sectionCourses.curation.ids.length > 0) sectionsToFetch.push('curation');
+
       switchPanel('editor');
       addLog('레터 열기', d.month + '호');
-      toast(d.month + '호를 불러왔습니다');
+
+      if (sectionsToFetch.length > 0) {
+        toast(d.month + '호 로드 중... 강의 데이터 불러오는 중');
+        loadCoursesFromWorker().then(function(all) {
+          for (var si = 0; si < sectionsToFetch.length; si++) {
+            var sec = sectionsToFetch[si];
+            var ids = sectionCourses[sec].ids;
+            for (var i = 0; i < ids.length; i++) {
+              if (!courseCache[ids[i]]) {
+                for (var j = 0; j < all.length; j++) {
+                  if (String(all[j].id) === String(ids[i])) {
+                    courseCache[ids[i]] = all[j];
+                    break;
+                  }
+                }
+              }
+            }
+            renderCoursePreview(sec);
+          }
+          toast(d.month + '호 + 강의 데이터 로드 완료!', 'success');
+        }).catch(function() {
+          toast(d.month + '호 로드 완료 (강의 데이터 실패 - 불러오기 버튼 사용)', 'error');
+        });
+      } else {
+        toast(d.month + '호를 불러왔습니다');
+      }
     });
   }
 
