@@ -66,7 +66,7 @@ ${courseInfo.join("\n")}
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               temperature: 0.85,
-              maxOutputTokens: 300
+              maxOutputTokens: 1024
             }
           })
         });
@@ -80,7 +80,7 @@ ${courseInfo.join("\n")}
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: {
                 temperature: 0.85,
-                maxOutputTokens: 300
+                maxOutputTokens: 1024
               }
             })
           });
