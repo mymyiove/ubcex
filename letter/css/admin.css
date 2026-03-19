@@ -787,3 +787,112 @@ body {
   .preview-grid.layout-card { grid-template-columns: 1fr; }
   .course-id-row { flex-direction: column; }
 }
+
+/* === Thumbnail === */
+.preview-thumb {
+  width: 80px;
+  height: 45px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg-warm);
+}
+.preview-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* === Default Image Template === */
+.default-image-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+.btn-clear-image {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 12px;
+  font-size: 0.68rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font);
+}
+.btn-clear-image:hover { border-color: var(--danger); color: var(--danger); }
+.btn-restore-image {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 12px;
+  font-size: 0.68rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font);
+}
+.btn-restore-image:hover { border-color: var(--accent); color: var(--accent); }
+.image-preview-small {
+  height: 40px;
+  border-radius: 4px;
+  margin-top: 0.3rem;
+}
+
+/* === Custom Badge Input === */
+.custom-badge-row {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+  align-items: center;
+}
+.custom-badge-input {
+  flex: 1;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-family: var(--font);
+  outline: none;
+}
+.custom-badge-input:focus { border-color: var(--accent); }
+.btn-add-badge {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  border-radius: 6px;
+  font-size: 0.65rem;
+  cursor: pointer;
+  font-family: var(--font);
+  white-space: nowrap;
+}
+.btn-add-badge:hover { background: var(--accent); color: white; }
+
+/* === List item with thumb === */
+.preview-list-item-with-thumb {
+  display: flex;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: var(--bg-warm);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  align-items: flex-start;
+  transition: all 0.2s;
+}
+.preview-list-item-with-thumb:hover { border-color: var(--accent-light); }
+
+/* Card with thumb */
+.preview-mini-card-with-thumb {
+  display: flex;
+  gap: 0.8rem;
+  background: var(--bg-warm);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem;
+  transition: all 0.2s;
+}
+.preview-mini-card-with-thumb:hover { border-color: var(--accent-light); }
+.preview-mini-card-body { flex: 1; }
