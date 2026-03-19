@@ -1,15 +1,11 @@
-// ═══════════════════════════════════════════════════════════
-// letter-save.js — 레터 데이터 저장 API
-// POST /api/letter-save
-// ═══════════════════════════════════════════════════════════
 export async function onRequestPost(context) {
-  var { request, env } = context;
+  var request = context.request;
+  var env = context.env;
   var ADMIN_SECRET = 'gogo1014';
 
-  // 인증 확인
   var auth = request.headers.get('Authorization');
   if (!auth || auth !== 'Bearer ' + ADMIN_SECRET) {
-    return new Response(JSON.stringify({ success: false, error: '인증 실패' }), {
+    return new Response(JSON.stringify({ success: false, error: 'auth failed' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
     });
@@ -17,16 +13,15 @@ export async function onRequestPost(context) {
 
   try {
     var body = await request.json();
-    var month = body.month; // "2026-03"
+    var month = body.month;
 
     if (!month || !/^\d{4}-\d{2}$/.test(month)) {
-      return new Response(JSON.stringify({ success: false, error: '유효하지 않은 호수 형식 (YYYY-MM)' }), {
+      return new Response(JSON.stringify({ success: false, error: 'invalid month format' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
     }
 
-    // 레터 데이터 구조
     var letterData = {
       month: month,
       title: {
@@ -43,7 +38,7 @@ export async function onRequestPost(context) {
         en: body.readingTime_en || '📖 Reading time: ~5 min'
       },
 
-     insight: {
+      insight: {
         image: body.insight_image || '',
         pages: body.insight_pages || [],
         courseIds: body.insight_courseIds || [],
@@ -59,7 +54,10 @@ export async function onRequestPost(context) {
           en: body.newContent_editorHtml_en || ''
         },
         highlights: body.newContent_highlights || [],
-        summary: { ko: body.newContent_summary_ko || '', en: body.newContent_summary_en || '' },
+        summary: {
+          ko: body.newContent_summary_ko || '',
+          en: body.newContent_summary_en || ''
+        },
         courseIds: body.newContent_courseIds || [],
         courseComments: body.newContent_courseComments || {},
         courseBadges: body.newContent_courseBadges || {},
@@ -68,7 +66,10 @@ export async function onRequestPost(context) {
 
       curation: {
         image: body.curation_image || '',
-        intro: { ko: body.curation_intro_ko || '', en: body.curation_intro_en || '' },
+        intro: {
+          ko: body.curation_intro_ko || '',
+          en: body.curation_intro_en || ''
+        },
         tags: body.curation_tags || [],
         courseIds: body.curation_courseIds || [],
         courseComments: body.curation_courseComments || {},
@@ -76,13 +77,10 @@ export async function onRequestPost(context) {
         layout: body.curation_layout || 'list'
       },
 
-      // 섹션 4: 홍보
       promo: {
         pages: body.promo_pages || []
-        // 각 page: { html_ko: '...', html_en: '...' }
       },
 
-      // 마무리
       closing: {
         image: body.closing_image || '',
         message: {
@@ -91,23 +89,20 @@ export async function onRequestPost(context) {
         }
       },
 
-      // 메타
-      status: body.status || 'draft', // draft | published | sent
+      status: body.status || 'draft',
+      lastEditor: body.lastEditor || '',
       createdAt: body.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       sentTo: body.sentTo || [],
       stats: body.stats || { sent: 0, opened: 0, clicked: 0 }
     };
 
-    // KV에 저장
     var KV = env.COURSE_CACHE;
     await KV.put('letter_' + month, JSON.stringify(letterData));
 
-    // 레터 목록(인덱스) 업데이트
     var indexRaw = await KV.get('letter_index');
     var index = indexRaw ? JSON.parse(indexRaw) : [];
 
-    // 이미 있으면 업데이트, 없으면 추가
     var found = false;
     for (var i = 0; i < index.length; i++) {
       if (index[i].month === month) {
@@ -117,7 +112,8 @@ export async function onRequestPost(context) {
           title_en: letterData.title.en,
           status: letterData.status,
           updatedAt: letterData.updatedAt,
-          coverImage: letterData.coverImage
+          coverImage: letterData.coverImage,
+          lastEditor: letterData.lastEditor
         };
         found = true;
         break;
@@ -130,18 +126,17 @@ export async function onRequestPost(context) {
         title_en: letterData.title.en,
         status: letterData.status,
         updatedAt: letterData.updatedAt,
-        coverImage: letterData.coverImage
+        coverImage: letterData.coverImage,
+        lastEditor: letterData.lastEditor
       });
     }
 
-    // 최신순 정렬
     index.sort(function(a, b) { return b.month.localeCompare(a.month); });
-
     await KV.put('letter_index', JSON.stringify(index));
 
     return new Response(JSON.stringify({
       success: true,
-      message: month + '호 저장 완료',
+      message: month + ' saved',
       data: letterData
     }), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
@@ -155,7 +150,6 @@ export async function onRequestPost(context) {
   }
 }
 
-// CORS preflight
 export async function onRequestOptions() {
   return new Response(null, {
     headers: {
