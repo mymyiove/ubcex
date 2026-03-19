@@ -588,7 +588,9 @@
             instructor: c.instructor || '',
             category: c.category || '',
             difficulty: c.difficulty || '',
-            headline: c.headline || ''
+            headline: c.headline || '',
+            description: c.description || '',
+            objectives: c.objectives || ''
           }]
         }).then(function(res) {
           btn.disabled = false;
