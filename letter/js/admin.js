@@ -487,7 +487,7 @@
       $('#f-new-image').value=d.newContent?(d.newContent.image||DEFAULT_IMAGES.newContent):DEFAULT_IMAGES.newContent;
       $('#f-new-summary-ko').value=d.newContent&&d.newContent.summary?d.newContent.summary.ko:'';
       $('#f-curation-image').value=d.curation?(d.curation.image||DEFAULT_IMAGES.curation):DEFAULT_IMAGES.curation;
-      $('#f-curation-intro-ko').value=d.curation&&d.curation.intro?&&d.curation.intro?d.curation.intro.ko:'';
+      $('#f-curation-intro-ko').value=d.curation&&d.curation.intro?d.curation.intro.ko:''
       $('#f-closing-image').value=d.closing?(d.closing.image||DEFAULT_IMAGES.closing):DEFAULT_IMAGES.closing;
 
       if (d.curation&&d.curation.tags) {
