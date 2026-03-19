@@ -24,27 +24,37 @@ export async function onRequestPost(context) {
       );
     }
 
-    // Process one course at a time for reliability
     const results = [];
 
     for (let i = 0; i < courses.length; i++) {
       const c = courses[i];
 
-      const prompt = `너는 기업 교육 큐레이터야. 아래 Udemy 강의를 학습자에게 추천하려고 해.
-이 강의를 왜 들어야 하는지, 누구에게 좋은지 힙하고 매력적으로 2줄로 써줘.
-강의 제목은 포함하지 마. 순수 추천 이유만 써.
-마크다운이나 따옴표 없이 순수 텍스트만 써줘.
+      const courseInfo = [];
+      if (c.title) courseInfo.push("제목: " + c.title);
+      if (c.category) courseInfo.push("카테고리: " + c.category);
+      if (c.difficulty) courseInfo.push("난이도: " + c.difficulty);
+      if (c.instructor) courseInfo.push("강사: " + c.instructor);
+      if (c.rating) courseInfo.push("평점: " + c.rating);
+      if (c.duration) courseInfo.push("수강시간: " + c.duration);
+      if (c.headline) courseInfo.push("소개: " + c.headline);
+      if (c.description) courseInfo.push("상세설명: " + c.description.substring(0, 1500));
+      if (c.objectives) courseInfo.push("학습목표: " + c.objectives.substring(0, 500));
+
+      const prompt = `너는 기업 교육 뉴스레터 에디터야. 아래 Udemy 강의를 기업 학습자에게 추천하려고 해.
+
+이 강의를 왜 들어야 하는지 추천 이유를 한국어로 2~3줄로 써줘.
+- 누구에게 특히 좋은지 (직무, 상황)
+- 이 강의만의 차별점이나 매력 포인트
+- 실무에 어떻게 도움이 되는지
+
+톤: 친근하면서도 전문적, 힙하고 매력적으로!
+강의 제목은 포함하지 마.
+마크다운, 따옴표, 번호 없이 순수 텍스트만.
 
 강의 정보:
-- 제목: ${c.title || ""}
-- 카테고리: ${c.category || ""}
-- 난이도: ${c.difficulty || ""}
-- 강사: ${c.instructor || ""}
-- 평점: ${c.rating || ""}
-- 수강시간: ${c.duration || ""}
-- 소개: ${c.headline || ""}
+${courseInfo.join("\n")}
 
-추천 이유 (2줄):`;
+추천 이유:`;
 
       try {
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -55,8 +65,8 @@ export async function onRequestPost(context) {
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
-              temperature: 0.8,
-              maxOutputTokens: 200
+              temperature: 0.85,
+              maxOutputTokens: 300
             }
           })
         });
@@ -69,8 +79,8 @@ export async function onRequestPost(context) {
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: {
-                temperature: 0.8,
-                maxOutputTokens: 200
+                temperature: 0.85,
+                maxOutputTokens: 300
               }
             })
           });
@@ -84,13 +94,10 @@ export async function onRequestPost(context) {
             .replace(/^\s*[-*•]\s*/gm, "")
             .replace(/^["'`]|["'`]$/g, "")
             .replace(/^\d+\.\s*/gm, "")
+            .replace(/\n{3,}/g, "\n\n")
             .trim();
 
-          if (cleaned && cleaned.length > 5) {
-            results.push({ id: c.id, comment_ko: cleaned });
-          } else {
-            results.push({ id: c.id, comment_ko: "" });
-          }
+          results.push({ id: c.id, comment_ko: cleaned || "" });
         } else {
           results.push({ id: c.id, comment_ko: "" });
         }
