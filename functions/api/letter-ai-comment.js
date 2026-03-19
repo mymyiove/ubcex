@@ -34,40 +34,75 @@ export async function onRequestPost(context) {
         ' | headline:' + (c.headline || '') + '\n';
     }
 
-    var prompt = 'You are a corporate learning curator for Udemy Business.\n' +
-      'For each course below, write a 2-line recommendation comment in Korean.\n' +
-      'Format: "누구에게 좋은지 + 왜 좋은지" in a friendly, professional tone.\n' +
-      'Do NOT include the course title in the comment.\n' +
-      'Do NOT use markdown. Plain text only.\n' +
-      'Return JSON array format: [{"id":"12345","comment_ko":"...","comment_en":"..."}]\n\n' +
-      'Courses:\n' + courseList;
+    var prompt = '당신은 Udemy Business 기업 교육 큐레이터입니다.\n' +
+      '아래 각 강의에 대해 2줄 이내의 추천 코멘트를 한국어로 작성하세요.\n' +
+      '형식: "누구에게 좋은지 + 왜 좋은지" 친근하고 전문적인 톤으로.\n' +
+      '강의 제목을 코멘트에 포함하지 마세요.\n' +
+      '마크다운 사용하지 마세요. 순수 텍스트만.\n' +
+      'JSON 배열로만 반환: [{"id":"12345","comment_ko":"..."}]\n' +
+      '다른 텍스트 없이 순수 JSON만 반환하세요.\n\n' +
+      '강의 목록:\n' + courseList;
 
-    var GEMINI_KEY = env.GEMINI_API_KEY || '';
-    if (!GEMINI_KEY) {
-      return new Response(JSON.stringify({ success: false, error: 'Gemini API key not configured' }), {
+    var apiKey = env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return new Response(JSON.stringify({ success: false, error: 'GEMINI_API_KEY not configured' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
     }
 
-    var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY;
+    // Use gemini-2.5-flash (same as ai-expand.js)
+    var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
 
-    var geminiRes = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 4096
-        }
-      })
-    });
+    var geminiRes = null;
+    var retries = 0;
+    var maxRetries = 3;
+
+    while (retries <= maxRetries) {
+      geminiRes = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+        })
+      });
+
+      if (geminiRes.status === 429) {
+        retries++;
+        if (retries > maxRetries) break;
+        var waitTime = Math.pow(2, retries) * 5000;
+        await new Promise(function(r) { setTimeout(r, waitTime); });
+        continue;
+      }
+      break;
+    }
+
+    // Fallback to gemini-3.1-flash-lite-preview
+    if (!geminiRes || !geminiRes.ok) {
+      var fallbackUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=' + apiKey;
+      geminiRes = await fetch(fallbackUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+        })
+      });
+
+      if (!geminiRes.ok) {
+        var errText = await geminiRes.text();
+        return new Response(JSON.stringify({ success: false, error: 'Gemini API ' + geminiRes.status + ': ' + errText.substring(0, 300) }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
+      }
+    }
 
     var geminiData = await geminiRes.json();
 
     if (!geminiData.candidates || !geminiData.candidates[0]) {
-      return new Response(JSON.stringify({ success: false, error: 'Gemini returned no candidates' }), {
+      return new Response(JSON.stringify({ success: false, error: 'No candidates returned', raw: JSON.stringify(geminiData).substring(0, 500) }), {
         status: 500,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
@@ -75,33 +110,27 @@ export async function onRequestPost(context) {
 
     var rawText = geminiData.candidates[0].content.parts[0].text || '';
 
-    // Extract JSON from response
-    var jsonMatch = rawText.match(/$[\s\S]*$/);
+    // Clean and parse JSON
+    var cleaned = rawText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    var jsonMatch = cleaned.match(/$[\s\S]*$/);
     var comments = [];
+
     if (jsonMatch) {
-      try {
-        comments = JSON.parse(jsonMatch[0]);
-      } catch (e) {
-        comments = [];
-      }
+      try { comments = JSON.parse(jsonMatch[0]); } catch (e) { comments = []; }
     }
 
-    // Fallback: parse line by line if JSON failed
+    // Fallback: line-by-line parsing
     if (comments.length === 0 && courses.length > 0) {
-      var lines = rawText.split('\n').filter(function(l) { return l.trim(); });
+      var lines = rawText.split('\n').filter(function(l) { return l.trim() && l.trim().length > 10; });
       for (var i = 0; i < courses.length && i < lines.length; i++) {
         comments.push({
           id: courses[i].id,
-          comment_ko: lines[i].replace(/^\d+[\.\)]\s*/, '').replace(/$.*?$\s*/, '').trim(),
-          comment_en: ''
+          comment_ko: lines[i].replace(/^\d+[\.\)]\s*/, '').replace(/$.*?$\s*/, '').replace(/^["']|["']$/g, '').trim()
         });
       }
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      comments: comments
-    }), {
+    return new Response(JSON.stringify({ success: true, comments: comments }), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
     });
 
