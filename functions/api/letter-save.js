@@ -43,39 +43,37 @@ export async function onRequestPost(context) {
         en: body.readingTime_en || '📖 Reading time: ~5 min'
       },
 
-      // 섹션 1: 트렌드 인사이트
-      insight: {
+     insight: {
         image: body.insight_image || '',
-        pages: body.insight_pages || []
-        // 각 page: { html_ko: '...', html_en: '...' }
+        pages: body.insight_pages || [],
+        courseIds: body.insight_courseIds || [],
+        courseComments: body.insight_courseComments || {},
+        courseBadges: body.insight_courseBadges || {},
+        layout: body.insight_layout || 'card'
       },
 
-      // 섹션 2: 신규 콘텐츠
       newContent: {
         image: body.newContent_image || '',
+        editorHtml: {
+          ko: body.newContent_editorHtml_ko || '',
+          en: body.newContent_editorHtml_en || ''
+        },
         highlights: body.newContent_highlights || [],
-        // 각 highlight: { badge, title_ko, title_en, desc_ko, desc_en, courses: [...] }
-        summary: {
-          ko: body.newContent_summary_ko || '',
-          en: body.newContent_summary_en || ''
-        }
+        summary: { ko: body.newContent_summary_ko || '', en: body.newContent_summary_en || '' },
+        courseIds: body.newContent_courseIds || [],
+        courseComments: body.newContent_courseComments || {},
+        courseBadges: body.newContent_courseBadges || {},
+        layout: body.newContent_layout || 'highlight'
       },
 
-      // 섹션 3: 큐레이션
       curation: {
         image: body.curation_image || '',
-        intro: {
-          ko: body.curation_intro_ko || '',
-          en: body.curation_intro_en || ''
-        },
+        intro: { ko: body.curation_intro_ko || '', en: body.curation_intro_en || '' },
         tags: body.curation_tags || [],
-        // 각 tag: { ko: '...', en: '...' }
         courseIds: body.curation_courseIds || [],
-        // 강의 ID 배열 → Explorer KV에서 데이터 조회
         courseComments: body.curation_courseComments || {},
-        // { "12345": { ko: "추천 코멘트...", en: "Recommended..." } }
-        courseBadges: body.curation_courseBadges || {}
-        // { "12345": { ko: "🔥 가장 인기", en: "🔥 Most Popular", class: "badge-popular" } }
+        courseBadges: body.curation_courseBadges || {},
+        layout: body.curation_layout || 'list'
       },
 
       // 섹션 4: 홍보
