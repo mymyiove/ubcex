@@ -64,14 +64,12 @@
   function apiCall(ep, method, body) {
     var opts = { method: method || 'GET', headers: { 'Content-Type': 'application/json' } };
     if (method === 'POST') {
-      opts.headers['Authorization'] = 'Bearer ' + ADMIN_SECRET;
+      if (ep.indexOf('/letter-save') !== -1 || ep.indexOf('/letter-delete') !== -1) {
+        opts.headers['Authorization'] = 'Bearer ' + ADMIN_SECRET;
+      }
       opts.body = JSON.stringify(body);
     }
     return fetch(API_BASE + ep, opts).then(function(r) { return r.json(); });
-  }
-
-  function escHtml(s) {
-    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function formatDuration(m) {
