@@ -1139,30 +1139,28 @@ body {
 .comment-row {
   display: flex;
   gap: 0.4rem;
-  align-items: flex-start;
+  align-items: stretch;
   margin-top: 0.4rem;
 }
 .comment-row .course-comment-input {
   flex: 1;
-  min-height: 45px;
+  min-height: 50px;
+  resize: vertical;
 }
 .btn-ai-single {
-  padding: 0.4rem 0.5rem;
+  width: 40px;
+  min-width: 40px;
   background: linear-gradient(135deg, #7c6cf0, #ec4899);
   color: white;
   border: none;
   border-radius: 8px;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   cursor: pointer;
-  white-space: nowrap;
   transition: all 0.2s;
-  font-family: var(--font);
-  flex-shrink: 0;
-  height: 45px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
+  flex-shrink: 0;
 }
 .btn-ai-single:hover { box-shadow: 0 2px 8px rgba(124,108,240,0.3); }
 .btn-ai-single:disabled { opacity: 0.5; cursor: wait; }
