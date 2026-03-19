@@ -443,14 +443,122 @@
       });
     }
 
+    // Language toggle - Google Translate live translation
+    var isTranslated = false;
+    var originalTexts = [];
+
     var lBtns = document.querySelectorAll('.lang-btn');
     for (var i = 0; i < lBtns.length; i++) {
       lBtns[i].addEventListener('click', function() {
         var nl = this.getAttribute('data-lang');
-        var url = new URL(window.location);
-        if (nl === 'ko') url.searchParams.delete('lang'); else url.searchParams.set('lang', nl);
-        window.location.href = url.toString();
+
+        for (var j = 0; j < lBtns.length; j++) lBtns[j].classList.remove('active');
+        this.classList.add('active');
+
+        if (nl === 'en' && !isTranslated) {
+          translatePageToEnglish();
+        } else if (nl === 'ko' && isTranslated) {
+          restoreOriginal();
+        }
       });
+    }
+
+    function translatePageToEnglish() {
+      var targets = document.querySelectorAll('#letter-content h1, #letter-content h2, #letter-content h3, #letter-content p, #letter-content span.index-title, #letter-content span.curation-tag, #letter-content .curation-rich-comment, #letter-content .curation-note, #letter-content .ai-comment, #letter-content .cover-subtitle, #letter-content .cover-company, #letter-content .cover-reading-time, #letter-content .cover-badge, #letter-content .new-summary');
+
+      var toTranslate = [];
+      originalTexts = [];
+
+      for (var i = 0; i < targets.length; i++) {
+        var text = targets[i].textContent.trim();
+        if (!text || text.length < 2) continue;
+        var koChars = (text.match(/[\uac00-\ud7af]/g) || []).length;
+        if (koChars < text.length * 0.2) continue;
+        toTranslate.push({ el: targets[i], text: text, origHtml: targets[i].innerHTML });
+        originalTexts.push({ el: targets[i], html: targets[i].innerHTML });
+      }
+
+      if (toTranslate.length === 0) return;
+
+      var separator = '\n\u00a7\u00a7\u00a7\n';
+      var combinedText = '';
+      for (var i = 0; i < toTranslate.length; i++) {
+        if (i > 0) combinedText += separator;
+        combinedText += toTranslate[i].text.substring(0, 1000);
+      }
+
+      var chunks = [];
+      if (combinedText.length <= 4000) {
+        chunks.push({ text: combinedText, items: toTranslate });
+      } else {
+        var currentChunk = '';
+        var currentItems = [];
+        for (var i = 0; i < toTranslate.length; i++) {
+          var addition = (currentItems.length > 0 ? separator : '') + toTranslate[i].text.substring(0, 1000);
+          if (currentChunk.length + addition.length > 4000 && currentItems.length > 0) {
+            chunks.push({ text: currentChunk, items: currentItems.slice() });
+            currentChunk = toTranslate[i].text.substring(0, 1000);
+            currentItems = [toTranslate[i]];
+          } else {
+            currentChunk += addition;
+            currentItems.push(toTranslate[i]);
+          }
+        }
+        if (currentItems.length > 0) chunks.push({ text: currentChunk, items: currentItems });
+      }
+
+      var translateChunk = function(chunk) {
+        return fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=en&dt=t&q=' + encodeURIComponent(chunk.text))
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            var fullTranslation = '';
+            if (data && data[0]) {
+              for (var j = 0; j < data[0].length; j++) {
+                if (data[0][j] && data[0][j][0]) fullTranslation += data[0][j][0];
+              }
+            }
+            return { items: chunk.items, translation: fullTranslation };
+          })
+          .catch(function() { return { items: chunk.items, translation: '' }; });
+      };
+
+      var promises = [];
+      for (var i = 0; i < chunks.length; i++) {
+        promises.push(translateChunk(chunks[i]));
+      }
+
+      Promise.all(promises).then(function(results) {
+        for (var r = 0; r < results.length; r++) {
+          var result = results[r];
+          if (!result.translation) continue;
+          var parts = result.translation.split(/\u00a7\u00a7\u00a7/);
+          for (var i = 0; i < Math.min(parts.length, result.items.length); i++) {
+            var tr = parts[i].trim();
+            if (tr) {
+              result.items[i].el.textContent = tr;
+            }
+          }
+        }
+        isTranslated = true;
+        showToast('🌐 English translation applied!');
+      });
+    }
+
+    function restoreOriginal() {
+      for (var i = 0; i < originalTexts.length; i++) {
+        originalTexts[i].el.innerHTML = originalTexts[i].html;
+      }
+      isTranslated = false;
+      originalTexts = [];
+      showToast('🇰🇷 한국어로 복원!');
+    }
+
+    function showToast(msg) {
+      var el = document.createElement('div');
+      el.style.cssText = 'position:fixed;bottom:2rem;right:2rem;padding:0.8rem 1.5rem;background:#1a1a2e;color:white;border-radius:10px;font-size:0.85rem;z-index:1000;';
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(function() { el.remove(); }, 3000);
     }
 
     var pBar = document.getElementById('scroll-progress');
