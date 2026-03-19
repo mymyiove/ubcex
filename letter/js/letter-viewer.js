@@ -1,8 +1,6 @@
 (function() {
 
   var API_BASE = '/api';
-  var WORKER_URL = 'https://udemy-sync.mymyiove882.workers.dev';
-  var WORKER_SECRET = 'gogo1014';
   var EXPLORER_BASE = 'https://ubcexp.pages.dev';
 
   var DEFAULT_IMAGES = {
@@ -249,7 +247,6 @@
       html += '</a>';
     }
     nav.innerHTML = html;
-
     var items = nav.querySelectorAll('.side-nav-item');
     for (var i = 0; i < items.length; i++) {
       items[i].addEventListener('click', function(e) {
@@ -262,13 +259,11 @@
         }
       });
     }
-
     var sections = [];
     for (var i = 0; i < navItems.length; i++) {
       var el = document.getElementById(navItems[i].id);
       if (el) sections.push({ id: navItems[i].id, el: el });
     }
-
     window.addEventListener('scroll', function() {
       var coverEnd = document.querySelector('.index-section');
       if (coverEnd) nav.classList.toggle('visible', window.scrollY > coverEnd.offsetTop - 100);
@@ -313,13 +308,14 @@
     var c = courseDataMap[id];
     if (!c) return '';
     var cm = getComment(comment);
+    var url = courseUrl(c);
     var html = '<div class="course-mini-card">';
-    if (c.image) html += '<img src="' + esc(c.image) + '" alt="" />';
+    if (c.image) html += '<a href="' + url + '" target="_blank"><img src="' + esc(c.image) + '" alt="" /></a>';
     if (badge) html += badgeHtml(badge);
-    html += '<h4>' + esc((c.title || '').substring(0, 50)) + '</h4>';
+    html += '<h4><a href="' + url + '" target="_blank" style="color:inherit;text-decoration:none;">' + esc((c.title || '').substring(0, 50)) + '</a></h4>';
     html += '<div style="font-size:0.72rem;color:#9090aa;margin-bottom:0.4rem;">' + metaLine(c) + '</div>';
     if (cm) html += '<div class="ai-comment">💡 ' + esc(cm) + '</div>';
-    html += '<a href="' + courseUrl(c) + '" target="_blank" class="mini-link">\uc9c0\uae08 \uc218\uac15\ud558\uae30 \u2192</a>';
+    html += '<a href="' + url + '" target="_blank" class="mini-link">\uc9c0\uae08 \uc218\uac15\ud558\uae30 \u2192</a>';
     html += '</div>';
     return html;
   }
@@ -328,14 +324,15 @@
     var c = courseDataMap[id];
     if (!c) return '';
     var cm = getComment(comment);
+    var url = courseUrl(c);
     var html = '<div class="new-highlight-card">';
     if (badge) html += badgeHtml(badge);
     else html += '<div class="highlight-badge">🆕 NEW</div>';
-    if (c.image) html += '<img src="' + esc(c.image) + '" alt="" />';
-    html += '<h3>' + esc(c.title || '') + '</h3>';
+    if (c.image) html += '<a href="' + url + '" target="_blank"><img src="' + esc(c.image) + '" alt="" /></a>';
+    html += '<h3><a href="' + url + '" target="_blank" style="color:inherit;text-decoration:none;">' + esc(c.title || '') + '</a></h3>';
     html += '<div style="font-size:0.78rem;color:#4a4a6a;margin-bottom:0.5rem;">' + metaLine(c) + '</div>';
     if (cm) html += '<p style="font-size:0.82rem;color:#4a4a6a;margin-bottom:0.8rem;">💡 ' + esc(cm) + '</p>';
-    html += '<a href="' + courseUrl(c) + '" target="_blank" class="mini-link">\uc218\uac15\ud558\uae30 \u2192</a>';
+    html += '<a href="' + url + '" target="_blank" class="mini-link">\uc218\uac15\ud558\uae30 \u2192</a>';
     html += '</div>';
     return html;
   }
@@ -344,14 +341,15 @@
     var c = courseDataMap[id];
     if (!c) return '';
     var cm = getComment(comment);
+    var url = courseUrl(c);
     var html = '<div class="curation-rich-item">';
     html += '<div class="curation-rank">' + String(idx + 1).padStart(2, '0') + '</div>';
     html += '<div class="curation-rich-info">';
     if (badge) html += badgeHtml(badge);
-    html += '<a href="' + courseUrl(c) + '" target="_blank" class="curation-rich-title">' + esc(c.title || '') + '</a>';
+    html += '<a href="' + url + '" target="_blank" class="curation-rich-title">' + esc(c.title || '') + '</a>';
     html += '<div class="curation-rich-meta">' + metaSpans(c) + '</div>';
     if (cm) html += '<div class="curation-rich-comment">' + esc(cm) + '</div>';
-    html += '<a href="' + courseUrl(c) + '" target="_blank" class="curation-rich-cta">\uc9c0\uae08 \ubc14\ub85c \uc2dc\uc791\ud558\uae30 \u2192</a>';
+    html += '<a href="' + url + '" target="_blank" class="curation-rich-cta">\uc9c0\uae08 \ubc14\ub85c \uc2dc\uc791\ud558\uae30 \u2192</a>';
     html += '</div></div>';
     return html;
   }
@@ -402,7 +400,7 @@
     var unsub = document.getElementById('btn-unsubscribe');
     if (unsub) unsub.addEventListener('click', function(e) {
       e.preventDefault();
-      if (confirm('\uc218\uc2e0\uac70\ubd80 \ud558\uc2dcdc\uaca0\uc2b5\ub2c8\uae4c?')) {
+      if (confirm('\uc218\uc2e0\uac70\ubd80 \ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c?')) {
         alert('\ucc98\ub9ac\ub418\uc5c8\uc2b5\ub2c8\ub2e4.');
       }
     });
@@ -419,7 +417,6 @@
       });
     }
 
-    // === Language Toggle with Google Translate ===
     var isTranslated = false;
     var originalTexts = [];
     var templateOriginals = [];
@@ -436,8 +433,6 @@
           restoreOriginal();
         }
       });
-
-      
     }
 
     function translatePageToEnglish() {
@@ -449,18 +444,25 @@
         '#letter-content .cover-reading-time, ' +
         '#letter-content .section-header h2, ' +
         '#letter-content .section-header p, ' +
-        '#letter-content .insight-card > h3, ' +
-        '#letter-content .insight-card > p, ' +
+        '#letter-content .insight-card h3, ' +
+        '#letter-content .insight-card p, ' +
         '#letter-content .insight-subtitle, ' +
         '#letter-content .curation-header h3, ' +
         '#letter-content .curation-tag, ' +
         '#letter-content .curation-rich-comment, ' +
+        '#letter-content .curation-rich-meta span, ' +
         '#letter-content .curation-note, ' +
         '#letter-content .ai-comment, ' +
         '#letter-content .new-summary, ' +
         '#letter-content .closing-template h2, ' +
         '#letter-content .closing-template p, ' +
-        '#letter-content .cta-banner > p'
+        '#letter-content .cta-banner > p, ' +
+        '#letter-content .course-mini-card h4 a, ' +
+        '#letter-content .course-mini-card > div, ' +
+        '#letter-content .new-highlight-card h3 a, ' +
+        '#letter-content .new-highlight-card > div, ' +
+        '#letter-content .new-highlight-card > p, ' +
+        '#letter-content .course-badge'
       );
 
       var toTranslate = [];
@@ -628,6 +630,12 @@
         templateOriginals.push({ el: cNote, html: cNote.innerHTML });
         cNote.textContent = '💡 Click a course title to visit the course page. All courses are free on the Udemy Business Learning Hub.';
       }
+
+      var footerCopyright = document.querySelector('.footer-copyright');
+      if (footerCopyright) {
+        templateOriginals.push({ el: footerCopyright, html: footerCopyright.innerHTML });
+        footerCopyright.textContent = 'Udemy Letter | Woongjin ThinkBig \u00a9 2026';
+      }
     }
 
     function restoreTemplateToKorean() {
@@ -645,7 +653,18 @@
       setTimeout(function() { el.remove(); }, 3000);
     }
 
-    // === Scroll: progress + header + top btn ===
+    // Auto-translate if lang=en
+    if (lang === 'en') {
+      setTimeout(function() {
+        var enBtn = document.querySelector('.lang-btn[data-lang="en"]');
+        if (enBtn) {
+          for (var j = 0; j < lBtns.length; j++) lBtns[j].classList.remove('active');
+          enBtn.classList.add('active');
+          translatePageToEnglish();
+        }
+      }, 1500);
+    }
+
     var pBar = document.getElementById('scroll-progress');
     var hdr = document.getElementById('letter-header');
     var topBtn = document.getElementById('scroll-to-top');
@@ -666,7 +685,6 @@
       }
     });
 
-    // === Scroll animations ===
     var aEls = document.querySelectorAll('.content-section, .index-card, .insight-card, .course-mini-card, .new-highlight-card, .curation-rich-item, .closing-template, .cta-banner, .curation-header, .new-summary, .section-illustration, .closing-illustration, .curation-banner-image');
     for (var i = 0; i < aEls.length; i++) aEls[i].classList.add('animate-on-scroll');
     var cItems = document.querySelectorAll('.curation-rich-item');
@@ -681,7 +699,6 @@
     for (var i = 0; i < sEls.length; i++) obs.observe(sEls[i]);
   }
 
-  // === Utils ===
   function t(obj) {
     if (!obj) return '';
     if (typeof obj === 'string') return obj;
