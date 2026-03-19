@@ -5,27 +5,41 @@
   var ADMIN_CODE = 'jhj11';
   var WORKER_URL = 'https://udemy-sync.mymyiove882.workers.dev';
 
+  // Default template images
+  var DEFAULT_IMAGES = {
+    cover: 'src/img/Brand_Launch.jpg',
+    insight: 'src/img/Global_Learning.png',
+    newContent: 'src/img/Instructor_Journey.jpg',
+    curation: 'src/img/Learning_at_Home.jpg',
+    closing: 'src/img/Brand_Launch_2.png'
+  };
+
   var editors = {};
   var currentMonth = null;
   var insightPageCount = 1;
   var promoPageCount = 1;
-
-  // Course data cache
   var courseCache = {};
-  // Section course data
+  var allCoursesCache = null;
+
   var sectionCourses = {
-    insight: { ids: [], data: {}, comments: {}, badges: {}, layout: 'card' },
-    new: { ids: [], data: {}, comments: {}, badges: {}, layout: 'highlight' },
-    curation: { ids: [], data: {}, comments: {}, badges: {}, layout: 'list' }
+    insight: { ids: [], comments: {}, badges: {}, layout: 'card' },
+    new: { ids: [], comments: {}, badges: {}, layout: 'highlight' },
+    curation: { ids: [], comments: {}, badges: {}, layout: 'list' }
   };
 
   var BADGE_OPTIONS = [
-    { id: 'popular', ko: '🔥 가장 인기', cls: 'badge-popular' },
-    { id: 'shortest', ko: '⚡ 가장 짧은', cls: 'badge-shortest' },
-    { id: 'top-rated', ko: '🏆 평점 최고', cls: 'badge-top-rated' },
-    { id: 'new', ko: '🆕 신규', cls: 'badge-new' },
-    { id: 'essential', ko: '💼 실무 필수', cls: 'badge-essential' }
+    { id: 'popular', ko: '🔥 가장 인기' },
+    { id: 'shortest', ko: '⚡ 가장 짧은' },
+    { id: 'top-rated', ko: '🏆 평점 최고' },
+    { id: 'new', ko: '🆕 신규' },
+    { id: 'essential', ko: '💼 실무 필수' }
   ];
+
+  // Load custom badges from localStorage
+  var customBadges = JSON.parse(localStorage.getItem('letter_custom_badges') || '[]');
+  for (var i = 0; i < customBadges.length; i++) {
+    BADGE_OPTIONS.push(customBadges[i]);
+  }
 
   function $(sel) { return document.querySelector(sel); }
   function $$(sel) { return document.querySelectorAll(sel); }
@@ -47,6 +61,31 @@
       opts.body = JSON.stringify(body);
     }
     return fetch(API_BASE + endpoint, opts).then(function(r) { return r.json(); });
+  }
+
+  function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function formatDuration(minutes) {
+    if (!minutes || minutes <= 0) return '';
+    var h = Math.floor(minutes / 60);
+    var m = minutes % 60;
+    if (h > 0 && m > 0) return h + 'h ' + m + 'm';
+    if (h > 0) return h + 'h';
+    return m + 'm';
+  }
+
+  function mapDifficulty(d) {
+    var map = { 'Beginner': '초급', 'BEGINNER': '초급', 'Intermediate': '중급', 'INTERMEDIATE': '중급', 'Expert': '고급', 'EXPERT': '고급', 'All Levels': '모든 수준', 'ALL_LEVELS': '모든 수준' };
+    return map[d] || d || '';
+  }
+
+  // Parse IDs from any format: comma, space, newline, tab
+  function parseIds(raw) {
+    if (!raw) return [];
+    return raw.split(/[\s,;\t\n]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s && /^\d+$/.test(s); });
   }
 
   // === Gate ===
@@ -81,9 +120,7 @@
   // === Section Toggle ===
   var sectionHeaders = $$('.section-card-header');
   for (var i = 0; i < sectionHeaders.length; i++) {
-    sectionHeaders[i].addEventListener('click', function() {
-      this.parentElement.classList.toggle('collapsed');
-    });
+    sectionHeaders[i].addEventListener('click', function() { this.parentElement.classList.toggle('collapsed'); });
   }
 
   // === Init ===
@@ -91,23 +128,80 @@
     initEditors();
     initLayoutSelectors();
     initFetchButtons();
+    initImageTemplates();
     loadLetterList();
+  }
+
+  // === Default Image Templates ===
+  function initImageTemplates() {
+    setupImageField('f-cover-image', DEFAULT_IMAGES.cover);
+    setupImageField('f-insight-image', DEFAULT_IMAGES.insight);
+    setupImageField('f-new-image', DEFAULT_IMAGES.newContent);
+    setupImageField('f-curation-image', DEFAULT_IMAGES.curation);
+    setupImageField('f-closing-image', DEFAULT_IMAGES.closing);
+  }
+
+  function setupImageField(inputId, defaultUrl) {
+    var input = $('#' + inputId);
+    if (!input) return;
+
+    // Set default value if empty
+    if (!input.value) input.value = defaultUrl;
+
+    // Find or create button row
+    var parent = input.parentElement;
+    var existing = parent.querySelector('.default-image-row');
+    if (existing) existing.remove();
+
+    var row = document.createElement('div');
+    row.className = 'default-image-row';
+    row.innerHTML = '<button class="btn-clear-image" data-input="' + inputId + '">✕ 비우기</button>' +
+      '<button class="btn-restore-image" data-input="' + inputId + '" data-default="' + defaultUrl + '">↩ 기본 이미지</button>' +
+      (input.value ? '<img class="image-preview-small" src="' + escHtml(input.value) + '" onerror="this.style.display=\'none\'" />' : '');
+    parent.appendChild(row);
+
+    row.querySelector('.btn-clear-image').addEventListener('click', function() {
+      $('#' + this.getAttribute('data-input')).value = '';
+      var img = row.querySelector('.image-preview-small');
+      if (img) img.style.display = 'none';
+    });
+
+    row.querySelector('.btn-restore-image').addEventListener('click', function() {
+      var inp = $('#' + this.getAttribute('data-input'));
+      inp.value = this.getAttribute('data-default');
+      var img = row.querySelector('.image-preview-small');
+      if (img) { img.src = inp.value; img.style.display = ''; }
+      else {
+        var newImg = document.createElement('img');
+        newImg.className = 'image-preview-small';
+        newImg.src = inp.value;
+        row.appendChild(newImg);
+      }
+    });
+
+    // Update preview on input change
+    input.addEventListener('input', function() {
+      var img = row.querySelector('.image-preview-small');
+      if (this.value) {
+        if (img) { img.src = this.value; img.style.display = ''; }
+        else {
+          var newImg = document.createElement('img');
+          newImg.className = 'image-preview-small';
+          newImg.src = this.value;
+          newImg.onerror = function() { this.style.display = 'none'; };
+          row.appendChild(newImg);
+        }
+      } else {
+        if (img) img.style.display = 'none';
+      }
+    });
   }
 
   // === Quill ===
   function createQuill(selector, placeholder) {
     return new Quill(selector, {
       theme: 'snow',
-      modules: {
-        toolbar: [
-          [{ header: [2, 3, 4, false] }],
-          ['bold', 'italic', 'underline', 'strike'],
-          [{ color: [] }, { background: [] }],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          ['link', 'image'],
-          ['clean']
-        ]
-      },
+      modules: { toolbar: [[{ header: [2, 3, 4, false] }], ['bold', 'italic', 'underline', 'strike'], [{ color: [] }, { background: [] }], [{ list: 'ordered' }, { list: 'bullet' }], ['link', 'image'], ['clean']] },
       placeholder: placeholder || ''
     });
   }
@@ -158,9 +252,7 @@
         if (firstTab) switchPage(section, firstTab.getAttribute('data-page'));
         return;
       }
-      if (e.target.classList.contains('page-tab')) {
-        switchPage(section, e.target.getAttribute('data-page'));
-      }
+      if (e.target.classList.contains('page-tab')) switchPage(section, e.target.getAttribute('data-page'));
     });
   }
 
@@ -206,18 +298,19 @@
   function fetchCourses(section) {
     var inputId = section === 'curation' ? 'f-curation-ids' : 'f-' + section + '-course-ids';
     var raw = $('#' + inputId).value.trim();
-    if (!raw) { toast('강의 ID를 입력해주세요', 'error'); return; }
+    var ids = parseIds(raw);
 
-    var ids = raw.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
-    if (ids.length === 0) { toast('유효한 ID가 없습니다', 'error'); return; }
+    if (ids.length === 0) { toast('강의 ID를 입력해주세요', 'error'); return; }
+
+    // Normalize input display
+    $('#' + inputId).value = ids.join(', ');
 
     var statusEl = $('#' + section + '-fetch-status');
-    statusEl.textContent = '⏳ ' + ids.length + '개 강불러오는 중...';
+    statusEl.textContent = '⏳ ' + ids.length + '개 강의 불러오는 중...';
     statusEl.className = 'fetch-status';
 
     sectionCourses[section].ids = ids;
 
-    // Fetch from Explorer Worker
     var uncached = [];
     for (var i = 0; i < ids.length; i++) {
       if (!courseCache[ids[i]]) uncached.push(ids[i]);
@@ -230,7 +323,6 @@
       return;
     }
 
-    // Load all chunks and find courses
     loadCoursesFromWorker().then(function(allCourses) {
       var found = 0;
       for (var i = 0; i < ids.length; i++) {
@@ -243,15 +335,11 @@
           }
         }
       }
-
       var notFound = ids.length - found;
-      if (notFound > 0) {
-        statusEl.textContent = '✅ ' + found + '개 로드 / ❌ ' + notFound + '개 미발견';
-        statusEl.className = 'fetch-status';
-      } else {
-        statusEl.textContent = '✅ ' + found + '개 강의 로드 완료!';
-        statusEl.className = 'fetch-status success';
-      }
+      statusEl.textContent = notFound > 0
+        ? '✅ ' + found + '개 로드 / ❌ ' + notFound + '개 미발견'
+        : '✅ ' + found + '개 강의 로드 완료!';
+      statusEl.className = 'fetch-status' + (notFound > 0 ? '' : ' success');
       renderCoursePreview(section);
     }).catch(function(e) {
       statusEl.textContent = '❌ 로드 실패: ' + e.message;
@@ -259,33 +347,24 @@
     });
   }
 
-  var allCoursesCache = null;
   function loadCoursesFromWorker() {
     if (allCoursesCache) return Promise.resolve(allCoursesCache);
-
-    return fetch(WORKER_URL + '/status', {
-      headers: { 'Authorization': 'Bearer ' + ADMIN_SECRET }
-    }).then(function(r) { return r.json(); }).then(function(status) {
-      var totalChunks = status.totalChunks || 0;
-      if (totalChunks === 0) throw new Error('No chunks');
-
-      var promises = [];
-      for (var i = 0; i < totalChunks; i++) {
-        promises.push(
-          fetch(WORKER_URL + '/get-courses?chunk=' + i, {
-            headers: { 'Authorization': 'Bearer ' + ADMIN_SECRET }
-          }).then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; })
-        );
-      }
-      return Promise.all(promises);
-    }).then(function(results) {
-      var all = [];
-      for (var i = 0; i < results.length; i++) {
-        if (Array.isArray(results[i])) all = all.concat(results[i]);
-      }
-      allCoursesCache = all;
-      return all;
-    });
+    return fetch(WORKER_URL + '/status', { headers: { 'Authorization': 'Bearer ' + ADMIN_SECRET } })
+      .then(function(r) { return r.json(); })
+      .then(function(status) {
+        var tc = status.totalChunks || 0;
+        if (tc === 0) throw new Error('No data');
+        var promises = [];
+        for (var i = 0; i < tc; i++) {
+          promises.push(fetch(WORKER_URL + '/get-courses?chunk=' + i, { headers: { 'Authorization': 'Bearer ' + ADMIN_SECRET } }).then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }));
+        }
+        return Promise.all(promises);
+      }).then(function(results) {
+        var all = [];
+        for (var i = 0; i < results.length; i++) { if (Array.isArray(results[i])) all = all.concat(results[i]); }
+        allCoursesCache = all;
+        return all;
+      });
   }
 
   // === Render Course Preview ===
@@ -293,7 +372,6 @@
     var container = $('#' + section + '-course-preview');
     var ids = sectionCourses[section].ids;
     var layout = sectionCourses[section].layout;
-
     if (ids.length === 0) { container.innerHTML = ''; return; }
 
     var html = '';
@@ -309,79 +387,60 @@
       }
 
       var title = c.title || '';
+      var thumb = c.image || '';
       var rating = c.rating ? '⭐ ' + Number(c.rating).toFixed(1) : '';
       var duration = c.contentLength ? '⏱️ ' + formatDuration(c.contentLength) : '';
       var instructor = c.instructor ? '👤 ' + c.instructor : '';
       var difficulty = c.difficulty ? '📊 ' + mapDifficulty(c.difficulty) : '';
       var category = c.category ? '📂 ' + c.category.split(',')[0].trim() : '';
+      var topic = c.topic ? '🏷️ ' + c.topic.split('|')[0].trim() : '';
+
+      var thumbHtml = thumb ? '<div class="preview-thumb"><img src="' + escHtml(thumb) + '" onerror="this.parentElement.style.display=\'none\'" /></div>' : '';
+      var metaHtml = [rating, duration, instructor, difficulty, category, topic].filter(Boolean).map(function(m) { return '<span>' + m + '</span>'; }).join('');
+      var badgeHtml = renderBadgeSelector(id, badge, section);
+      var commentHtml = '<textarea class="course-comment-input" data-section="' + section + '" data-id="' + id + '" placeholder="추천 사유를 입력하세요...">' + escHtml(comment) + '</textarea>';
+      var removeHtml = '<span class="preview-mini-card-remove" data-section="' + section + '" data-id="' + id + '">✕</span>';
 
       if (layout === 'card') {
-        html += renderCardPreview(id, title, rating, duration, instructor, difficulty, comment, badge, section, i);
+        html += '<div class="preview-mini-card-with-thumb" data-id="' + id + '">' +
+          thumbHtml +
+          '<div class="preview-mini-card-body">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
+              '<div class="preview-mini-card-title">' + escHtml(title.substring(0, 50)) + '</div>' + removeHtml +
+            '</div>' +
+            '<div class="preview-mini-card-meta">' + metaHtml + '</div>' +
+            badgeHtml + commentHtml +
+          '</div></div>';
       } else if (layout === 'highlight') {
-        html += renderHighlightPreview(id, title, rating, duration, instructor, category, comment, badge, section, i);
+        html += '<div class="preview-highlight-card" data-id="' + id + '">' +
+          '<div style="display:flex;gap:0.8rem;">' +
+            thumbHtml +
+            '<div style="flex:1;">' +
+              '<div style="display:flex;justify-content:space-between;">' +
+                '<div class="preview-highlight-badge">🆕 NEW</div>' + removeHtml +
+              '</div>' +
+              '<div class="preview-highlight-title">' + escHtml(title.substring(0, 60)) + '</div>' +
+              '<div class="preview-highlight-meta">' + metaHtml + '</div>' +
+            '</div>' +
+          '</div>' +
+          badgeHtml + commentHtml +
+        '</div>';
       } else {
-        html += renderListPreview(id, title, rating, duration, instructor, difficulty, category, comment, badge, section, i);
+        html += '<div class="preview-list-item-with-thumb" data-id="' + id + '">' +
+          '<div class="preview-list-rank">' + String(i + 1).padStart(2, '0') + '</div>' +
+          thumbHtml +
+          '<div class="preview-list-info" style="flex:1;">' +
+            '<div style="display:flex;justify-content:space-between;">' +
+              '<div class="preview-list-title">' + escHtml(title.substring(0, 70)) + '</div>' + removeHtml +
+            '</div>' +
+            '<div class="preview-list-meta">' + metaHtml + '</div>' +
+            badgeHtml + commentHtml +
+          '</div></div>';
       }
     }
 
     container.innerHTML = html;
     bindPreviewEvents(section);
-  }
-
-  function renderCardPreview(id, title, rating, duration, instructor, difficulty, comment, badge, section, idx) {
-    return '<div class="preview-mini-card" data-id="' + id + '">' +
-      '<div class="preview-mini-card-header">' +
-        '<div class="preview-mini-card-title">' + escHtml(title.substring(0, 50)) + '</div>' +
-        '<span class="preview-mini-card-remove" data-section="' + section + '" data-id="' + id + '">✕</span>' +
-      '</div>' +
-      '<div class="preview-mini-card-meta">' +
-        (rating ? '<span>' + rating + '</span>' : '') +
-        (duration ? '<span>' + duration + '</span>' : '') +
-        (instructor ? '<span>' + instructor + '</span>' : '') +
-        (difficulty ? '<span>' + difficulty + '</span>' : '') +
-      '</div>' +
-      renderBadgeSelector(id, badge, section) +
-      '<textarea class="course-comment-input" data-section="' + section + '" data-id="' + id + '" placeholder="추천 사유를 입력하세요...">' + escHtml(comment) + '</textarea>' +
-    '</div>';
-  }
-
-  function renderHighlightPreview(id, title, rating, duration, instructor, category, comment, badge, section, idx) {
-    return '<div class="preview-highlight-card" data-id="' + id + '">' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
-        '<div class="preview-highlight-badge">🆕 NEW</div>' +
-        '<span class="preview-mini-card-remove" data-section="' + section + '" data-id="' + id + '">✕</span>' +
-      '</div>' +
-      '<div class="preview-highlight-title">' + escHtml(title.substring(0, 60)) + '</div>' +
-      '<div class="preview-highlight-meta">' +
-        (rating ? '<span>' + rating + '</span>' : '') +
-        (duration ? '<span>' + duration + '</span>' : '') +
-        (instructor ? '<span>' + instructor + '</span>' : '') +
-        (category ? '<span>' + category + '</span>' : '') +
-      '</div>' +
-      renderBadgeSelector(id, badge, section) +
-      '<textarea class="course-comment-input" data-section="' + section + '" data-id="' + id + '" placeholder="추천 사유를 입력하세요...">' + escHtml(comment) + '</textarea>' +
-    '</div>';
-  }
-
-  function renderListPreview(id, title, rating, duration, instructor, difficulty, category, comment, badge, section, idx) {
-    return '<div class="preview-list-item" data-id="' + id + '">' +
-      '<div class="preview-list-rank">' + String(idx + 1).padStart(2, '0') + '</div>' +
-      '<div class="preview-list-info">' +
-        '<div style="display:flex;justify-content:space-between;">' +
-          '<div class="preview-list-title">' + escHtml(title.substring(0, 70)) + '</div>' +
-          '<span class="preview-mini-card-remove" data-section="' + section + '" data-id="' + id + '">✕</span>' +
-        '</div>' +
-        '<div class="preview-list-meta">' +
-          (rating ? '<span>' + rating + '</span>' : '') +
-          (duration ? '<span>' + duration + '</span>' : '') +
-          (instructor ? '<span>' + instructor + '</span>' : '') +
-          (difficulty ? '<span>' + difficulty + '</span>' : '') +
-          (category ? '<span>' + category + '</span>' : '') +
-        '</div>' +
-        renderBadgeSelector(id, badge, section) +
-        '<textarea class="course-comment-input" data-section="' + section + '" data-id="' + id + '" placeholder="추천 사유를 입력하세요...">' + escHtml(comment) + '</textarea>' +
-      '</div>' +
-    '</div>';
   }
 
   function renderBadgeSelector(id, currentBadge, section) {
@@ -391,12 +450,17 @@
       var sel = currentBadge === b.id ? ' selected' : '';
       html += '<button class="badge-opt' + sel + '" data-section="' + section + '" data-id="' + id + '" data-badge="' + b.id + '">' + b.ko + '</button>';
     }
+    // Custom badge add button
+    html += '<div class="custom-badge-row">' +
+      '<input class="custom-badge-input" data-section="' + section + '" data-id="' + id + '" placeholder="+ 커스텀 뱃지" />' +
+      '<button class="btn-add-badge" data-section="' + section + '" data-id="' + id + '">추가</button>' +
+    '</div>';
     html += '</div>';
     return html;
   }
 
   function bindPreviewEvents(section) {
-    // Remove buttons
+    // Remove
     var removeBtns = $$('#' + section + '-course-preview .preview-mini-card-remove');
     for (var i = 0; i < removeBtns.length; i++) {
       removeBtns[i].addEventListener('click', function() {
@@ -405,63 +469,56 @@
         sectionCourses[sec].ids = sectionCourses[sec].ids.filter(function(x) { return x !== id; });
         delete sectionCourses[sec].comments[id];
         delete sectionCourses[sec].badges[id];
-        // Update input
         var inputId = sec === 'curation' ? 'f-curation-ids' : 'f-' + sec + '-course-ids';
         $('#' + inputId).value = sectionCourses[sec].ids.join(', ');
         renderCoursePreview(sec);
       });
     }
 
-    // Badge buttons
+    // Badge select
     var badgeBtns = $$('#' + section + '-course-preview .badge-opt');
     for (var i = 0; i < badgeBtns.length; i++) {
       badgeBtns[i].addEventListener('click', function() {
         var sec = this.getAttribute('data-section');
         var id = this.getAttribute('data-id');
         var badge = this.getAttribute('data-badge');
-        if (sectionCourses[sec].badges[id] === badge) {
-          delete sectionCourses[sec].badges[id];
-        } else {
-          sectionCourses[sec].badges[id] = badge;
-        }
+        if (sectionCourses[sec].badges[id] === badge) delete sectionCourses[sec].badges[id];
+        else sectionCourses[sec].badges[id] = badge;
         renderCoursePreview(sec);
       });
     }
 
-    // Comment inputs
+    // Custom badge add
+    var addBadgeBtns = $$('#' + section + '-course-preview .btn-add-badge');
+    for (var i = 0; i < addBadgeBtns.length; i++) {
+      addBadgeBtns[i].addEventListener('click', function() {
+        var sec = this.getAttribute('data-section');
+        var id = this.getAttribute('data-id');
+        var input = this.parentElement.querySelector('.custom-badge-input');
+        var val = input.value.trim();
+        if (!val) return;
+
+        var newId = 'custom_' + Date.now();
+        var newBadge = { id: newId, ko: val };
+        BADGE_OPTIONS.push(newBadge);
+
+        // Save to localStorage
+        customBadges.push(newBadge);
+        localStorage.setItem('letter_custom_badges', JSON.stringify(customBadges));
+
+        sectionCourses[sec].badges[id] = newId;
+        toast('뱃지 "' + val + '" 추가됨!', 'success');
+        renderCoursePreview(sec);
+      });
+    }
+
+    // Comment input
     var commentInputs = $$('#' + section + '-course-preview .course-comment-input');
     for (var i = 0; i < commentInputs.length; i++) {
       commentInputs[i].addEventListener('input', function() {
-        var sec = this.getAttribute('data-section');
-        var id = this.getAttribute('data-id');
-        sectionCourses[sec].comments[id] = this.value;
+        sectionCourses[this.getAttribute('data-section')].comments[this.getAttribute('data-id')] = this.value;
       });
     }
-  }
-
-  // === Helpers ===
-  function formatDuration(minutes) {
-    if (!minutes || minutes <= 0) return '';
-    var h = Math.floor(minutes / 60);
-    var m = minutes % 60;
-    if (h > 0 && m > 0) return h + 'h ' + m + 'm';
-    if (h > 0) return h + 'h';
-    return m + 'm';
-  }
-
-  function mapDifficulty(d) {
-    var map = {
-      'Beginner': '초급', 'BEGINNER': '초급',
-      'Intermediate': '중급', 'INTERMEDIATE': '중급',
-      'Expert': '고급', 'EXPERT': '고급',
-      'All Levels': '모든 수준', 'ALL_LEVELS': '모든 수준'
-    };
-    return map[d] || d;
-  }
-
-  function escHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   // === Letter List ===
@@ -513,13 +570,16 @@
       $('#f-status').value = d.status || 'draft';
       $('#f-title-ko').value = d.title ? d.title.ko : '';
       $('#f-subtitle-ko').value = d.subtitle ? d.subtitle.ko : '';
-      $('#f-cover-image').value = d.coverImage || '';
-      $('#f-insight-image').value = d.insight ? d.insight.image : '';
-      $('#f-new-image').value = d.newContent ? d.newContent.image : '';
+      $('#f-cover-image').value = d.coverImage || DEFAULT_IMAGES.cover;
+      $('#f-insight-image').value = d.insight ? (d.insight.image || DEFAULT_IMAGES.insight) : DEFAULT_IMAGES.insight;
+      $('#f-new-image').value = d.newContent ? (d.newContent.image || DEFAULT_IMAGES.newContent) : DEFAULT_IMAGES.newContent;
       $('#f-new-summary-ko').value = d.newContent && d.newContent.summary ? d.newContent.summary.ko : '';
-      $('#f-curation-image').value = d.curation ? d.curation.image : '';
+      $('#f-curation-image').value = d.curation ? (d.curation.image || DEFAULT_IMAGES.curation) : DEFAULT_IMAGES.curation;
       $('#f-curation-intro-ko').value = d.curation && d.curation.intro ? d.curation.intro.ko : '';
-      $('#f-closing-image').value = d.closing ? d.closing.image : '';
+      $('#f-closing-image').value = d.closing ? (d.closing.image || DEFAULT_IMAGES.closing) : DEFAULT_IMAGES.closing;
+
+      // Refresh image previews
+      initImageTemplates();
 
       if (d.curation && d.curation.tags) {
         var tt = [];
@@ -527,27 +587,21 @@
         $('#f-curation-tags').value = tt.join(', ');
       }
 
-      // Load course IDs
-      if (d.insight && d.insight.courseIds) {
-        $('#f-insight-course-ids').value = d.insight.courseIds.join(', ');
-        sectionCourses.insight.ids = d.insight.courseIds;
-        sectionCourses.insight.comments = d.insight.courseComments || {};
-        sectionCourses.insight.badges = d.insight.courseBadges || {};
-      }
-      if (d.newContent && d.newContent.courseIds) {
-        $('#f-new-course-ids').value = d.newContent.courseIds.join(', ');
-        sectionCourses.new.ids = d.newContent.courseIds;
-        sectionCourses.new.comments = d.newContent.courseComments || {};
-        sectionCourses.new.badges = d.newContent.courseBadges || {};
-      }
-      if (d.curation && d.curation.courseIds) {
-        $('#f-curation-ids').value = d.curation.courseIds.join(', ');
-        sectionCourses.curation.ids = d.curation.courseIds;
-        sectionCourses.curation.comments = d.curation.courseComments || {};
-        sectionCourses.curation.badges = d.curation.courseBadges || {};
-      }
+      // Course IDs
+      var loadSection = function(sec, data, inputId) {
+        if (data && data.courseIds && data.courseIds.length > 0) {
+          $('#' + inputId).value = data.courseIds.join(', ');
+          sectionCourses[sec].ids = data.courseIds;
+          sectionCourses[sec].comments = data.courseComments || {};
+          sectionCourses[sec].badges = data.courseBadges || {};
+          if (data.layout) sectionCourses[sec].layout = data.layout;
+        }
+      };
+      loadSection('insight', d.insight, 'f-insight-course-ids');
+      loadSection('new', d.newContent, 'f-new-course-ids');
+      loadSection('curation', d.curation, 'f-curation-ids');
 
-      // Load editors
+      // Editors
       if (d.insight && d.insight.pages && d.insight.pages.length > 0 && editors['insight-0']) {
         editors['insight-0'].root.innerHTML = d.insight.pages[0].html_ko || '';
       }
@@ -568,10 +622,7 @@
   // === Save ===
   $('#btn-save').addEventListener('click', function() {
     var month = $('#f-month').value.trim();
-    if (!month || !/^\d{4}-\d{2}$/.test(month)) {
-      toast('호수를 YYYY-MM 형식으로 입력해주세요', 'error');
-      return;
-    }
+    if (!month || !/^\d{4}-\d{2}$/.test(month)) { toast('호수를 YYYY-MM 형식으로 입력해주세요', 'error'); return; }
 
     var insightPages = [];
     var insightWraps = $$('#insight-editors .editor-wrap');
@@ -645,8 +696,7 @@
 
   // === Delete ===
   $('#btn-delete').addEventListener('click', function() {
-    if (!currentMonth) return;
-    if (!confirm(currentMonth + '호를 삭제하시겠습니까?')) return;
+    if (!currentMonth || !confirm(currentMonth + '호를 삭제하시겠습니까?')) return;
     showLoading();
     apiCall('/letter-delete', 'POST', { month: currentMonth }).then(function(res) {
       hideLoading();
@@ -657,7 +707,11 @@
 
   // === Preview ===
   $('#btn-preview').addEventListener('click', function() {
-    window.open('index.html?preview=true', '_blank');
+    var sub = prompt('미리보기할 기업 서브도메인 (비워두면 기본):', '');
+    var url = 'index.html';
+    if (sub) url += '?sub=' + sub;
+    window.open(url, '_blank');
+    toast('현재는 하드코딩 버전이 열립니다. JSON 연동은 Phase 1-6에서!');
   });
 
   // === Back ===
@@ -676,17 +730,21 @@
     $('#f-month').value = ''; $('#f-month').disabled = false;
     $('#f-status').value = 'draft';
     $('#f-title-ko').value = ''; $('#f-subtitle-ko').value = '';
-    $('#f-cover-image').value = ''; $('#f-insight-image').value = '';
-    $('#f-new-image').value = ''; $('#f-new-summary-ko').value = '';
-    $('#f-curation-image').value = ''; $('#f-curation-intro-ko').value = '';
-    $('#f-curation-tags').value = ''; $('#f-curation-ids').value = '';
-    $('#f-closing-image').value = '';
+    $('#f-cover-image').value = DEFAULT_IMAGES.cover;
+    $('#f-insight-image').value = DEFAULT_IMAGES.insight;
+    $('#f-new-image').value = DEFAULT_IMAGES.newContent;
+    $('#f-new-summary-ko').value = '';
+    $('#f-curation-image').value = DEFAULT_IMAGES.curation;
+    $('#f-curation-intro-ko').value = '';
+    $('#f-curation-tags').value = '';
+    $('#f-curation-ids').value = '';
+    $('#f-closing-image').value = DEFAULT_IMAGES.closing;
     if ($('#f-insight-course-ids')) $('#f-insight-course-ids').value = '';
     if ($('#f-new-course-ids')) $('#f-new-course-ids').value = '';
 
-    sectionCourses.insight = { ids: [], data: {}, comments: {}, badges: {}, layout: 'card' };
-    sectionCourses.new = { ids: [], data: {}, comments: {}, badges: {}, layout: 'highlight' };
-    sectionCourses.curation = { ids: [], data: {}, comments: {}, badges: {}, layout: 'list' };
+    sectionCourses.insight = { ids: [], comments: {}, badges: {}, layout: 'card' };
+    sectionCourses.new = { ids: [], comments: {}, badges: {}, layout: 'highlight' };
+    sectionCourses.curation = { ids: [], comments: {}, badges: {}, layout: 'list' };
 
     $('#insight-course-preview').innerHTML = '';
     $('#new-course-preview').innerHTML = '';
@@ -698,6 +756,8 @@
     for (var key in editors) {
       if (editors[key] && editors[key].root) editors[key].root.innerHTML = '';
     }
+
+    initImageTemplates();
   }
 
 })();
