@@ -77,7 +77,7 @@ ${jobContext ? `사용자의 직무/관심 분야: ${jobContext}` : ""}
 
     if (!geminiRes || !geminiRes.ok) {
       // 2.5-flash 실패 시 2.5-flash-lite로 폴백
-      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
+      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`;
       geminiRes = await fetch(fallbackUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
