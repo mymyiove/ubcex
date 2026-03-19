@@ -171,7 +171,9 @@
     html += '<p class="cover-subtitle">' + t(d.subtitle) + '</p>';
     html += '<p class="cover-company" id="company-greeting">' + getGreeting() + '</p>';
     html += '<p class="cover-reading-time">' + t(d.readingTime) + '</p>';
+    html += '<div class="scroll-indicator" id="scroll-down">👇</div>';
     html += '</div></section>';
+    
 
     var navItems = [];
     if (d.insight) navItems.push({ id: 'section-insight', num: '01', icon: '📊', ko: '트렌드 인사이트', en: 'Trend Insights' });
@@ -432,6 +434,17 @@
     var expBtn = document.getElementById('btn-explorer');
     if (expBtn) { expBtn.href = explorerUrl; expBtn.target = '_blank'; }
 
+    var scrollDown = document.getElementById('scroll-down');
+    if (scrollDown) {
+      scrollDown.addEventListener('click', function() {
+        var idx = document.querySelector('.index-section');
+        if (idx) {
+          var hh = document.querySelector('.letter-header');
+          window.scrollTo({ top: idx.getBoundingClientRect().top + window.scrollY - (hh ? hh.offsetHeight + 20 : 80), behavior: 'smooth' });
+        }
+      });
+    }
+
     var archiveBtn = document.getElementById('btn-archive');
     if (archiveBtn) {
       archiveBtn.addEventListener('click', function(e) {
@@ -440,14 +453,23 @@
       });
     }
 
-    var pdfBtns = document.querySelectorAll('#btn-pdf, #btn-pdf-bottom');
-    for (var i = 0; i < pdfBtns.length; i++) {
-      pdfBtns[i].addEventListener('click', function() {
-        var fn = (sub || 'general') + '_Udemy_Letter_' + (letterData ? letterData.month.replace('-', '') : '') + '.pdf';
-        document.title = fn.replace('.pdf', '');
-        alert('PDF\ub85c \uc800\uc7a5\uc744 \uc120\ud0dd\ud558\uc138\uc694.\n\ud30c\uc77c\uba85: ' + fn);
-        window.print();
-        setTimeout(function() { document.title = 'Udemy Letter'; }, 1000);
+    var copyBtn = document.getElementById('btn-copy-link');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function() {
+        var url = window.location.href;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(url).then(function() {
+            showCopyToast('🔗 링크가 복사되었습니다!');
+          });
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = url;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          showCopyToast('🔗 링크가 복사되었습니다!');
+        }
       });
     }
 
@@ -660,6 +682,17 @@
       templateOriginals = [];
     }
 
+    function showCopyToast(msg) {
+      var existing = document.querySelector('.copy-toast');
+      if (existing) existing.remove();
+      var el = document.createElement('div');
+      el.className = 'copy-toast show';
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(function() { el.classList.remove('show'); }, 2000);
+      setTimeout(function() { el.remove(); }, 2500);
+    }
+
     function showToast(msg) {
       var el = document.createElement('div');
       el.style.cssText = 'position:fixed;bottom:2rem;right:2rem;padding:0.8rem 1.5rem;background:#1a1a2e;color:white;border-radius:10px;font-size:0.85rem;z-index:1000;';
@@ -682,7 +715,11 @@
     var pBar = document.getElementById('scroll-progress');
     var hdr = document.getElementById('letter-header');
     var topBtn = document.getElementById('scroll-to-top');
+    var mobileBar = document.getElementById('mobile-bottom-bar');
+    var mobileTopBtn = document.getElementById('mobile-top-btn');
+
     if (topBtn) topBtn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    if (mobileTopBtn) mobileTopBtn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 
     var tk = false;
     window.addEventListener('scroll', function() {
@@ -693,6 +730,7 @@
           if (pBar && dh > 0) pBar.style.width = Math.min((st / dh) * 100, 100) + '%';
           if (hdr) hdr.classList.toggle('scrolled', st > 50);
           if (topBtn) topBtn.classList.toggle('visible', st > 400);
+          if (mobileBar) mobileBar.classList.toggle('visible', st > 400);
           tk = false;
         });
         tk = true;
