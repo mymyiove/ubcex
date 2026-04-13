@@ -1,7 +1,7 @@
 (function() {
 
   var API_BASE = '/api';
-  var EXPLORER_BASE = 'https://ubcexp.pages.dev';
+  // var EXPLORER_BASE = ''; // Explorer 비공개
 
   var DEFAULT_IMAGES = {
     cover: 'src/img/Brand_Launch.jpg',
@@ -18,7 +18,8 @@
   var isArchive = params.get('archive') === 'true';
   var baseUrl = sub ? 'https://' + sub + '.udemy.com/course/' : '#';
   var campusUrl = sub ? 'https://' + sub + '.udemy.com' : 'https://www.udemy.com';
-  var explorerUrl = EXPLORER_BASE + (sub ? '?sub=' + sub : '');
+  // var explorerUrl = ''; // Explorer 비공개
+
 
   var letterData = null;
   var courseDataMap = {};
@@ -443,10 +444,10 @@
   function ctaBanner(text) {
     return '<div class="cta-banner"><p>' + text + '</p>' +
       '<div class="cta-buttons-row">' +
-      '<a href="' + campusUrl + '" target="_blank" class="cta-primary">🚀 \ud559\uc2b5\uc7a5 \ubc14\ub85c\uac00\uae30 <span class="cta-arrow">\u2192</span></a>' +
-      '<a href="' + explorerUrl + '" target="_blank" class="btn-explorer">🔭 \uac15\uc758 \ud0d0\ud5d8\ud558\uae30</a>' +
+      '<a href="' + campusUrl + '" target="_blank" class="cta-primary">🚀 학습장 바로가기 <span class="cta-arrow">→</span></a>' +
       '</div></div>';
   }
+
 
   function initInteractions() {
     var cIds = ['btn-campus', 'btn-campus-bottom'];
@@ -455,8 +456,12 @@
       if (el) { el.href = campusUrl; el.target = '_blank'; }
     }
 
-    var expBtn = document.getElementById('btn-explorer');
-    if (expBtn) { expBtn.href = explorerUrl; expBtn.target = '_blank'; }
+    // Explorer 비공개 — btn-explorer 숨김 처리
+    var expBtns = document.querySelectorAll('.btn-explorer, #btn-explorer');
+    for (var i = 0; i < expBtns.length; i++) {
+      expBtns[i].style.display = 'none';
+    }
+
 
     var archiveBtn = document.getElementById('btn-archive');
     if (archiveBtn) {
