@@ -9,39 +9,37 @@
 </head>
 <body>
 
-<div class="admin-toast" id="admin-toast"></div>
-<div class="loading-overlay" id="loading"><div class="loading-spinner"></div></div>
+<div id="admin-toast" class="admin-toast"></div>
+<div id="loading" class="loading-overlay"><div class="loading-spinner"></div></div>
 
 <div class="admin-gate" id="admin-gate">
   <div class="gate-card">
     <h1>Udemy Letter Admin</h1>
     <p>관리자 코드를 입력해주세요</p>
-    <input type="password" class="gate-input" id="gate-code" placeholder="관리자 코드" />
-    <button class="gate-btn" id="gate-submit">진입하기</button>
+    <input type="password" id="gate-code" class="gate-input" placeholder="코드 입력">
+    <button id="gate-submit" class="gate-btn">진입하기</button>
   </div>
 </div>
 
 <div id="admin-app" style="display:none;">
-
   <header class="admin-header">
     <div class="admin-header-inner">
       <div class="admin-brand" id="admin-brand-home">
         <span class="admin-brand-icon">📮</span>
         <span class="admin-brand-text">Letter Admin</span>
       </div>
-      <div class="admin-nav">
+      <nav class="admin-nav">
         <button class="admin-nav-btn active" data-panel="list">📋 목록</button>
         <button class="admin-nav-btn" data-panel="editor">✏️ 편집</button>
         <button class="admin-nav-btn" data-panel="log">📝 로그</button>
         <button class="admin-nav-btn" id="btn-preview-nav">👁️ 미리보기</button>
-        <span class="admin-nav-btn" id="current-user-display" style="border:none;cursor:default;color:var(--accent);font-weight:600;"></span>
+        <span id="current-user-display"></span>
         <button class="admin-nav-btn" id="btn-logout">🚪</button>
-      </div>
+      </nav>
     </div>
   </header>
 
   <main class="admin-main">
-
     <div class="admin-panel active" id="panel-list">
       <div class="letter-list-header">
         <h2>📮 레터 목록</h2>
@@ -53,30 +51,29 @@
     </div>
 
     <div class="admin-panel" id="panel-editor">
-
-      <div class="editor-actions-sticky" id="editor-sticky">
+      <div class="editor-actions-sticky">
         <div class="editor-actions-left">
-          <h2 id="editor-title" style="font-size:1.1rem;font-weight:800;">✏️ 새 레터</h2>
+          <h3 id="editor-title">✏️ 새 레터</h3>
           <span class="last-saved-info" id="last-saved-info"></span>
         </div>
         <div class="editor-actions-right">
-          <button class="btn-editor" id="btn-copy-email" style="display:none; color: #10b981; border-color: #10b981;">📧 메일 복사</button>
+          <button class="btn-editor" id="btn-copy-email" style="display:none;">📧 메일 복사</button>
           <button class="btn-editor btn-save" id="btn-save">💾 저장</button>
           <button class="btn-editor btn-danger" id="btn-delete" style="display:none;">🗑️ 삭제</button>
         </div>
       </div>
 
-      <div class="section-card" id="sec-basic">
+      <div class="section-card">
         <div class="section-card-header"><h3>📋 기본 정보</h3><span class="section-card-toggle">▼</span></div>
         <div class="section-card-body">
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">호수 (YYYY-MM)</label>
-              <input type="text" class="form-input" id="f-month" placeholder="2026-03" />
+              <input type="text" id="f-month" class="form-input" placeholder="2026-04">
             </div>
             <div class="form-group">
               <label class="form-label">상태</label>
-              <select class="form-input" id="f-status">
+              <select id="f-status" class="form-input">
                 <option value="draft">📝 초안</option>
                 <option value="published">✅ 발행</option>
                 <option value="sent">📧 발송완료</option>
@@ -85,26 +82,26 @@
           </div>
           <div class="form-group">
             <label class="form-label">제목 (한국어)</label>
-            <input type="text" class="form-input" id="f-title-ko" placeholder="기술혁신을 넘어 강력한 시너지를 만드는 법" />
+            <input type="text" id="f-title-ko" class="form-input" placeholder="이달의 레터 제목">
           </div>
           <div class="form-group">
             <label class="form-label">부제 (한국어)</label>
-            <input type="text" class="form-input" id="f-subtitle-ko" placeholder="AI 고도화와 장수경제, 세대 시너지" />
+            <input type="text" id="f-subtitle-ko" class="form-input" placeholder="부제목">
           </div>
           <div class="form-group">
             <label class="form-label">표지 이미지 URL</label>
-            <input type="text" class="form-input" id="f-cover-image" placeholder="src/img/Brand_Launch.jpg" />
-            <div class="form-hint">비워두면 기본 이미지 사용</div>
+            <input type="text" id="f-cover-image" class="form-input">
+            <p class="form-hint">비워두면 기본 이미지 사용</p>
           </div>
         </div>
       </div>
 
-      <div class="section-card" id="sec-insight">
+      <div class="section-card">
         <div class="section-card-header"><h3>📊 트렌드 인사이트</h3><span class="section-card-toggle">▼</span></div>
         <div class="section-card-body">
           <div class="form-group">
             <label class="form-label">섹션 이미지 URL</label>
-            <input type="text" class="form-input" id="f-insight-image" placeholder="src/img/Global_Learning.png" />
+            <input type="text" id="f-insight-image" class="form-input">
           </div>
           <div class="form-group">
             <label class="form-label">콘텐츠</label>
@@ -112,7 +109,9 @@
               <button class="page-tab active" data-page="0">페이지 1</button>
               <button class="page-tab-add" id="insight-add-page">+ 추가</button>
             </div>
-            <div id="insight-editors"><div class="editor-wrap" data-page="0"><div id="insight-editor-0"></div></div></div>
+            <div id="insight-editors">
+              <div class="editor-wrap" data-page="0"><div id="insight-editor-0"></div></div>
+            </div>
           </div>
           <div class="course-section">
             <div class="course-section-title">📚 추천 강의</div>
@@ -121,7 +120,7 @@
               <button class="layout-option" data-layout="list">📋 리스트</button>
             </div>
             <div class="course-id-row">
-              <input type="text" class="course-id-input" id="f-insight-course-ids" placeholder="강의 ID: 8139 8324 8814" />
+              <input type="text" id="f-insight-course-ids" class="course-id-input form-input" placeholder="강의 ID (쉼표 구분)">
               <button class="btn-fetch-courses" id="btn-fetch-insight-courses">불러오기</button>
             </div>
             <div class="fetch-status" id="insight-fetch-status"></div>
@@ -130,12 +129,12 @@
         </div>
       </div>
 
-      <div class="section-card" id="sec-new">
+      <div class="section-card">
         <div class="section-card-header"><h3>✨ 신규 콘텐츠</h3><span class="section-card-toggle">▼</span></div>
         <div class="section-card-body">
           <div class="form-group">
             <label class="form-label">섹션 이미지 URL</label>
-            <input type="text" class="form-input" id="f-new-image" placeholder="src/img/Instructor_Journey.jpg" />
+            <input type="text" id="f-new-image" class="form-input">
           </div>
           <div class="form-group">
             <label class="form-label">콘텐츠</label>
@@ -144,38 +143,38 @@
           <div class="course-section">
             <div class="course-section-title">🆕 신규 강의</div>
             <div class="layout-selector" id="new-layout-selector">
-              <button class="layout-option active" data-layout="highlight">⭐ 하이라이트</button>
-              <button class="layout-option" data-layout="card">🃏 카드</button>
+              <button class="layout-option" data-layout="highlight">⭐ 하이라이트</button>
+              <button class="layout-option active" data-layout="card">🃏 카드</button>
               <button class="layout-option" data-layout="list">📋 리스트</button>
             </div>
             <div class="course-id-row">
-              <input type="text" class="course-id-input" id="f-new-course-ids" placeholder="강의 ID: 12345 67890" />
+              <input type="text" id="f-new-course-ids" class="course-id-input form-input" placeholder="강의 ID (쉼표 구분)">
               <button class="btn-fetch-courses" id="btn-fetch-new-courses">불러오기</button>
             </div>
             <div class="fetch-status" id="new-fetch-status"></div>
-            <div class="preview-grid layout-highlight" id="new-course-preview"></div>
+            <div class="preview-grid layout-card" id="new-course-preview"></div>
           </div>
-          <div class="form-group" style="margin-top:1rem;">
+          <div class="form-group">
             <label class="form-label">요약 문구</label>
-            <input type="text" class="form-input" id="f-new-summary-ko" placeholder="총 40개의 신규 강의가..." />
+            <input type="text" id="f-new-summary-ko" class="form-input" placeholder="요약">
           </div>
         </div>
       </div>
 
-      <div class="section-card" id="sec-curation">
+      <div class="section-card">
         <div class="section-card-header"><h3>🎯 큐레이션</h3><span class="section-card-toggle">▼</span></div>
         <div class="section-card-body">
           <div class="form-group">
             <label class="form-label">섹션 이미지 URL</label>
-            <input type="text" class="form-input" id="f-curation-image" placeholder="src/img/Learning_at_Home.jpg" />
+            <input type="text" id="f-curation-image" class="form-input">
           </div>
           <div class="form-group">
             <label class="form-label">소개 문구</label>
-            <input type="text" class="form-input" id="f-curation-intro-ko" placeholder="반복적인 업무는 이렇게 처리합니다." />
+            <input type="text" id="f-curation-intro-ko" class="form-input">
           </div>
           <div class="form-group">
             <label class="form-label">태그 (쉼표 구분)</label>
-            <input type="text" class="form-input" id="f-curation-tags" placeholder="AI 활용하기, 자동화" />
+            <input type="text" id="f-curation-tags" class="form-input">
           </div>
           <div class="course-section">
             <div class="course-section-title">🎯 큐레이션 강의</div>
@@ -184,7 +183,7 @@
               <button class="layout-option" data-layout="card">🃏 카드</button>
             </div>
             <div class="course-id-row">
-              <input type="text" class="course-id-input" id="f-curation-ids" placeholder="강의 ID: 55555 66666 77777" />
+              <input type="text" id="f-curation-ids" class="course-id-input form-input" placeholder="강의 ID (쉼표 구분)">
               <button class="btn-fetch-courses" id="btn-fetch-curation-courses">불러오기</button>
             </div>
             <div class="fetch-status" id="curation-fetch-status"></div>
@@ -193,23 +192,25 @@
         </div>
       </div>
 
-      <div class="section-card" id="sec-promo">
+      <div class="section-card">
         <div class="section-card-header"><h3>📢 홍보</h3><span class="section-card-toggle">▼</span></div>
         <div class="section-card-body">
           <div class="page-tabs" id="promo-tabs">
             <button class="page-tab active" data-page="0">페이지 1</button>
             <button class="page-tab-add" id="promo-add-page">+ 추가</button>
           </div>
-          <div id="promo-editors"><div class="editor-wrap" data-page="0"><div id="promo-editor-0"></div></div></div>
+          <div id="promo-editors">
+            <div class="editor-wrap" data-page="0"><div id="promo-editor-0"></div></div>
+          </div>
         </div>
       </div>
 
-      <div class="section-card" id="sec-closing">
+      <div class="section-card">
         <div class="section-card-header"><h3>🚀 마무리</h3><span class="section-card-toggle">▼</span></div>
         <div class="section-card-body">
           <div class="form-group">
             <label class="form-label">마무리 이미지 URL</label>
-            <input type="text" class="form-input" id="f-closing-image" placeholder="src/img/Brand_Launch_2.png" />
+            <input type="text" id="f-closing-image" class="form-input">
           </div>
           <div class="form-group">
             <label class="form-label">마무리 메시지</label>
@@ -217,7 +218,6 @@
           </div>
         </div>
       </div>
-
     </div>
 
     <div class="admin-panel" id="panel-log">
@@ -228,7 +228,6 @@
         </div>
       </div>
     </div>
-
   </main>
 </div>
 
