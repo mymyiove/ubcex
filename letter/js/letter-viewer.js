@@ -146,18 +146,45 @@
   }
 
   function loadCourseData(ids) {
-    var idsParam = ids.join(',');
+  if (!ids || ids.length === 0) return Promise.resolve();
+
+  var idsParam = ids.join(',');
+
+  // ★ 재시도 로직 추가 (최대 2회)
+  function tryFetch(attempt) {
     return fetch('/api/courses-proxy?ids=' + encodeURIComponent(idsParam))
-      .then(function(r) { return r.ok ? r.json() : []; })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
       .then(function(courses) {
         if (!Array.isArray(courses)) return;
         for (var i = 0; i < courses.length; i++) {
           courseDataMap[String(courses[i].id)] = courses[i];
         }
+
+        // 못 찾은 ID 체크
+        var missing = [];
+        for (var i = 0; i < ids.length; i++) {
+          if (!courseDataMap[String(ids[i])]) missing.push(ids[i]);
+        }
+        if (missing.length > 0) {
+          console.warn('[Letter] 강의 미발견: ' + missing.join(', '));
+        }
       })
-      .catch(function() {});
+      .catch(function(e) {
+        console.warn('[Letter] 강의 로드 실패 (시도 ' + attempt + '): ' + e.message);
+        if (attempt < 2) {
+          // 2초 후 재시도
+          return new Promise(function(resolve) {
+            setTimeout(function() { resolve(tryFetch(attempt + 1)); }, 2000);
+          });
+        }
+      });
   }
 
+  return tryFetch(1);
+}
   function renderLetter() {
     var d = letterData;
     var html = '';
