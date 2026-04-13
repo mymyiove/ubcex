@@ -361,38 +361,68 @@
   }
 
   function loadCoursesFromWorker() {
-    if (allCoursesCache) return Promise.resolve(allCoursesCache);
-    return fetch('/api/courses-proxy?action=status')
-      .then(function(r) {
-        if (!r.ok) throw new Error('status failed');
-        return r.json();
-      })
-      .then(function(s) {
-        var tc = s.totalChunks || 0;
-        if (tc === 0) throw new Error('no chunks');
+  if (allCoursesCache) return Promise.resolve(allCoursesCache);
+
+  return fetch('/api/courses-proxy?action=status')
+    .then(function(r) {
+      if (!r.ok) throw new Error('status failed');
+      return r.json();
+    })
+    .then(function(s) {
+      var tc = s.totalChunks || 0;
+      if (tc === 0) throw new Error('no chunks');
+
+      // ★ 배치로 3개씩 순차 로딩 (한번에 전부 X)
+      var BATCH = 3;
+      var all = [];
+      var batchIndex = 0;
+
+      function loadBatch() {
+        if (batchIndex >= tc) {
+          allCoursesCache = all;
+          return Promise.resolve(all);
+        }
+
+        var end = Math.min(batchIndex + BATCH, tc);
         var ps = [];
-        for (var i = 0; i < tc; i++) {
+        for (var i = batchIndex; i < end; i++) {
           ps.push(
             fetch('/api/courses-proxy?chunk=' + i)
               .then(function(r) { return r.ok ? r.json() : []; })
               .catch(function() { return []; })
           );
         }
-        return Promise.all(ps);
-      })
-      .then(function(rs) {
-        var all = [];
-        for (var i = 0; i < rs.length; i++) {
-          if (Array.isArray(rs[i])) all = all.concat(rs[i]);
-        }
-        allCoursesCache = all;
-        return all;
-      })
-      .catch(function(e) {
-        toast('강의 데이터 로드 실패 - 불러오기 버튼을 사용해주세요', 'error');
-        return [];
-      });
-  }
+
+        return Promise.all(ps).then(function(rs) {
+          for (var i = 0; i < rs.length; i++) {
+            if (Array.isArray(rs[i])) all = all.concat(rs[i]);
+          }
+          batchIndex = end;
+
+          // 진행률 표시 (선택)
+          var pct = Math.round((end / tc) * 100);
+          var statusEls = ['insight-fetch-status', 'new-fetch-status', 'curation-fetch-status'];
+          for (var si = 0; si < statusEls.length; si++) {
+            var el = document.getElementById(statusEls[si]);
+            if (el && !el.textContent.match(/✅|❌/)) {
+              el.textContent = '⏳ 강의 데이터 로딩 중... ' + pct + '% (' + all.length + '개)';
+            }
+          }
+
+          // 다음 배치 전 살짝 대기 (서버 부하 방지)
+          return new Promise(function(resolve) {
+            setTimeout(function() { resolve(loadBatch()); }, 200);
+          });
+        });
+      }
+
+      return loadBatch();
+    })
+    .catch(function(e) {
+      toast('강의 데이터 로드 실패: ' + e.message, 'error');
+      return [];
+    });
+}
 
   // === Render Course Preview ===
   function renderCoursePreview(sec) {
