@@ -696,6 +696,17 @@
         });
       }
 
+      var emailBtns = $$('.btn-copy-email');
+      for (var i = 0; i < emailBtns.length; i++) {
+        emailBtns[i].addEventListener('click', function(e) {
+          e.stopPropagation();
+          var m = this.getAttribute('data-month');
+          var sub = prompt('[' + m + '호] 메일 발송용 HTML 복사\n\n타겟 기업의 Subdomain을 입력하세요.\n(예: woongjin)', 'woongjin');
+          if (sub === null) return;
+          generateEmail(m, sub.trim());
+        });
+      }
+
       var cards = $$('.letter-card');
       for (var i = 0; i < cards.length; i++) {
         cards[i].addEventListener('click', function(e) {
@@ -1350,4 +1361,550 @@
     return html;
   }
 
+  // ==========================================
+  // === Email HTML Generation (v2 — 풀버전) ===
+  // ==========================================
+
+  function generateEmail(month, sub) {
+    showLoading();
+    toast('📧 이메일 HTML 생성 중...');
+    apiCall('/letter-get?month=' + month).then(function(res) {
+      if (!res.success) { hideLoading(); toast('레터 데이터를 불러오지 못했습니다.', 'error'); return; }
+      var letter = res.data;
+      var allIds = [];
+      if (letter.insight && letter.insight.courseIds) allIds = allIds.concat(letter.insight.courseIds);
+      if (letter.newContent && letter.newContent.courseIds) allIds = allIds.concat(letter.newContent.courseIds);
+      if (letter.curation && letter.curation.courseIds) allIds = allIds.concat(letter.curation.courseIds);
+
+      if (allIds.length > 0) {
+        loadCoursesFromWorker().then(function(allCourses) {
+          var cMap = {};
+          for (var i = 0; i < allCourses.length; i++) cMap[String(allCourses[i].id)] = allCourses[i];
+          finishEmailGeneration(letter, sub, cMap, month);
+        }).catch(function() {
+          finishEmailGeneration(letter, sub, {}, month);
+        });
+      } else {
+        finishEmailGeneration(letter, sub, {}, month);
+      }
+    }).catch(function(e) {
+      hideLoading();
+      toast('실패: ' + e.message, 'error');
+    });
+  }
+
+  function finishEmailGeneration(letter, sub, cMap, month) {
+    var html = buildEmailHtml(letter, sub, cMap);
+    hideLoading();
+
+    // 클립보드 복사
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(html).then(function() {
+        toast('📧 이메일 HTML 복사 완료! (' + Math.round(html.length / 1024) + 'KB)', 'success');
+        addLog('이메일 HTML 복사', month + '호 / sub=' + sub);
+      }).catch(function() {
+        fallbackCopy(html);
+        toast('📧 이메일 HTML 복사 완료!', 'success');
+      });
+    } else {
+      fallbackCopy(html);
+      toast('📧 이메일 HTML 복사 완료!', 'success');
+    }
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+
+  // ── Quill HTML 정리 ──
+  function cleanQuillHtml(html) {
+    if (!html) return '';
+    // 빈 줄 정리
+    html = html.replace(/<p><br><\/p>/g, '<br>');
+    // Quill 클래스 제거
+    html = html.replace(/ class="ql-[^"]*"/g, '');
+    // 이미지 크기 제한
+    html = html.replace(/<img(?![^>]*style)/g, '<img style="max-width:100%;height:auto;display:block;margin:8px 0;"');
+    // 링크 색상
+    html = html.replace(/<a(?![^>]*style)/g, '<a style="color:#7c6cf0;text-decoration:underline;"');
+    // p 태그 스타일
+    html = html.replace(/<p>/g, '<p style="margin:0 0 12px;font-size:15px;line-height:1.75;color:#4a4a6a;">');
+    // strong
+    html = html.replace(/<strong>/g, '<strong style="color:#1a1a2e;">');
+    // h2, h3
+    html = html.replace(/<h2>/g, '<h2 style="margin:0 0 12px;font-size:20px;font-weight:800;color:#1a1a2e;">');
+    html = html.replace(/<h3>/g, '<h3 style="margin:0 0 10px;font-size:17px;font-weight:700;color:#1a1a2e;">');
+    // ul, ol, li
+    html = html.replace(/<ul>/g, '<ul style="margin:0 0 12px;padding-left:20px;">');
+    html = html.replace(/<ol>/g, '<ol style="margin:0 0 12px;padding-left:20px;">');
+    html = html.replace(/<li>/g, '<li style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#4a4a6a;">');
+    return html;
+  }
+
+  // ── 이미지 URL 절대경로 변환 ──
+  function absUrl(url) {
+    if (!url) return '';
+    if (url.indexOf('http') === 0) return url;
+    return 'https://ubcexp.pages.dev/letter/' + url.replace(/^\//, '');
+  }
+
+  // ── 강의 URL 생성 ──
+  function makeCourseUrl(slug, sub) {
+    var base = sub ? 'https://' + sub + '.udemy.com' : 'https://www.udemy.com';
+    if (!slug) return base;
+    if (slug.indexOf('http') === 0) return slug.replace('www.udemy.com', sub ? sub + '.udemy.com' : 'www.udemy.com');
+    return base + '/course/' + slug + '/';
+  }
+
+  // ── 뱃지 HTML ──
+  function emailBadgeHtml(badgeId) {
+    var badges = {
+      'popular': { text: '🔥 가장 인기', bg: '#fef3c7', color: '#92400e' },
+      'shortest': { text: '⚡ 가장 짧은', bg: '#dbeafe', color: '#1e40af' },
+      'top-rated': { text: '🏆 평점 최고', bg: '#d1fae5', color: '#065f46' },
+      'new': { text: '🆕 신규', bg: '#ede9fe', color: '#5b21b6' },
+      'essential': { text: '💼 실무 필수', bg: '#fce7f3', color: '#9d174d' }
+    };
+    var b = badges[badgeId];
+    if (!b) {
+      // 커스텀 뱃지
+      var customs = JSON.parse(localStorage.getItem('letter_custom_badges') || '[]');
+      for (var i = 0; i < customs.length; i++) {
+        if (customs[i].id === badgeId) {
+          b = { text: customs[i].ko, bg: '#ede9fe', color: '#5b21b6' };
+          break;
+        }
+      }
+    }
+    if (!b) return '';
+    return '<span style="display:inline-block;padding:3px 10px;background:' + b.bg +
+      ';color:' + b.color + ';border-radius:8px;font-size:11px;font-weight:700;margin-bottom:6px;">' +
+      b.text + '</span>';
+  }
+
+  // ── 코멘트 추출 ──
+  function getCommentText(c) {
+    if (!c) return '';
+    if (typeof c === 'string') return c;
+    return c.ko || '';
+  }
+
+  // ══════════════════════════════════════════
+  // ★★★ 메인: 이메일 HTML 빌더 (풀버전) ★★★
+  // ══════════════════════════════════════════
+  function buildEmailHtml(letter, sub, coursesMap) {
+    var campusUrl = sub ? 'https://' + sub + '.udemy.com' : 'https://www.udemy.com';
+    var greeting = sub ? sub.toUpperCase() + ' 학습자님을 위한 이달의 레터' : '학습자님을 위한 이달의 레터';
+    var titleKo = (letter.title && letter.title.ko) ? letter.title.ko : '';
+    var subtitleKo = (letter.subtitle && letter.subtitle.ko) ? letter.subtitle.ko : '';
+
+    var h = '';
+
+    // ── DOCTYPE + HEAD ──
+    h += '<!DOCTYPE html>\n';
+    h += '<html lang="ko" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">\n';
+    h += '<head>\n';
+    h += '<meta charset="utf-8">\n';
+    h += '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
+    h += '<meta http-equiv="X-UA-Compatible" content="IE=edge">\n';
+    h += '<title>Udemy Letter — ' + escHtml(letter.month) + '</title>\n';
+    h += '<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->\n';
+    h += '<style type="text/css">\n';
+    h += 'body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}\n';
+    h += 'table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}\n';
+    h += 'img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none;}\n';
+    h += 'body{margin:0;padding:0;width:100%!important;}\n';
+    h += '@media only screen and (max-width:620px){\n';
+    h += '  .mobile-full{width:100%!important;}\n';
+    h += '  .mobile-pad{padding:16px!important;}\n';
+    h += '  .mobile-hide{display:none!important;}\n';
+    h += '  .mobile-stack{display:block!important;width:100%!important;}\n';
+    h += '  .mobile-title{font-size:22px!important;line-height:28px!important;}\n';
+    h += '}\n';
+    h += '</style>\n';
+    h += '</head>\n';
+
+    // ── BODY ──
+    h += '<body style="margin:0;padding:0;background-color:#f5f3ff;font-family:\'Apple SD Gothic Neo\',\'Malgun Gothic\',Helvetica,Arial,sans-serif;">\n';
+
+    // 프리헤더
+    h += '<div style="display:none;font-size:1px;color:#f5f3ff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">';
+    h += escHtml(titleKo) + ' — ' + escHtml(subtitleKo);
+    h += '</div>\n';
+
+    // 전체 래퍼
+    h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f5f3ff;">\n';
+    h += '<tr><td align="center" style="padding:20px 10px;">\n';
+
+    // Outlook 래퍼
+    h += '<!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" align="center"><tr><td><![endif]-->\n';
+
+    // 메인 컨테이너
+    h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="mobile-full" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;">\n';
+
+    // ═══ 헤더 ═══
+    h += '<tr><td style="padding:14px 24px;border-bottom:1px solid #f0eeff;">\n';
+    h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>\n';
+    h += '<td><img src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg" alt="Udemy" height="22" style="vertical-align:middle;"> <span style="color:#7c6cf0;font-size:14px;font-weight:700;vertical-align:middle;margin-left:6px;">Letter</span></td>\n';
+    h += '<td align="right" style="font-size:12px;color:#9090aa;">' + escHtml(letter.month) + '호</td>\n';
+    h += '</tr></table>\n';
+    h += '</td></tr>\n';
+
+    // ═══ 표지 ═══
+    var coverImg = absUrl(letter.coverImage || 'src/img/Brand_Launch.jpg');
+    h += '<tr><td style="background:#7c6cf0;background:linear-gradient(135deg,#7c6cf0 0%,#a78bfa 40%,#ec4899 100%);padding:0;text-align:center;">\n';
+    // 표지 이미지
+    if (coverImg) {
+      h += '<img src="' + escHtml(coverImg) + '" alt="" width="600" style="display:block;width:100%;max-width:600px;height:auto;" class="mobile-full">\n';
+    }
+    // 표지 텍스트
+    h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="padding:30px 32px 36px;text-align:center;" class="mobile-pad">\n';
+    h += '<p style="margin:0 0 8px;font-size:12px;color:rgba(255,255,255,0.65);letter-spacing:3px;text-transform:uppercase;">' + escHtml(letter.month) + '호</p>\n';
+    h += '<h1 style="margin:0 0 10px;font-size:28px;font-weight:900;color:#ffffff;line-height:1.3;" class="mobile-title">' + escHtml(titleKo) + '</h1>\n';
+    h += '<p style="margin:0 0 14px;font-size:15px;color:rgba(255,255,255,0.85);font-weight:300;">' + escHtml(subtitleKo) + '</p>\n';
+    h += '<p style="margin:0;font-size:13px;color:rgba(255,255,255,0.55);">' + escHtml(greeting) + '</p>\n';
+    h += '</td></tr></table>\n';
+    h += '</td></tr>\n';
+
+    // ═══ INDEX 섹션 ═══
+    var sections = [];
+    if (letter.insight) sections.push({ num: '01', icon: '📊', title: '트렌드 인사이트' });
+    if (letter.newContent) sections.push({ num: '02', icon: '✨', title: '신규 콘텐츠' });
+    if (letter.curation) sections.push({ num: '03', icon: '🎯', title: '이달의 큐레이션' });
+
+    if (sections.length > 0) {
+      h += '<tr><td style="padding:28px 32px;" class="mobile-pad">\n';
+      h += '<p style="margin:0 0 14px;font-size:11px;font-weight:700;color:#7c6cf0;letter-spacing:2px;">INDEX</p>\n';
+      h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>\n';
+      for (var si = 0; si < sections.length; si++) {
+        var sec = sections[si];
+        var w = Math.floor(100 / sections.length);
+        h += '<td width="' + w + '%" valign="top" style="padding:12px;background:#f5f3ff;border-radius:12px;text-align:center;" class="mobile-stack">\n';
+        h += '<p style="margin:0 0 2px;font-size:10px;font-weight:700;color:#7c6cf0;letter-spacing:1px;">' + sec.num + '</p>\n';
+        h += '<p style="margin:0 0 4px;font-size:22px;">' + sec.icon + '</p>\n';
+        h += '<p style="margin:0;font-size:13px;font-weight:700;color:#1a1a2e;">' + escHtml(sec.title) + '</p>\n';
+        h += '</td>\n';
+        if (si < sections.length - 1) h += '<td width="8"></td>\n';
+      }
+      h += '</tr></table>\n';
+      h += '</td></tr>\n';
+    }
+
+    // ═══ 트렌드 인사이트 ═══
+    if (letter.insight) {
+      h += emailSectionHeader('CONTENT 1', '📊', '트렌드 인사이트');
+
+      // 섹션 이미지
+      if (letter.insight.image) {
+        h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
+        h += '<img src="' + escHtml(absUrl(letter.insight.image)) + '" alt="" width="536" style="display:block;width:100%;max-width:536px;border-radius:12px;" class="mobile-full">\n';
+        h += '</td></tr>\n';
+      }
+
+      // 에디터 콘텐츠
+      if (letter.insight.pages && letter.insight.pages.length > 0) {
+        for (var pi = 0; pi < letter.insight.pages.length; pi++) {
+          var pageHtml = cleanQuillHtml(letter.insight.pages[pi].html_ko || '');
+          if (pageHtml.replace(/<[^>]*>/g, '').trim()) {
+            h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
+            h += '<div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:24px;border-top:4px solid #7c6cf0;">\n';
+            h += pageHtml + '\n';
+            h += '</div>\n';
+            h += '</td></tr>\n';
+          }
+        }
+      }
+
+      // 강의 카드
+      if (letter.insight.courseIds && letter.insight.courseIds.length > 0) {
+        h += emailCourseCards(letter.insight, coursesMap, sub);
+      }
+    }
+
+    // ═══ 신규 콘텐츠 ═══
+    if (letter.newContent) {
+      h += emailDivider();
+      h += emailSectionHeader('CONTENT 2', '✨', '신규 콘텐츠');
+
+      if (letter.newContent.image) {
+        h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
+        h += '<img src="' + escHtml(absUrl(letter.newContent.image)) + '" alt="" width="536" style="display:block;width:100%;max-width:536px;border-radius:12px;" class="mobile-full">\n';
+        h += '</td></tr>\n';
+      }
+
+      if (letter.newContent.editorHtml && letter.newContent.editorHtml.ko) {
+        var newHtml = cleanQuillHtml(letter.newContent.editorHtml.ko);
+        if (newHtml.replace(/<[^>]*>/g, '').trim()) {
+          h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
+          h += '<div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:24px;">\n';
+          h += newHtml + '\n';
+          h += '</div>\n';
+          h += '</td></tr>\n';
+        }
+      }
+
+      if (letter.newContent.courseIds && letter.newContent.courseIds.length > 0) {
+        h += emailCourseCards(letter.newContent, coursesMap, sub);
+      }
+
+      if (letter.newContent.summary && letter.newContent.summary.ko) {
+        h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
+        h += '<div style="background:#f5f3ff;border-radius:12px;padding:16px;text-align:center;">\n';
+        h += '<p style="margin:0;font-size:14px;color:#4a4a6a;line-height:1.7;">' + escHtml(letter.newContent.summary.ko) + '</p>\n';
+        h += '</div>\n';
+        h += '</td></tr>\n';
+      }
+    }
+
+    // ═══ 큐레이션 ═══
+    if (letter.curation) {
+      h += emailDivider();
+      h += emailSectionHeader('CONTENT 3', '🎯', '이달의 큐레이션');
+
+      if (letter.curation.image) {
+        h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
+        h += '<img src="' + escHtml(absUrl(letter.curation.image)) + '" alt="" width="536" style="display:block;width:100%;max-width:536px;border-radius:12px;" class="mobile-full">\n';
+        h += '</td></tr>\n';
+      }
+
+      // 소개 + 태그
+      if ((letter.curation.intro && letter.curation.intro.ko) || (letter.curation.tags && letter.curation.tags.length > 0)) {
+        h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
+        h += '<div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:20px;border-left:4px solid #7c6cf0;">\n';
+        if (letter.curation.intro && letter.curation.intro.ko) {
+          h += '<p style="margin:0 0 12px;font-size:14px;color:#4a4a6a;line-height:1.7;">' + escHtml(letter.curation.intro.ko) + '</p>\n';
+        }
+        if (letter.curation.tags && letter.curation.tags.length > 0) {
+          h += '<div style="margin-top:8px;">\n';
+          for (var ti = 0; ti < letter.curation.tags.length; ti++) {
+            var tagText = typeof letter.curation.tags[ti] === 'string' ? letter.curation.tags[ti] : (letter.curation.tags[ti].ko || '');
+            h += '<span style="display:inline-block;padding:5px 14px;background:#7c6cf0;color:#ffffff;border-radius:20px;font-size:12px;font-weight:600;margin:0 6px 6px 0;">' + escHtml(tagText) + '</span>\n';
+          }
+          h += '</div>\n';
+        }
+        h += '</div>\n';
+        h += '</td></tr>\n';
+      }
+
+      // 큐레이션 리스트
+      if (letter.curation.courseIds && letter.curation.courseIds.length > 0) {
+        h += emailCurationList(letter.curation, coursesMap, sub);
+      }
+
+      // 안내 문구
+      h += '<tr><td style="padding:0 32px 8px;text-align:center;" class="mobile-pad">\n';
+      h += '<p style="margin:0;font-size:12px;color:#9090aa;background:#f5f3ff;padding:10px;border-radius:8px;">💡 강의명을 클릭하면 해당 강의 페이지로 연결됩니다.</p>\n';
+      h += '</td></tr>\n';
+    }
+
+    // ═══ 홍보 ═══
+    if (letter.promo && letter.promo.pages && letter.promo.pages.length > 0) {
+      var hasPromo = false;
+      for (var pri = 0; pri < letter.promo.pages.length; pri++) {
+        if (letter.promo.pages[pri].html_ko && letter.promo.pages[pri].html_ko.replace(/<[^>]*>/g, '').trim()) hasPromo = true;
+      }
+      if (hasPromo) {
+        h += emailDivider();
+        h += emailSectionHeader('PROMOTION', '📢', '홍보');
+        for (var pri2 = 0; pri2 < letter.promo.pages.length; pri2++) {
+          var promoHtml = cleanQuillHtml(letter.promo.pages[pri2].html_ko || '');
+          if (promoHtml.replace(/<[^>]*>/g, '').trim()) {
+            h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
+            h += '<div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:24px;">\n';
+            h += promoHtml + '\n';
+            h += '</div>\n';
+            h += '</td></tr>\n';
+          }
+        }
+      }
+    }
+
+    // ═══ CTA 배너 ═══
+    h += '<tr><td style="padding:24px 32px;" class="mobile-pad">\n';
+    h += '<div style="background:#f5f3ff;border:1px solid #f0eeff;border-radius:16px;padding:28px;text-align:center;">\n';
+    h += '<p style="margin:0 0 16px;font-size:15px;color:#4a4a6a;">이번 달 추천 강의가 마음에 드셨나요?</p>\n';
+    h += '<a href="' + escHtml(campusUrl) + '" target="_blank" style="display:inline-block;padding:14px 32px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:28px;font-size:15px;font-weight:700;">🚀 학습장 바로가기 →</a>\n';
+    h += '</div>\n';
+    h += '</td></tr>\n';
+
+    // ═══ 마무리 ═══
+    var closingHtml = (letter.closing && letter.closing.message && letter.closing.message.ko) ? letter.closing.message.ko : '';
+    h += '<tr><td style="padding:40px 32px;background:#f5f3ff;border-top:2px solid #7c6cf0;text-align:center;" class="mobile-pad">\n';
+    if (letter.closing && letter.closing.image) {
+      h += '<img src="' + escHtml(absUrl(letter.closing.image)) + '" alt="" width="200" style="display:block;max-width:200px;margin:0 auto 20px;border-radius:12px;">\n';
+    }
+    h += '<p style="margin:0 0 8px;font-size:28px;">📮</p>\n';
+    h += '<p style="margin:0 0 4px;font-size:18px;font-weight:800;color:#7c6cf0;">Udemy Letter</p>\n';
+    if (closingHtml) {
+      var closingClean = cleanQuillHtml(closingHtml);
+      h += '<div style="margin:16px 0;font-size:13px;color:#9090aa;line-height:1.8;">' + closingClean + '</div>\n';
+    }
+    h += '</td></tr>\n';
+
+    // ═══ 푸터 ═══
+    h += '<tr><td style="padding:20px 32px;text-align:center;background:#ffffff;border-top:1px solid #f0eeff;" class="mobile-pad">\n';
+    h += '<p style="margin:0 0 8px;font-size:12px;color:#9090aa;">Udemy Letter | 웅진씽크빅 © 2026</p>\n';
+    h += '<p style="margin:0;"><a href="#" style="font-size:11px;color:#9090aa;text-decoration:underline;">수신거부</a></p>\n';
+    h += '</td></tr>\n';
+
+    // 메인 컨테이너 닫기
+    h += '</table>\n';
+
+    // Outlook 래퍼 닫기
+    h += '<!--[if mso]></td></tr></table><![endif]-->\n';
+
+    h += '</td></tr></table>\n';
+    h += '</body>\n</html>';
+
+    return h;
+  }
+
+  // ── 섹션 헤더 ──
+  function emailSectionHeader(tag, icon, title) {
+    var h = '<tr><td style="padding:28px 32px 12px;" class="mobile-pad">\n';
+    h += '<p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#7c6cf0;letter-spacing:2px;text-transform:uppercase;">' + escHtml(tag) + '</p>\n';
+    h += '<h2 style="margin:0;font-size:22px;font-weight:800;color:#1a1a2e;">' + icon + ' ' + escHtml(title) + '</h2>\n';
+    h += '</td></tr>\n';
+    return h;
+  }
+
+  // ── 구분선 ──
+  function emailDivider() {
+    return '<tr><td style="padding:0 32px;" class="mobile-pad"><div style="border-top:1px solid #f0eeff;margin:8px 0;"></div></td></tr>\n';
+  }
+
+  // ── 강의 카드 (카드/하이라이트 레이아웃) ──
+  function emailCourseCards(sData, coursesMap, sub) {
+    var ids = sData.courseIds || [];
+    var comments = sData.courseComments || {};
+    var badges = sData.courseBadges || {};
+    var h = '';
+
+    for (var i = 0; i < ids.length; i++) {
+      var c = coursesMap[String(ids[i])];
+      if (!c) continue;
+      var curl = makeCourseUrl(c.url || c.slug, sub);
+      var cimg = absUrl(c.image);
+      var badge = badges[ids[i]];
+      var comment = getCommentText(comments[ids[i]]);
+
+      h += '<tr><td style="padding:0 32px 10px;" class="mobile-pad">\n';
+      h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;overflow:hidden;">\n';
+      h += '<tr>\n';
+
+      // 썸네일
+      if (cimg) {
+        h += '<td width="130" valign="top" class="mobile-hide">\n';
+        h += '<a href="' + escHtml(curl) + '" target="_blank"><img src="' + escHtml(cimg) + '" alt="" width="130" height="73" style="display:block;width:130px;height:73px;object-fit:cover;"></a>\n';
+        h += '</td>\n';
+      }
+
+      // 정보
+      h += '<td valign="top" style="padding:14px 16px;">\n';
+      if (badge) h += emailBadgeHtml(badge) + '<br>\n';
+      h += '<a href="' + escHtml(curl) + '" target="_blank" style="font-size:14px;font-weight:700;color:#1a1a2e;text-decoration:none;line-height:1.4;">' + escHtml((c.title || '').substring(0, 65)) + '</a>\n';
+
+      // 메타
+      var metaParts = [];
+      if (c.rating) metaParts.push('⭐ ' + Number(c.rating).toFixed(1));
+      if (c.contentLength) metaParts.push('⏱️ ' + formatDuration(c.contentLength));
+      if (c.instructor) metaParts.push('👤 ' + escHtml((c.instructor || '').substring(0, 25)));
+      if (c.difficulty) metaParts.push('📊 ' + mapDifficulty(c.difficulty));
+      if (metaParts.length > 0) {
+        h += '<p style="margin:5px 0 0;font-size:11px;color:#9090aa;line-height:1.5;">' + metaParts.join(' &nbsp;·&nbsp; ') + '</p>\n';
+      }
+
+      // 코멘트
+      if (comment) {
+        h += '<p style="margin:8px 0 0;font-size:12px;color:#4a4a6a;background:#f5f3ff;padding:8px 10px;border-radius:8px;border-left:3px solid #a78bfa;line-height:1.6;">💡 ' + escHtml(comment.substring(0, 120)) + '</p>\n';
+      }
+
+      // CTA
+      h += '<a href="' + escHtml(curl) + '" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:#7c6cf0;text-decoration:none;font-weight:600;">지금 수강하기 →</a>\n';
+
+      h += '</td>\n';
+      h += '</tr></table>\n';
+      h += '</td></tr>\n';
+    }
+
+    return h;
+  }
+
+  // ── 큐레이션 리스트 ──
+  function emailCurationList(cData, coursesMap, sub) {
+    var ids = cData.courseIds || [];
+    var comments = cData.courseComments || {};
+    var badges = cData.courseBadges || {};
+    var h = '';
+
+    for (var i = 0; i < ids.length; i++) {
+      var c = coursesMap[String(ids[i])];
+      if (!c) continue;
+      var curl = makeCourseUrl(c.url || c.slug, sub);
+      var badge = badges[ids[i]];
+      var comment = getCommentText(comments[ids[i]]);
+
+      h += '<tr><td style="padding:0 32px 6px;" class="mobile-pad">\n';
+      h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-bottom:1px solid #f0eeff;">\n';
+      h += '<tr>\n';
+
+      // 순위
+      h += '<td width="40" valign="top" style="padding:14px 0;">\n';
+      h += '<span style="font-size:18px;font-weight:900;color:#7c6cf0;">' + String(i + 1).padStart(2, '0') + '</span>\n';
+      h += '</td>\n';
+
+      // 정보
+      h += '<td valign="top" style="padding:14px 0 14px 8px;">\n';
+      if (badge) h += emailBadgeHtml(badge) + '<br>\n';
+      h += '<a href="' + escHtml(curl) + '" target="_blank" style="font-size:14px;font-weight:700;color:#1a1a2e;text-decoration:none;line-height:1.4;">' + escHtml((c.title || '').substring(0, 70)) + '</a>\n';
+
+      var metaParts = [];
+      if (c.rating) metaParts.push('⭐ ' + Number(c.rating).toFixed(1));
+      if (c.contentLength) metaParts.push('⏱️ ' + formatDuration(c.contentLength));
+      if (c.difficulty) metaParts.push('📊 ' + mapDifficulty(c.difficulty));
+      if (c.instructor) metaParts.push('👤 ' + escHtml((c.instructor || '').substring(0, 25)));
+      if (c.category) metaParts.push('📂 ' + escHtml((c.category || '').split(',')[0].trim().substring(0, 20)));
+      if (metaParts.length > 0) {
+        h += '<p style="margin:5px 0 0;font-size:11px;color:#9090aa;line-height:1.5;">' + metaParts.join(' &nbsp;·&nbsp; ') + '</p>\n';
+      }
+
+      if (comment) {
+        h += '<p style="margin:8px 0 0;font-size:12px;color:#4a4a6a;background:#f5f3ff;padding:8px 10px;border-radius:8px;border-left:3px solid #a78bfa;line-height:1.6;">💡 ' + escHtml(comment.substring(0, 150)) + '</p>\n';
+      }
+
+      h += '<a href="' + escHtml(curl) + '" target="_blank" style="display:inline-block;margin-top:8px;padding:6px 16px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:18px;font-size:12px;font-weight:600;">지금 바로 시작하기 →</a>\n';
+
+      h += '</td>\n';
+      h += '</tr></table>\n';
+      h += '</td></tr>\n';
+
+      // 중간 CTA (3번째 강의 뒤)
+      if (i === 2 && ids.length > 4) {
+        h += '<tr><td style="padding:12px 32px;" class="mobile-pad">\n';
+        h += '<div style="background:#f5f3ff;border:1px solid #f0eeff;border-radius:12px;padding:16px;text-align:center;">\n';
+        h += '<p style="margin:0 0 10px;font-size:13px;color:#4a4a6a;">💡 지금 바로 학습장에서 무료로 수강하세요!</p>\n';
+        h += '<a href="' + escHtml(campusUrl) + '" target="_blank" style="display:inline-block;padding:10px 24px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:20px;font-size:13px;font-weight:700;">🚀 학습장 바로가기 →</a>\n';
+        h += '</div>\n';
+        h += '</td></tr>\n';
+      }
+    }
+
+    return h;
+  }
+
+  // ── 레터 목록에 메일복사 버튼 추가 ──
+  // loadLetterList 함수 안의 letter-card-actions 부분에서
+  // loadLetterList 안에서 letter-card-actions 부분
+html += '<div class="letter-card-actions">';
+html += '<button class="letter-card-action" data-month="' + item.month + '" data-action="edit">✏️ 편집</button>';
+html += '<button class="letter-card-action btn-copy-email" data-month="' + item.month + '">📧 메일복사</button>';
+html += '</div>';
+
+  
 })();
