@@ -1,5 +1,3 @@
-// functions/api/courses-proxy.js — 전체 교체
-
 export async function onRequestGet(context) {
   const { request } = context;
   const url = new URL(request.url);
@@ -26,21 +24,19 @@ export async function onRequestGet(context) {
       return new Response(JSON.stringify(data), { headers: corsHeaders });
     }
 
-    // ── ID로 강의 검색 (★ 수정: 배치 방식으로 변경) ──
+    // ── ID로 강의 검색 (배치 방식) ──
     if (ids) {
       const idList = ids.split(',').map(s => s.trim()).filter(Boolean);
       if (idList.length === 0) {
         return new Response(JSON.stringify([]), { headers: corsHeaders });
       }
 
-      // 상태 조회
       const statusRes = await fetch(WORKER_URL + '/status', {
         headers: { 'Authorization': 'Bearer ' + WORKER_SECRET }
       });
       const status = await statusRes.json();
       const tc = status.totalChunks || 0;
 
-      // ★ 배치로 3개씩 순차 처리 (한번에 전부 X)
       const BATCH_SIZE = 3;
       const found = [];
       const idSet = new Set(idList);
