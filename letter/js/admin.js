@@ -3,6 +3,8 @@
   var API_BASE = '/api';
   var ADMIN_SECRET = 'gogo1014';
   var WORKER_URL = 'https://udemy-sync.mymyiove882.workers.dev';
+  var EMAIL_FONT = "'Noto Sans KR','Apple SD Gothic Neo','Pretendard',-apple-system,'Segoe UI','Malgun Gothic','맑은 고딕',Helvetica,Arial,sans-serif";
+  var EMAIL_IMAGE_BASE = 'https://ubcexp.pages.dev/letter/';
 
   var ADMINS = {
     'jhj11': '휴',
@@ -361,65 +363,48 @@
   }
 
   function loadCoursesFromWorker() {
-  if (allCoursesCache) return Promise.resolve(allCoursesCache);
-
-  return fetch('/api/courses-proxy?action=status')
-    .then(function(r) {
-      if (!r.ok) throw new Error('status failed');
-      return r.json();
-    })
-    .then(function(s) {
-      var tc = s.totalChunks || 0;
-      if (tc === 0) throw new Error('no chunks');
-
-      var BATCH = 3;
-      var all = [];
-      var batchIndex = 0;
-
-      function loadBatch() {
-        if (batchIndex >= tc) {
-          allCoursesCache = all;
-          return Promise.resolve(all);
-        }
-
-        var end = Math.min(batchIndex + BATCH, tc);
-        var ps = [];
-        for (var i = batchIndex; i < end; i++) {
-          ps.push(
-            fetch('/api/courses-proxy?chunk=' + i)
-              .then(function(r) { return r.ok ? r.json() : []; })
-              .catch(function() { return []; })
-          );
-        }
-
-        return Promise.all(ps).then(function(rs) {
-          for (var i = 0; i < rs.length; i++) {
-            if (Array.isArray(rs[i])) all = all.concat(rs[i]);
+    if (allCoursesCache) return Promise.resolve(allCoursesCache);
+    return fetch('/api/courses-proxy?action=status')
+      .then(function(r) {
+        if (!r.ok) throw new Error('status failed');
+        return r.json();
+      })
+      .then(function(s) {
+        var tc = s.totalChunks || 0;
+        if (tc === 0) throw new Error('no chunks');
+        var BATCH = 3;
+        var all = [];
+        var batchIndex = 0;
+        function loadBatch() {
+          if (batchIndex >= tc) {
+            allCoursesCache = all;
+            return Promise.resolve(all);
           }
-          batchIndex = end;
-
-          var pct = Math.round((end / tc) * 100);
-          var statusEls = ['insight-fetch-status', 'new-fetch-status', 'curation-fetch-status'];
-          for (var si = 0; si < statusEls.length; si++) {
-            var el = document.getElementById(statusEls[si]);
-            if (el && !el.textContent.match(/✅|❌/)) {
-              el.textContent = '⏳ 강의 데이터 로딩 중... ' + pct + '% (' + all.length + '개)';
+          var end = Math.min(batchIndex + BATCH, tc);
+          var ps = [];
+          for (var i = batchIndex; i < end; i++) {
+            ps.push(fetch('/api/courses-proxy?chunk=' + i).then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }));
+          }
+          return Promise.all(ps).then(function(rs) {
+            for (var i = 0; i < rs.length; i++) {
+              if (Array.isArray(rs[i])) all = all.concat(rs[i]);
             }
-          }
-
-          return new Promise(function(resolve) {
-            setTimeout(function() { resolve(loadBatch()); }, 200);
+            batchIndex = end;
+            var pct = Math.round((end / tc) * 100);
+            var statusEls = ['insight-fetch-status', 'new-fetch-status', 'curation-fetch-status'];
+            for (var si = 0; si < statusEls.length; si++) {
+              var el = document.getElementById(statusEls[si]);
+              if (el && !el.textContent.match(/✅|❌/)) {
+                el.textContent = '⏳ 강의 데이터 로딩 중... ' + pct + '% (' + all.length + '개)';
+              }
+            }
+            return new Promise(function(resolve) { setTimeout(function() { resolve(loadBatch()); }, 200); });
           });
-        });
-      }
-
-      return loadBatch();
-    })
-    .catch(function(e) {
-      toast('강의 데이터 로드 실패: ' + e.message, 'error');
-      return [];
-    });
-}
+        }
+        return loadBatch();
+      })
+      .catch(function(e) { toast('강의 데이터 로드 실패: ' + e.message, 'error'); return []; });
+  }
 
   // === Render Course Preview ===
   function renderCoursePreview(sec) {
@@ -427,7 +412,6 @@
     var ids = sectionCourses[sec].ids;
     var layout = sectionCourses[sec].layout;
     if (ids.length === 0) { container.innerHTML = ''; return; }
-
     var html = '';
     for (var i = 0; i < ids.length; i++) {
       var id = ids[i];
@@ -435,12 +419,7 @@
       var comment = sectionCourses[sec].comments[id] || '';
       if (typeof comment === 'object') comment = comment.ko || '';
       var badge = sectionCourses[sec].badges[id] || '';
-
-      if (!c) {
-        html += '<div class="preview-list-item"><div style="color:var(--danger);font-size:0.8rem;">❌ ID ' + id + '</div></div>';
-        continue;
-      }
-
+      if (!c) { html += '<div class="preview-mini-card-with-thumb" style="opacity:0.5">❌ ID ' + id + '</div>'; continue; }
       var title = c.title || '';
       var thumb = c.image || '';
       var metaParts = [];
@@ -449,49 +428,18 @@
       if (c.instructor) metaParts.push('👤 ' + c.instructor);
       if (c.difficulty) metaParts.push('📊 ' + mapDifficulty(c.difficulty));
       var meta = metaParts.map(function(m) { return '<span>' + m + '</span>'; }).join('');
-
       var thumbH = thumb ? '<div class="preview-thumb"><img src="' + escHtml(thumb) + '" onerror="this.parentElement.style.display=\'none\'" /></div>' : '';
       var removeH = '<span class="preview-mini-card-remove" data-section="' + sec + '" data-id="' + id + '">✕</span>';
       var badgeH = renderBadgeSelector(id, badge, sec);
-      var commentH = '<div class="comment-row">' +
-        '<textarea class="course-comment-input" data-section="' + sec + '" data-id="' + id + '" placeholder="추천 사유를 입력하세요...">' + escHtml(comment) + '</textarea>' +
-        '<button class="btn-ai-single" data-section="' + sec + '" data-id="' + id + '" title="AI 코멘트 생성">🤖</button>' +
-        '</div>';
-
+      var commentH = '<div class="comment-row"><textarea class="course-comment-input" data-section="' + sec + '" data-id="' + id + '" placeholder="추천 사유를 입력하세요...">' + escHtml(comment) + '</textarea><button class="btn-ai-single" data-section="' + sec + '" data-id="' + id + '" title="AI 코멘트 생성">🤖</button></div>';
       if (layout === 'card') {
-        html += '<div class="preview-mini-card-with-thumb" data-id="' + id + '">' + thumbH +
-          '<div class="preview-mini-card-body">' +
-          '<div style="display:flex;justify-content:space-between;">' +
-          '<div class="preview-mini-card-title">' + escHtml(title.substring(0, 50)) + '</div>' + removeH +
-          '</div>' +
-          '<div class="preview-mini-card-meta">' + meta + '</div>' +
-          badgeH + commentH +
-          '</div></div>';
+        html += '<div class="preview-mini-card-with-thumb">' + thumbH + '<div class="preview-mini-card-body"><div style="display:flex;justify-content:space-between;align-items:start"><div class="preview-mini-card-title">' + escHtml(title.substring(0, 50)) + '</div>' + removeH + '</div><div class="preview-mini-card-meta">' + meta + '</div>' + badgeH + commentH + '</div></div>';
       } else if (layout === 'highlight') {
-        html += '<div class="preview-highlight-card" data-id="' + id + '">' +
-          '<div style="display:flex;gap:0.8rem;">' + thumbH +
-          '<div style="flex:1;">' +
-          '<div style="display:flex;justify-content:space-between;">' +
-          '<div class="preview-highlight-badge">🆕</div>' + removeH +
-          '</div>' +
-          '<div class="preview-highlight-title">' + escHtml(title.substring(0, 60)) + '</div>' +
-          '<div class="preview-highlight-meta">' + meta + '</div>' +
-          '</div></div>' +
-          badgeH + commentH +
-          '</div>';
+        html += '<div class="preview-highlight-card"><div style="display:flex;gap:0.8rem">' + thumbH + '<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:start"><div class="preview-highlight-badge">🆕</div>' + removeH + '</div><div class="preview-highlight-title">' + escHtml(title.substring(0, 60)) + '</div><div class="preview-highlight-meta">' + meta + '</div></div></div>' + badgeH + commentH + '</div>';
       } else {
-        html += '<div class="preview-list-item-with-thumb" data-id="' + id + '">' +
-          '<div class="preview-list-rank">' + String(i + 1).padStart(2, '0') + '</div>' + thumbH +
-          '<div style="flex:1;">' +
-          '<div style="display:flex;justify-content:space-between;">' +
-          '<div class="preview-list-title">' + escHtml(title.substring(0, 70)) + '</div>' + removeH +
-          '</div>' +
-          '<div class="preview-list-meta">' + meta + '</div>' +
-          badgeH + commentH +
-          '</div></div>';
+        html += '<div class="preview-list-item-with-thumb"><div class="preview-list-rank">' + String(i + 1).padStart(2, '0') + '</div>' + thumbH + '<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:start"><div class="preview-list-title">' + escHtml(title.substring(0, 70)) + '</div>' + removeH + '</div><div class="preview-list-meta">' + meta + '</div>' + badgeH + commentH + '</div></div>';
       }
     }
-
     container.innerHTML = html;
     bindPreviewEvents(sec);
   }
@@ -502,17 +450,11 @@
       var b = BADGE_OPTIONS[i];
       var sel = cur === b.id ? ' selected' : '';
       var isCustom = b.id.indexOf('custom_') === 0;
-      h += '<span class="badge-opt-wrap">';
-      h += '<button class="badge-opt' + sel + '" data-section="' + sec + '" data-id="' + id + '" data-badge="' + b.id + '">' + b.ko + '</button>';
-      if (isCustom) {
-        h += '<button class="badge-delete-btn" data-badge-id="' + b.id + '" title="뱃지 삭제">✕</button>';
-      }
+      h += '<span class="badge-opt-wrap"><button class="badge-opt' + sel + '" data-section="' + sec + '" data-id="' + id + '" data-badge="' + b.id + '">' + b.ko + '</button>';
+      if (isCustom) h += '<button class="badge-delete-btn" data-badge-id="' + b.id + '" title="뱃지 삭제">✕</button>';
       h += '</span>';
     }
-    h += '<div class="custom-badge-row">' +
-      '<input class="custom-badge-input" data-section="' + sec + '" data-id="' + id + '" placeholder="+ 커스텀" />' +
-      '<button class="btn-add-badge" data-section="' + sec + '" data-id="' + id + '">추가</button>' +
-      '</div></div>';
+    h += '<div class="custom-badge-row"><input class="custom-badge-input" data-section="' + sec + '" data-id="' + id + '" placeholder="+ 커스텀" /><button class="btn-add-badge" data-section="' + sec + '" data-id="' + id + '">추가</button></div></div>';
     return h;
   }
 
@@ -530,22 +472,17 @@
         renderCoursePreview(s);
       });
     }
-
     var badgeBtns = $$('#' + sec + '-course-preview .badge-opt');
     for (var i = 0; i < badgeBtns.length; i++) {
       badgeBtns[i].addEventListener('click', function() {
         var s = this.getAttribute('data-section');
         var id = this.getAttribute('data-id');
         var b = this.getAttribute('data-badge');
-        if (sectionCourses[s].badges[id] === b) {
-          delete sectionCourses[s].badges[id];
-        } else {
-          sectionCourses[s].badges[id] = b;
-        }
+        if (sectionCourses[s].badges[id] === b) delete sectionCourses[s].badges[id];
+        else sectionCourses[s].badges[id] = b;
         renderCoursePreview(s);
       });
     }
-
     var addBBtns = $$('#' + sec + '-course-preview .btn-add-badge');
     for (var i = 0; i < addBBtns.length; i++) {
       addBBtns[i].addEventListener('click', function() {
@@ -563,40 +500,29 @@
         renderCoursePreview(s);
       });
     }
-
     var badgeDelBtns = $$('#' + sec + '-course-preview .badge-delete-btn');
     for (var i = 0; i < badgeDelBtns.length; i++) {
       badgeDelBtns[i].addEventListener('click', function(e) {
         e.stopPropagation();
         var badgeId = this.getAttribute('data-badge-id');
         if (!confirm('이 뱃지를 삭제하시겠습니까?')) return;
-        for (var j = BADGE_OPTIONS.length - 1; j >= 0; j--) {
-          if (BADGE_OPTIONS[j].id === badgeId) { BADGE_OPTIONS.splice(j, 1); break; }
-        }
-        for (var j = customBadges.length - 1; j >= 0; j--) {
-          if (customBadges[j].id === badgeId) { customBadges.splice(j, 1); break; }
-        }
+        for (var j = BADGE_OPTIONS.length - 1; j >= 0; j--) { if (BADGE_OPTIONS[j].id === badgeId) { BADGE_OPTIONS.splice(j, 1); break; } }
+        for (var j = customBadges.length - 1; j >= 0; j--) { if (customBadges[j].id === badgeId) { customBadges.splice(j, 1); break; } }
         localStorage.setItem('letter_custom_badges', JSON.stringify(customBadges));
         var allSecs = ['insight', 'new', 'curation'];
         for (var si = 0; si < allSecs.length; si++) {
-          for (var cid in sectionCourses[allSecs[si]].badges) {
-            if (sectionCourses[allSecs[si]].badges[cid] === badgeId) {
-              delete sectionCourses[allSecs[si]].badges[cid];
-            }
-          }
+          for (var cid in sectionCourses[allSecs[si]].badges) { if (sectionCourses[allSecs[si]].badges[cid] === badgeId) delete sectionCourses[allSecs[si]].badges[cid]; }
           renderCoursePreview(allSecs[si]);
         }
         toast('뱃지 삭제됨!', 'success');
       });
     }
-
     var cInputs = $$('#' + sec + '-course-preview .course-comment-input');
     for (var i = 0; i < cInputs.length; i++) {
       cInputs[i].addEventListener('input', function() {
         sectionCourses[this.getAttribute('data-section')].comments[this.getAttribute('data-id')] = this.value;
       });
     }
-
     var aiSingleBtns = $$('#' + sec + '-course-preview .btn-ai-single');
     for (var i = 0; i < aiSingleBtns.length; i++) {
       aiSingleBtns[i].addEventListener('click', function() {
@@ -607,23 +533,10 @@
         var btn = this;
         btn.disabled = true;
         btn.textContent = '⏳';
-
         apiCall('/letter-ai-comment', 'POST', {
-          courses: [{
-            id: id,
-            title: c.title || '',
-            rating: c.rating ? String(c.rating) : '',
-            duration: c.contentLength ? formatDuration(c.contentLength) : '',
-            instructor: c.instructor || '',
-            category: c.category || '',
-            difficulty: c.difficulty || '',
-            headline: c.headline || '',
-            description: c.description || '',
-            objectives: c.objectives || ''
-          }]
+          courses: [{ id: id, title: c.title || '', rating: c.rating ? String(c.rating) : '', duration: c.contentLength ? formatDuration(c.contentLength) : '', instructor: c.instructor || '', category: c.category || '', difficulty: c.difficulty || '', headline: c.headline || '', description: c.description || '', objectives: c.objectives || '' }]
         }).then(function(res) {
-          btn.disabled = false;
-          btn.textContent = '🤖';
+          btn.disabled = false; btn.textContent = '🤖';
           if (res.success && res.comments && res.comments.length > 0) {
             var commentText = res.comments[0].comment_ko || '';
             if (commentText) {
@@ -631,22 +544,15 @@
               var ta = document.querySelector('#' + s + '-course-preview .course-comment-input[data-id="' + id + '"]');
               if (ta) ta.value = commentText;
               toast('🤖 AI 코멘트 생성!', 'success');
-            } else {
-              toast('AI가 빈 응답을 반환했습니다', 'error');
-            }
-          } else {
-            toast('AI 실패: ' + (res.error || 'unknown'), 'error');
-          }
-        }).catch(function(e) {
-          btn.disabled = false;
-          btn.textContent = '🤖';
-          toast('AI 실패: ' + e.message, 'error');
-        });
+            } else toast('AI가 빈 응답을 반환했습니다', 'error');
+          } else toast('AI 실패: ' + (res.error || 'unknown'), 'error');
+        }).catch(function(e) { btn.disabled = false; btn.textContent = '🤖'; toast('AI 실패: ' + e.message, 'error'); });
       });
     }
   }
 
-  // === Letter List ===
+
+   // === Letter List ===
   function loadLetterList() {
     apiCall('/letter-list').then(function(res) {
       var grid = $('#letter-grid');
@@ -662,16 +568,13 @@
         html += '<div class="letter-card" data-month="' + item.month + '">';
         html += '<div class="letter-card-month">' + item.month + '</div>';
         html += '<div class="letter-card-title">' + escHtml(item.title_ko || '제목 없음') + '</div>';
-        html += '<div class="letter-card-meta">';
-        html += '<span class="status-badge ' + sc + '">' + st + '</span>';
-        html += '<span>' + (item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('ko-KR') : '') + '</span>';
-        html += '</div>';
+        html += '<div class="letter-card-meta"><span class="status-badge ' + sc + '">' + st + '</span>';
+        html += '<span>' + (item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('ko-KR') : '') + '</span></div>';
         if (item.lastEditor) html += '<div class="letter-card-editor">✏️ ' + escHtml(item.lastEditor) + '</div>';
         html += '<div class="letter-card-actions">';
         html += '<button class="letter-card-action" data-month="' + item.month + '" data-action="edit">✏️ 편집</button>';
-        html += '<button class="letter-card-action btn-copy-email" data-month="' + item.month + '" style="color: #10b981; border-color: #10b981;">📧 메일복사</button>';
-        html += '</div>';
-        html += '</div>';
+        html += '<button class="letter-card-action" data-month="' + item.month + '" data-action="email">📧 메일복사</button>';
+        html += '</div></div>';
       }
       grid.innerHTML = html;
 
@@ -682,28 +585,10 @@
           var m = this.getAttribute('data-month');
           var action = this.getAttribute('data-action');
           if (action === 'edit') loadLetter(m);
-        });
-      }
-
-      var emailBtns = $$('.btn-copy-email');
-      for (var i = 0; i < emailBtns.length; i++) {
-        emailBtns[i].addEventListener('click', function(e) {
-          e.stopPropagation();
-          var m = this.getAttribute('data-month');
-          var sub = prompt('[' + m + '호] 메일 발송용 HTML 복사\n\n타겟 기업의 Subdomain을 입력하세요.\n(예: woongjindemo / 비워두면 udemy.com 공통 링크가 적용됩니다.)', 'woongjindemo');
-          if (sub === null) return; 
-          generateEmail(m, sub.trim());
-        });
-      }
-
-      var emailBtns = $$('.btn-copy-email');
-      for (var i = 0; i < emailBtns.length; i++) {
-        emailBtns[i].addEventListener('click', function(e) {
-          e.stopPropagation();
-          var m = this.getAttribute('data-month');
-          var sub = prompt('[' + m + '호] 메일 발송용 HTML 복사\n\n타겟 기업의 Subdomain을 입력하세요.\n(예: woongjin)', 'woongjin');
-          if (sub === null) return;
-          generateEmail(m, sub.trim());
+          if (action === 'email') {
+            var sub = prompt('[' + m + '호] 메일 발송용 HTML 복사\n\n타겟 기업의 Subdomain을 입력하세요.\n(예: woongjin)', 'woongjin');
+            if (sub !== null) generateEmail(m, sub.trim());
+          }
         });
       }
 
@@ -723,6 +608,7 @@
     clearEditor();
     $('#editor-title').textContent = '✏️ 새 레터';
     $('#btn-delete').style.display = 'none';
+    $('#btn-copy-email').style.display = 'none';
     $('#last-saved-info').textContent = '';
     switchPanel('editor');
   });
@@ -747,15 +633,11 @@
       $('#f-curation-image').value = (d.curation && d.curation.image) ? d.curation.image : DEFAULT_IMAGES.curation;
       $('#f-curation-intro-ko').value = (d.curation && d.curation.intro && d.curation.intro.ko) ? d.curation.intro.ko : '';
       $('#f-closing-image').value = (d.closing && d.closing.image) ? d.closing.image : DEFAULT_IMAGES.closing;
-
       if (d.curation && d.curation.tags) {
         var tt = [];
-        for (var i = 0; i < d.curation.tags.length; i++) {
-          tt.push(d.curation.tags[i].ko || d.curation.tags[i]);
-        }
+        for (var i = 0; i < d.curation.tags.length; i++) tt.push(d.curation.tags[i].ko || d.curation.tags[i]);
         $('#f-curation-tags').value = tt.join(', ');
       }
-
       if (d.insight && d.insight.courseIds && d.insight.courseIds.length > 0) {
         $('#f-insight-course-ids').value = d.insight.courseIds.join(', ');
         sectionCourses.insight.ids = d.insight.courseIds;
@@ -777,40 +659,25 @@
         sectionCourses.curation.badges = d.curation.courseBadges || {};
         if (d.curation.layout) sectionCourses.curation.layout = d.curation.layout;
       }
-
-      if (d.insight && d.insight.pages && d.insight.pages.length > 0 && editors['insight-0']) {
-        editors['insight-0'].root.innerHTML = d.insight.pages[0].html_ko || '';
-      }
-      if (editors['new'] && d.newContent && d.newContent.editorHtml) {
-        editors['new'].root.innerHTML = d.newContent.editorHtml.ko || '';
-      }
-      if (editors['closing'] && d.closing && d.closing.message) {
-        editors['closing'].root.innerHTML = d.closing.message.ko || '';
-      }
-
-      // Load promo editor
-      if (d.promo && d.promo.pages && d.promo.pages.length > 0 && editors['promo-0']) {
-        editors['promo-0'].root.innerHTML = d.promo.pages[0].html_ko || '';
-      }
+      if (d.insight && d.insight.pages && d.insight.pages.length > 0 && editors['insight-0']) editors['insight-0'].root.innerHTML = d.insight.pages[0].html_ko || '';
+      if (editors['new'] && d.newContent && d.newContent.editorHtml) editors['new'].root.innerHTML = d.newContent.editorHtml.ko || '';
+      if (editors['closing'] && d.closing && d.closing.message) editors['closing'].root.innerHTML = d.closing.message.ko || '';
+      if (d.promo && d.promo.pages && d.promo.pages.length > 0 && editors['promo-0']) editors['promo-0'].root.innerHTML = d.promo.pages[0].html_ko || '';
 
       $('#editor-title').textContent = '✏️ ' + d.month + '호 편집';
       $('#btn-delete').style.display = '';
-      $('#btn-copy-email').style.display = ''; 
-
+      $('#btn-copy-email').style.display = '';
       if (d.updatedAt) {
         var info = new Date(d.updatedAt).toLocaleString('ko-KR');
         if (d.lastEditor) info += ' by ' + d.lastEditor;
         $('#last-saved-info').textContent = '💾 ' + info;
       }
-
       var sectionsToFetch = [];
       if (sectionCourses.insight.ids.length > 0) sectionsToFetch.push('insight');
       if (sectionCourses.new.ids.length > 0) sectionsToFetch.push('new');
       if (sectionCourses.curation.ids.length > 0) sectionsToFetch.push('curation');
-
       switchPanel('editor');
       addLog('레터 열기', d.month + '호');
-
       if (sectionsToFetch.length > 0) {
         toast(d.month + '호 로드 중... 강의 데이터 불러오는 중');
         loadCoursesFromWorker().then(function(all) {
@@ -820,108 +687,59 @@
             for (var i = 0; i < ids.length; i++) {
               if (!courseCache[ids[i]]) {
                 for (var j = 0; j < all.length; j++) {
-                  if (String(all[j].id) === String(ids[i])) {
-                    courseCache[ids[i]] = all[j];
-                    break;
-                  }
+                  if (String(all[j].id) === String(ids[i])) { courseCache[ids[i]] = all[j]; break; }
                 }
               }
             }
             renderCoursePreview(sec);
           }
           toast(d.month + '호 + 강의 데이터 로드 완료!', 'success');
-        }).catch(function() {
-          toast(d.month + '호 로드 완료 (강의 데이터 실패 - 불러오기 버튼 사용)', 'error');
-        });
-      } else {
-        toast(d.month + '호를 불러왔습니다');
-      }
+        }).catch(function() { toast(d.month + '호 로드 완료 (강의 데이터 실패)', 'error'); });
+      } else toast(d.month + '호를 불러왔습니다');
     });
   }
 
   // === Save ===
   $('#btn-save').addEventListener('click', function() {
     var month = $('#f-month').value.trim();
-    if (!month || !/^\d{4}-\d{2}$/.test(month)) {
-      toast('YYYY-MM 형식으로!', 'error');
-      return;
-    }
-
+    if (!month || !/^\d{4}-\d{2}$/.test(month)) { toast('YYYY-MM 형식으로!', 'error'); return; }
     var insightPages = [];
     var iw = $$('#insight-editors .editor-wrap');
-    for (var i = 0; i < iw.length; i++) {
-      var pg = iw[i].getAttribute('data-page');
-      var ed = editors['insight-' + pg];
-      if (ed) insightPages.push({ html_ko: ed.root.innerHTML, html_en: '' });
-    }
-
+    for (var i = 0; i < iw.length; i++) { var pg = iw[i].getAttribute('data-page'); var ed = editors['insight-' + pg]; if (ed) insightPages.push({ html_ko: ed.root.innerHTML, html_en: '' }); }
     var promoPages = [];
     var pw = $$('#promo-editors .editor-wrap');
-    for (var i = 0; i < pw.length; i++) {
-      var pg = pw[i].getAttribute('data-page');
-      var ed = editors['promo-' + pg];
-      if (ed) promoPages.push({ html_ko: ed.root.innerHTML, html_en: '' });
-    }
-
+    for (var i = 0; i < pw.length; i++) { var pg = pw[i].getAttribute('data-page'); var ed = editors['promo-' + pg]; if (ed) promoPages.push({ html_ko: ed.root.innerHTML, html_en: '' }); }
     var tagsRaw = $('#f-curation-tags').value.trim();
     var tags = [];
-    if (tagsRaw) {
-      var parts = tagsRaw.split(',');
-      for (var i = 0; i < parts.length; i++) {
-        var t = parts[i].trim();
-        if (t) tags.push({ ko: t, en: '' });
-      }
-    }
-
+    if (tagsRaw) { var parts = tagsRaw.split(','); for (var i = 0; i < parts.length; i++) { var t = parts[i].trim(); if (t) tags.push({ ko: t, en: '' }); } }
     var body = {
-      month: month,
-      title_ko: $('#f-title-ko').value.trim(),
-      subtitle_ko: $('#f-subtitle-ko').value.trim(),
-      coverImage: $('#f-cover-image').value.trim(),
-      status: $('#f-status').value,
-      lastEditor: currentUser,
-      insight_image: $('#f-insight-image').value.trim(),
-      insight_pages: insightPages,
-      insight_courseIds: sectionCourses.insight.ids,
-      insight_courseComments: sectionCourses.insight.comments,
-      insight_courseBadges: sectionCourses.insight.badges,
-      insight_layout: sectionCourses.insight.layout,
+      month: month, title_ko: $('#f-title-ko').value.trim(), subtitle_ko: $('#f-subtitle-ko').value.trim(),
+      coverImage: $('#f-cover-image').value.trim(), status: $('#f-status').value, lastEditor: currentUser,
+      insight_image: $('#f-insight-image').value.trim(), insight_pages: insightPages,
+      insight_courseIds: sectionCourses.insight.ids, insight_courseComments: sectionCourses.insight.comments,
+      insight_courseBadges: sectionCourses.insight.badges, insight_layout: sectionCourses.insight.layout,
       newContent_image: $('#f-new-image').value.trim(),
       newContent_editorHtml_ko: editors['new'] ? editors['new'].root.innerHTML : '',
       newContent_summary_ko: $('#f-new-summary-ko').value.trim(),
-      newContent_courseIds: sectionCourses.new.ids,
-      newContent_courseComments: sectionCourses.new.comments,
-      newContent_courseBadges: sectionCourses.new.badges,
-      newContent_layout: sectionCourses.new.layout,
-      curation_image: $('#f-curation-image').value.trim(),
-      curation_intro_ko: $('#f-curation-intro-ko').value.trim(),
-      curation_tags: tags,
-      curation_courseIds: sectionCourses.curation.ids,
-      curation_courseComments: sectionCourses.curation.comments,
-      curation_courseBadges: sectionCourses.curation.badges,
+      newContent_courseIds: sectionCourses.new.ids, newContent_courseComments: sectionCourses.new.comments,
+      newContent_courseBadges: sectionCourses.new.badges, newContent_layout: sectionCourses.new.layout,
+      curation_image: $('#f-curation-image').value.trim(), curation_intro_ko: $('#f-curation-intro-ko').value.trim(),
+      curation_tags: tags, curation_courseIds: sectionCourses.curation.ids,
+      curation_courseComments: sectionCourses.curation.comments, curation_courseBadges: sectionCourses.curation.badges,
       curation_layout: sectionCourses.curation.layout,
       closing_image: $('#f-closing-image').value.trim(),
       closing_ko: editors['closing'] ? editors['closing'].root.innerHTML : '',
       promo_pages: promoPages
     };
-
     showLoading();
     apiCall('/letter-save', 'POST', body).then(function(res) {
       hideLoading();
       if (res.success) {
-        currentMonth = month;
-        $('#f-month').disabled = true;
-        $('#btn-delete').style.display = '';
+        currentMonth = month; $('#f-month').disabled = true; $('#btn-delete').style.display = ''; $('#btn-copy-email').style.display = '';
         $('#last-saved-info').textContent = '💾 ' + new Date().toLocaleString('ko-KR') + ' by ' + currentUser;
-        addLog('레터 저장', month + '호');
-        toast(res.message, 'success');
-      } else {
-        toast('저장 실패: ' + res.error, 'error');
-      }
-    }).catch(function(e) {
-      hideLoading();
-      toast('저장 실패', 'error');
-    });
+        addLog('레터 저장', month + '호'); toast(res.message, 'success');
+      } else toast('저장 실패: ' + res.error, 'error');
+    }).catch(function() { hideLoading(); toast('저장 실패', 'error'); });
   });
 
   // === Delete ===
@@ -931,189 +749,18 @@
     showLoading();
     apiCall('/letter-delete', 'POST', { month: currentMonth }).then(function(res) {
       hideLoading();
-      if (res.success) {
-        addLog('레터 삭제', currentMonth + '호');
-        toast(res.message, 'success');
-        currentMonth = null;
-        clearEditor();
-        switchPanel('list');
-        loadLetterList();
-      } else {
-        toast('삭제 실패', 'error');
-      }
+      if (res.success) { addLog('레터 삭제', currentMonth + '호'); toast(res.message, 'success'); currentMonth = null; clearEditor(); switchPanel('list'); loadLetterList(); }
+      else toast('삭제 실패', 'error');
     });
   });
 
-  // Editor Email Copy Button
+  // === Email Copy (Editor) ===
   $('#btn-copy-email').addEventListener('click', function() {
-    if (!currentMonth) return;
-    var sub = prompt('[' + currentMonth + '호] 메일 발송용 HTML 복사\n\n타겟 기업의 Subdomain을 입력하세요.\n(예: woongjindemo / 비워두면 udemy.com 공통 링크가 적용됩니다.)', 'woongjindemo');
+    if (!currentMonth) { toast('먼저 레터를 저장해주세요', 'error'); return; }
+    var sub = prompt('[' + currentMonth + '호] 메일 발송용 HTML 복사\n\n타겟 기업의 Subdomain을 입력하세요.', 'woongjin');
     if (sub === null) return;
     generateEmail(currentMonth, sub.trim());
   });
-
-  // === Translate Letter ===
-  function translateLetter(month) {
-    if (!confirm(month + '호의 영어 번역본을 생성하시겠습니까?')) return;
-    showLoading();
-    toast('🌐 번역 시작...');
-
-    apiCall('/letter-get?month=' + month).then(function(res) {
-      if (!res.success) {
-        hideLoading();
-        toast('레터 로드 실패', 'error');
-        return;
-      }
-
-      var d = res.data;
-      var texts = {};
-
-      if (d.title && d.title.ko) texts['title'] = d.title.ko;
-      if (d.subtitle && d.subtitle.ko) texts['subtitle'] = d.subtitle.ko;
-      if (d.curation && d.curation.intro && d.curation.intro.ko) texts['curation_intro'] = d.curation.intro.ko;
-      if (d.newContent && d.newContent.summary && d.newContent.summary.ko) texts['new_summary'] = d.newContent.summary.ko;
-
-      if (d.curation && d.curation.tags) {
-        var tagTexts = [];
-        for (var i = 0; i < d.curation.tags.length; i++) {
-          if (d.curation.tags[i].ko) tagTexts.push(d.curation.tags[i].ko);
-        }
-        if (tagTexts.length > 0) texts['curation_tags'] = tagTexts.join(', ');
-      }
-
-      if (d.insight && d.insight.pages) {
-        for (var i = 0; i < d.insight.pages.length; i++) {
-          if (d.insight.pages[i].html_ko) texts['insight_page_' + i] = d.insight.pages[i].html_ko;
-        }
-      }
-      if (d.newContent && d.newContent.editorHtml && d.newContent.editorHtml.ko) texts['new_editor'] = d.newContent.editorHtml.ko;
-      if (d.closing && d.closing.message && d.closing.message.ko) texts['closing'] = d.closing.message.ko;
-
-      var sectionNames = ['insight', 'newContent', 'curation'];
-      for (var s = 0; s < sectionNames.length; s++) {
-        var secData = d[sectionNames[s]];
-        if (secData && secData.courseComments) {
-          for (var cid in secData.courseComments) {
-            var cm = secData.courseComments[cid];
-            var koText = typeof cm === 'string' ? cm : (cm && cm.ko ? cm.ko : '');
-            if (koText) texts['comment_' + sectionNames[s] + '_' + cid] = koText;
-          }
-        }
-      }
-
-      var keys = Object.keys(texts);
-      if (keys.length === 0) {
-        hideLoading();
-        toast('번역할 텍스트 없음', 'error');
-        return;
-      }
-
-      apiCall('/letter-translate', 'POST', { texts: texts }).then(function(trRes) {
-        if (!trRes.success) {
-          hideLoading();
-          toast('번역 실패: ' + (trRes.error || ''), 'error');
-          return;
-        }
-
-        var tr = trRes.translations || {};
-
-        if (tr['title'] && d.title) d.title.en = tr['title'];
-        if (tr['subtitle'] && d.subtitle) d.subtitle.en = tr['subtitle'];
-        if (tr['curation_intro'] && d.curation && d.curation.intro) d.curation.intro.en = tr['curation_intro'];
-        if (tr['new_summary'] && d.newContent && d.newContent.summary) d.newContent.summary.en = tr['new_summary'];
-
-        if (tr['curation_tags'] && d.curation && d.curation.tags) {
-          var enTags = tr['curation_tags'].split(',');
-          for (var i = 0; i < d.curation.tags.length && i < enTags.length; i++) {
-            d.curation.tags[i].en = enTags[i].trim();
-          }
-        }
-
-        if (d.insight && d.insight.pages) {
-          for (var i = 0; i < d.insight.pages.length; i++) {
-            if (tr['insight_page_' + i]) d.insight.pages[i].html_en = tr['insight_page_' + i];
-          }
-        }
-        if (tr['new_editor'] && d.newContent && d.newContent.editorHtml) d.newContent.editorHtml.en = tr['new_editor'];
-        if (tr['closing'] && d.closing && d.closing.message) d.closing.message.en = tr['closing'];
-
-        for (var s = 0; s < sectionNames.length; s++) {
-          var secData = d[sectionNames[s]];
-          if (secData && secData.courseComments) {
-            for (var cid in secData.courseComments) {
-              var trKey = 'comment_' + sectionNames[s] + '_' + cid;
-              if (tr[trKey]) {
-                var existing = secData.courseComments[cid];
-                if (typeof existing === 'string') {
-                  secData.courseComments[cid] = { ko: existing, en: tr[trKey] };
-                } else if (existing) {
-                  existing.en = tr[trKey];
-                }
-              }
-            }
-          }
-        }
-
-        var saveBody = {
-          month: d.month,
-          title_ko: d.title ? d.title.ko || '' : '',
-          title_en: d.title ? d.title.en || '' : '',
-          subtitle_ko: d.subtitle ? d.subtitle.ko || '' : '',
-          subtitle_en: d.subtitle ? d.subtitle.en || '' : '',
-          coverImage: d.coverImage || '',
-          status: d.status || 'draft',
-          lastEditor: currentUser,
-          insight_image: d.insight ? d.insight.image || '' : '',
-          insight_pages: d.insight ? d.insight.pages || [] : [],
-          insight_courseIds: d.insight ? d.insight.courseIds || [] : [],
-          insight_courseComments: d.insight ? d.insight.courseComments || {} : {},
-          insight_courseBadges: d.insight ? d.insight.courseBadges || {} : {},
-          insight_layout: d.insight ? d.insight.layout || 'card' : 'card',
-          newContent_image: d.newContent ? d.newContent.image || '' : '',
-          newContent_editorHtml_ko: d.newContent && d.newContent.editorHtml ? d.newContent.editorHtml.ko || '' : '',
-          newContent_editorHtml_en: d.newContent && d.newContent.editorHtml ? d.newContent.editorHtml.en || '' : '',
-          newContent_summary_ko: d.newContent && d.newContent.summary ? d.newContent.summary.ko || '' : '',
-          newContent_summary_en: d.newContent && d.newContent.summary ? d.newContent.summary.en || '' : '',
-          newContent_courseIds: d.newContent ? d.newContent.courseIds || [] : [],
-          newContent_courseComments: d.newContent ? d.newContent.courseComments || {} : {},
-          newContent_courseBadges: d.newContent ? d.newContent.courseBadges || {} : {},
-          newContent_layout: d.newContent ? d.newContent.layout || 'highlight' : 'highlight',
-          curation_image: d.curation ? d.curation.image || '' : '',
-          curation_intro_ko: d.curation && d.curation.intro ? d.curation.intro.ko || '' : '',
-          curation_intro_en: d.curation && d.curation.intro ? d.curation.intro.en || '' : '',
-          curation_tags: d.curation ? d.curation.tags || [] : [],
-          curation_courseIds: d.curation ? d.curation.courseIds || [] : [],
-          curation_courseComments: d.curation ? d.curation.courseComments || {} : {},
-          curation_courseBadges: d.curation ? d.curation.courseBadges || {} : {},
-          curation_layout: d.curation ? d.curation.layout || 'list' : 'list',
-          closing_image: d.closing ? d.closing.image || '' : '',
-          closing_ko: d.closing && d.closing.message ? d.closing.message.ko || '' : '',
-          closing_en: d.closing && d.closing.message ? d.closing.message.en || '' : '',
-          promo_pages: d.promo ? d.promo.pages || [] : []
-        };
-
-        apiCall('/letter-save', 'POST', saveBody).then(function(saveRes) {
-          hideLoading();
-          if (saveRes.success) {
-            var count = Object.keys(tr).length;
-            addLog('영어 번역', month + '호 / ' + count + '개');
-            toast('🌐 ' + count + '개 항목 번역 완료!', 'success');
-            loadLetterList();
-          } else {
-            toast('저장 실패', 'error');
-          }
-        });
-
-      }).catch(function(e) {
-        hideLoading();
-        toast('번역 실패: ' + e.message, 'error');
-      });
-
-    }).catch(function(e) {
-      hideLoading();
-      toast('로드 실패: ' + e.message, 'error');
-    });
-  }
 
   // === Helpers ===
   function switchPanel(name) {
@@ -1121,248 +768,30 @@
     for (var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
     $('#panel-' + name).classList.add('active');
     var nb = $$('.admin-nav-btn[data-panel]');
-    for (var i = 0; i < nb.length; i++) {
-      nb[i].classList.toggle('active', nb[i].getAttribute('data-panel') === name);
-    }
+    for (var i = 0; i < nb.length; i++) nb[i].classList.toggle('active', nb[i].getAttribute('data-panel') === name);
   }
 
   function clearEditor() {
-    $('#f-month').value = '';
-    $('#f-month').disabled = false;
-    $('#f-status').value = 'draft';
-    $('#f-title-ko').value = '';
-    $('#f-subtitle-ko').value = '';
-    $('#f-cover-image').value = DEFAULT_IMAGES.cover;
-    $('#f-insight-image').value = DEFAULT_IMAGES.insight;
-    $('#f-new-image').value = DEFAULT_IMAGES.newContent;
-    $('#f-new-summary-ko').value = '';
-    $('#f-curation-image').value = DEFAULT_IMAGES.curation;
-    $('#f-curation-intro-ko').value = '';
-    $('#f-curation-tags').value = '';
-    $('#f-curation-ids').value = '';
+    $('#f-month').value = ''; $('#f-month').disabled = false; $('#f-status').value = 'draft';
+    $('#f-title-ko').value = ''; $('#f-subtitle-ko').value = '';
+    $('#f-cover-image').value = DEFAULT_IMAGES.cover; $('#f-insight-image').value = DEFAULT_IMAGES.insight;
+    $('#f-new-image').value = DEFAULT_IMAGES.newContent; $('#f-new-summary-ko').value = '';
+    $('#f-curation-image').value = DEFAULT_IMAGES.curation; $('#f-curation-intro-ko').value = '';
+    $('#f-curation-tags').value = ''; $('#f-curation-ids').value = '';
     $('#f-closing-image').value = DEFAULT_IMAGES.closing;
     $('#btn-copy-email').style.display = 'none';
     if ($('#f-insight-course-ids')) $('#f-insight-course-ids').value = '';
     if ($('#f-new-course-ids')) $('#f-new-course-ids').value = '';
-
     sectionCourses.insight = { ids: [], comments: {}, badges: {}, layout: 'card' };
     sectionCourses.new = { ids: [], comments: {}, badges: {}, layout: 'highlight' };
     sectionCourses.curation = { ids: [], comments: {}, badges: {}, layout: 'list' };
-
-    $('#insight-course-preview').innerHTML = '';
-    $('#new-course-preview').innerHTML = '';
-    $('#curation-course-preview').innerHTML = '';
-    $('#insight-fetch-status').textContent = '';
-    $('#new-fetch-status').textContent = '';
-    $('#curation-fetch-status').textContent = '';
-
-    for (var key in editors) {
-      if (editors[key] && editors[key].root) editors[key].root.innerHTML = '';
-    }
+    $('#insight-course-preview').innerHTML = ''; $('#new-course-preview').innerHTML = ''; $('#curation-course-preview').innerHTML = '';
+    $('#insight-fetch-status').textContent = ''; $('#new-fetch-status').textContent = ''; $('#curation-fetch-status').textContent = '';
+    for (var key in editors) { if (editors[key] && editors[key].root) editors[key].root.innerHTML = ''; }
   }
 
   // ==========================================
-  // === Email HTML Generation Logic ===
-  // ==========================================
-
-  function generateEmail(month, sub) {
-    showLoading();
-    apiCall('/letter-get?month=' + month).then(function(res) {
-      if (!res.success) { hideLoading(); toast('레터 데이터를 불러오지 못했습니다.', 'error'); return; }
-      var letter = res.data;
-      var allIds = [];
-      if (letter.insight && letter.insight.courseIds) allIds = allIds.concat(letter.insight.courseIds);
-      if (letter.newContent && letter.newContent.courseIds) allIds = allIds.concat(letter.newContent.courseIds);
-      if (letter.curation && letter.curation.courseIds) allIds = allIds.concat(letter.curation.courseIds);
-
-      if (allIds.length > 0) {
-        loadCoursesFromWorker().then(function(allCourses) {
-          var cMap = {};
-          for (var i = 0; i < allCourses.length; i++) cMap[allCourses[i].id] = allCourses[i];
-          finishEmailGeneration(letter, sub, cMap);
-        }).catch(function() {
-          finishEmailGeneration(letter, sub, {});
-        });
-      } else {
-        finishEmailGeneration(letter, sub, {});
-      }
-    });
-  }
-
-  function finishEmailGeneration(letter, sub, cMap) {
-    var html = buildEmailHtml(letter, sub, cMap);
-    copyToClipboard(html);
-    hideLoading();
-    toast('📧 메일 발송용 HTML이 복사되었습니다!', 'success');
-  }
-
-  function copyToClipboard(text) {
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-  }
-
-  function sanitizeQuillHtml(html) {
-    if (!html) return '';
-    html = html.replace(/<img /g, '<img style="max-width: 100%; height: auto; border-radius: 8px; margin: 15px 0; display: block;" ');
-    html = html.replace(/<p>/g, '<p style="margin: 0 0 12px 0; line-height: 1.6; color: #4a4a6a;">');
-    html = html.replace(/<h2>/g, '<h2 style="font-size: 18px; color: #1a1a2e; margin: 20px 0 10px 0;">');
-    html = html.replace(/<h3>/g, '<h3 style="font-size: 16px; color: #1a1a2e; margin: 15px 0 10px 0;">');
-    return html;
-  }
-
-  function buildEmailHtml(letter, sub, coursesMap) {
-    var IMAGE_BASE_URL = 'https://ubcexp.pages.dev/letter/';
-    
-    function fixImg(url) {
-      if (!url) return '';
-      if (url.indexOf('http') === 0) return url;
-      return IMAGE_BASE_URL + url.replace(/^\//, '');
-    }
-
-    var campusUrl = sub ? 'https://' + sub + '.udemy.com' : 'https://www.udemy.com';
-    
-    function courseUrl(slug) {
-      if (!slug) return campusUrl;
-      if (slug.indexOf('http') === 0) return slug.replace('www.udemy.com', sub ? sub + '.udemy.com' : 'www.udemy.com');
-      return campusUrl + '/course/' + slug + '/';
-    }
-
-    var html = '<div style="background-color: #f8f7ff; padding: 20px 0; font-family: \'Apple SD Gothic Neo\', \'Malgun Gothic\', sans-serif;">';
-    
-    // Outlook Desktop Compatibility Wrapper
-    html += '';
-    html += '<table width="100%" align="center" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">';
-
-    // 1. Cover
-    var cover = fixImg(letter.coverImage || 'src/img/Brand_Launch.jpg');
-    html += '<tr><td style="padding: 0;">';
-    html += '<img src="' + cover + '" width="600" style="display: block; width: 100%; max-width: 600px; height: auto;" alt="Cover" />';
-    html += '</td></tr>';
-
-    html += '<tr><td style="padding: 30px 25px; text-align: center;">';
-    html += '<div style="display: inline-block; padding: 6px 14px; background-color: #f5f3ff; color: #7c6cf0; border-radius: 20px; font-size: 13px; font-weight: bold; margin-bottom: 15px;">' + letter.month + '호</div>';
-    html += '<h1 style="margin: 0 0 10px 0; font-size: 24px; color: #1a1a2e; line-height: 1.4;">' + (letter.title ? letter.title.ko : '') + '</h1>';
-    html += '<p style="margin: 0 0 20px 0; font-size: 15px; color: #4a4a6a;">' + (letter.subtitle ? letter.subtitle.ko : '') + '</p>';
-    var greeting = sub ? sub.toUpperCase() + ' 학습자님을 위한 이달의 레터' : '학습자님을 위한 이달의 레터';
-    html += '<p style="margin: 0; font-size: 13px; color: #9090aa;">' + greeting + '</p>';
-    html += '</td></tr>';
-
-    // 2. Reusable Section Builder
-    function buildSection(title, icon, img, htmlContent, courseData) {
-      var s = '<tr><td style="padding: 20px 25px 30px 25px;">';
-      s += '<div style="display: inline-block; padding: 4px 12px; background-color: rgba(124,108,240,0.05); color: #7c6cf0; border-radius: 20px; font-size: 11px; font-weight: bold; letter-spacing: 0.1em; margin-bottom: 10px;">SECTION</div>';
-      s += '<h2 style="margin: 0 0 15px 0; font-size: 20px; color: #1a1a2e; font-weight: 800;">' + icon + ' ' + title + '</h2>';
-      
-      if (img) {
-        s += '<img src="' + fixImg(img) + '" width="100%" style="display: block; width: 100%; border-radius: 12px; margin-bottom: 20px;" />';
-      }
-      
-      if (htmlContent) {
-        s += '<div style="margin-bottom: 25px;">' + sanitizeQuillHtml(htmlContent) + '</div>';
-      }
-      
-      if (courseData && courseData.courseIds && courseData.courseIds.length > 0) {
-        s += '<table width="100%" cellpadding="0" cellspacing="0" border="0">';
-        courseData.courseIds.forEach(function(id) {
-          var c = coursesMap[id];
-          if (!c) return;
-          var curl = courseUrl(c.url || c.slug);
-          var cimg = fixImg(c.image);
-          var cmt = (courseData.courseComments && courseData.courseComments[id]) ? courseData.courseComments[id] : '';
-          if (typeof cmt === 'object') cmt = cmt.ko || '';
-
-          s += '<tr><td style="padding: 15px; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 12px; display: block; background-color: #ffffff;">';
-          s += '<table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>';
-          
-          s += '<td width="110" valign="top" style="padding-right: 15px;">';
-          s += '<a href="' + curl + '" target="_blank"><img src="' + cimg + '" width="110" style="display:block; border-radius: 6px; width: 110px; max-width: 110px;" /></a>';
-          s += '</td>';
-          
-          s += '<td valign="top">';
-          s += '<h4 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 700; line-height: 1.3;"><a href="' + curl + '" target="_blank" style="color: #1a1a2e; text-decoration: none;">' + (c.title || '') + '</a></h4>';
-          s += '<p style="margin: 0 0 10px 0; font-size: 12px; color: #9090aa;">⭐ ' + (c.rating ? Number(c.rating).toFixed(1) : '') + ' &nbsp;|&nbsp; 👤 ' + (c.instructor || '') + '</p>';
-          if (cmt) {
-            s += '<div style="background-color: #f5f3ff; padding: 10px; border-left: 3px solid #a78bfa; border-radius: 0 6px 6px 0; font-size: 13px; color: #4a4a6a; margin-bottom: 10px;">💡 ' + cmt + '</div>';
-          }
-          s += '<a href="' + curl + '" target="_blank" style="display: inline-block; font-size: 13px; color: #7c6cf0; text-decoration: none; font-weight: bold;">바로 수강하기 &rarr;</a>';
-          s += '</td></tr></table>';
-          s += '</td></tr>';
-        });
-        s += '</table>';
-      }
-      s += '</td></tr>';
-      return s;
-    }
-
-    // Insight Section
-    if (letter.insight) {
-      var insightHtml = (letter.insight.pages && letter.insight.pages.length > 0) ? letter.insight.pages.map(function(p){ return p.html_ko; }).join('<br><br>') : '';
-      html += buildSection('트렌드 인사이트', '📊', letter.insight.image, insightHtml, letter.insight);
-    }
-
-    // New Content Section
-    if (letter.newContent) {
-      var newHtml = (letter.newContent.editorHtml && letter.newContent.editorHtml.ko) ? letter.newContent.editorHtml.ko : '';
-      if (letter.newContent.summary && letter.newContent.summary.ko) {
-        newHtml += '<div style="text-align: center; padding: 20px; background-color: #f5f3ff; border-radius: 10px; color: #4a4a6a; margin-top: 15px;"><strong>' + letter.newContent.summary.ko + '</strong></div>';
-      }
-      html += buildSection('신규 콘텐츠', '✨', letter.newContent.image, newHtml, letter.newContent);
-    }
-
-    // Curation Section
-    if (letter.curation) {
-      var curHtml = '';
-      if (letter.curation.intro && letter.curation.intro.ko) curHtml += '<h3 style="font-size: 16px; margin: 0 0 10px 0;">' + letter.curation.intro.ko + '</h3>';
-      if (letter.curation.tags && letter.curation.tags.length > 0) {
-        curHtml += '<div style="margin-bottom: 15px;">';
-        letter.curation.tags.forEach(function(t) {
-          curHtml += '<span style="display: inline-block; padding: 4px 10px; background-color: #7c6cf0; color: #ffffff; border-radius: 20px; font-size: 12px; margin-right: 5px; margin-bottom: 5px;">' + (typeof t === 'string' ? t : t.ko) + '</span>';
-        });
-        curHtml += '</div>';
-      }
-      html += buildSection('이달의 큐레이션', '🎯', letter.curation.image, curHtml, letter.curation);
-    }
-
-    // Promo Section
-    if (letter.promo && letter.promo.pages && letter.promo.pages.length > 0) {
-      var promoHtml = letter.promo.pages.map(function(p){ return p.html_ko; }).join('<br>');
-      if (promoHtml.replace(/<[^>]*>/g, '').trim()) {
-        html += buildSection('홍보', '📢', '', promoHtml, null);
-      }
-    }
-
-    // CTA Hub Button
-    html += '<tr><td align="center" style="padding: 20px 20px 40px 20px;">';
-    html += '<a href="' + campusUrl + '" target="_blank" style="display: inline-block; padding: 16px 36px; background-color: #7c6cf0; color: #ffffff; text-decoration: none; border-radius: 30px; font-size: 16px; font-weight: bold; letter-spacing: 0.05em;">🚀 학습장 바로가기</a>';
-    html += '</td></tr>';
-
-    // Closing Section
-    var closingHtml = (letter.closing && letter.closing.message && letter.closing.message.ko) ? letter.closing.message.ko : '';
-    html += '<tr><td align="center" style="padding: 40px 20px; background-color: #f5f3ff; border-top: 2px solid #7c6cf0;">';
-    if (letter.closing && letter.closing.image) {
-      html += '<img src="' + fixImg(letter.closing.image) + '" width="200" style="display:block; max-width:200px; margin-bottom:20px;" />';
-    }
-    if (closingHtml) {
-      html += '<div style="font-size: 14px; color: #4a4a6a; margin-bottom: 25px; line-height: 1.6;">' + closingHtml + '</div>';
-    }
-    html += '<p style="font-size: 12px; color: #9090aa; margin: 0;">Udemy Letter | 웅진씽크빅 &copy; 2026</p>';
-    html += '</td></tr>';
-
-    html += '</table>';
-    html += '';
-    html += '</div>';
-    
-    return html;
-  }
-
-  // ==========================================
-  // === Email HTML Generation (v2 — 풀버전) ===
+  // === Email HTML Generation v3 (풀버전) ===
   // ==========================================
 
   function generateEmail(month, sub) {
@@ -1375,536 +804,273 @@
       if (letter.insight && letter.insight.courseIds) allIds = allIds.concat(letter.insight.courseIds);
       if (letter.newContent && letter.newContent.courseIds) allIds = allIds.concat(letter.newContent.courseIds);
       if (letter.curation && letter.curation.courseIds) allIds = allIds.concat(letter.curation.courseIds);
-
       if (allIds.length > 0) {
         loadCoursesFromWorker().then(function(allCourses) {
           var cMap = {};
           for (var i = 0; i < allCourses.length; i++) cMap[String(allCourses[i].id)] = allCourses[i];
-          finishEmailGeneration(letter, sub, cMap, month);
-        }).catch(function() {
-          finishEmailGeneration(letter, sub, {}, month);
-        });
-      } else {
-        finishEmailGeneration(letter, sub, {}, month);
-      }
-    }).catch(function(e) {
-      hideLoading();
-      toast('실패: ' + e.message, 'error');
-    });
+          doEmailCopy(letter, sub, cMap, month);
+        }).catch(function() { doEmailCopy(letter, sub, {}, month); });
+      } else doEmailCopy(letter, sub, {}, month);
+    }).catch(function(e) { hideLoading(); toast('실패: ' + e.message, 'error'); });
   }
 
-  function finishEmailGeneration(letter, sub, cMap, month) {
+  function doEmailCopy(letter, sub, cMap, month) {
     var html = buildEmailHtml(letter, sub, cMap);
     hideLoading();
-
-    // 클립보드 복사
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(html).then(function() {
-        toast('📧 이메일 HTML 복사 완료! (' + Math.round(html.length / 1024) + 'KB)', 'success');
-        addLog('이메일 HTML 복사', month + '호 / sub=' + sub);
-      }).catch(function() {
-        fallbackCopy(html);
-        toast('📧 이메일 HTML 복사 완료!', 'success');
-      });
-    } else {
-      fallbackCopy(html);
-      toast('📧 이메일 HTML 복사 완료!', 'success');
-    }
-  }
-
-  function fallbackCopy(text) {
     var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.cssText = 'position:fixed;opacity:0;';
+    ta.value = html;
+    ta.style.cssText = 'position:fixed;opacity:0;left:-9999px;';
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
+    toast('📧 이메일 HTML 복사 완료! (' + Math.round(html.length / 1024) + 'KB)', 'success');
+    addLog('이메일 HTML 복사', month + '호 / sub=' + sub);
   }
 
-  // ── Quill HTML 정리 ──
-  function cleanQuillHtml(html) {
-    if (!html) return '';
-    // 빈 줄 정리
-    html = html.replace(/<p><br><\/p>/g, '<br>');
-    // Quill 클래스 제거
-    html = html.replace(/ class="ql-[^"]*"/g, '');
-    // 이미지 크기 제한
-    html = html.replace(/<img(?![^>]*style)/g, '<img style="max-width:100%;height:auto;display:block;margin:8px 0;"');
-    // 링크 색상
-    html = html.replace(/<a(?![^>]*style)/g, '<a style="color:#7c6cf0;text-decoration:underline;"');
-    // p 태그 스타일
-    html = html.replace(/<p>/g, '<p style="margin:0 0 12px;font-size:15px;line-height:1.75;color:#4a4a6a;">');
-    // strong
-    html = html.replace(/<strong>/g, '<strong style="color:#1a1a2e;">');
-    // h2, h3
-    html = html.replace(/<h2>/g, '<h2 style="margin:0 0 12px;font-size:20px;font-weight:800;color:#1a1a2e;">');
-    html = html.replace(/<h3>/g, '<h3 style="margin:0 0 10px;font-size:17px;font-weight:700;color:#1a1a2e;">');
-    // ul, ol, li
-    html = html.replace(/<ul>/g, '<ul style="margin:0 0 12px;padding-left:20px;">');
-    html = html.replace(/<ol>/g, '<ol style="margin:0 0 12px;padding-left:20px;">');
-    html = html.replace(/<li>/g, '<li style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#4a4a6a;">');
-    return html;
-  }
-
-  // ── 이미지 URL 절대경로 변환 ──
-  function absUrl(url) {
+  function emailAbsUrl(url) {
     if (!url) return '';
     if (url.indexOf('http') === 0) return url;
-    return 'https://ubcexp.pages.dev/letter/' + url.replace(/^\//, '');
+    return EMAIL_IMAGE_BASE + url.replace(/^\//, '');
   }
 
-  // ── 강의 URL 생성 ──
-  function makeCourseUrl(slug, sub) {
+  function emailCourseUrl(slug, sub) {
     var base = sub ? 'https://' + sub + '.udemy.com' : 'https://www.udemy.com';
     if (!slug) return base;
     if (slug.indexOf('http') === 0) return slug.replace('www.udemy.com', sub ? sub + '.udemy.com' : 'www.udemy.com');
     return base + '/course/' + slug + '/';
   }
 
-  // ── 뱃지 HTML ──
-  function emailBadgeHtml(badgeId) {
-    var badges = {
-      'popular': { text: '🔥 가장 인기', bg: '#fef3c7', color: '#92400e' },
-      'shortest': { text: '⚡ 가장 짧은', bg: '#dbeafe', color: '#1e40af' },
-      'top-rated': { text: '🏆 평점 최고', bg: '#d1fae5', color: '#065f46' },
-      'new': { text: '🆕 신규', bg: '#ede9fe', color: '#5b21b6' },
-      'essential': { text: '💼 실무 필수', bg: '#fce7f3', color: '#9d174d' }
-    };
-    var b = badges[badgeId];
-    if (!b) {
-      // 커스텀 뱃지
-      var customs = JSON.parse(localStorage.getItem('letter_custom_badges') || '[]');
-      for (var i = 0; i < customs.length; i++) {
-        if (customs[i].id === badgeId) {
-          b = { text: customs[i].ko, bg: '#ede9fe', color: '#5b21b6' };
-          break;
-        }
-      }
-    }
+  function emailCleanHtml(html) {
+    if (!html) return '';
+    var F = EMAIL_FONT;
+    html = html.replace(/<p><br><\/p>/g, '<br>');
+    html = html.replace(/ class="ql-[^"]*"/g, '');
+    html = html.replace(/<img(?![^>]*style)/g, '<img style="max-width:100%;height:auto;display:block;margin:8px 0;"');
+    html = html.replace(/<a(?![^>]*style)/g, '<a style="color:#7c6cf0;text-decoration:underline;font-family:' + F + ';"');
+    html = html.replace(/<p>/g, '<p style="margin:0 0 12px;font-size:15px;line-height:1.75;color:#4a4a6a;font-family:' + F + ';">');
+    html = html.replace(/<strong>/g, '<strong style="color:#1a1a2e;">');
+    html = html.replace(/<h2>/g, '<h2 style="margin:0 0 12px;font-size:20px;font-weight:800;color:#1a1a2e;font-family:' + F + ';">');
+    html = html.replace(/<h3>/g, '<h3 style="margin:0 0 10px;font-size:17px;font-weight:700;color:#1a1a2e;font-family:' + F + ';">');
+    html = html.replace(/<ul>/g, '<ul style="margin:0 0 12px;padding-left:20px;">');
+    html = html.replace(/<ol>/g, '<ol style="margin:0 0 12px;padding-left:20px;">');
+    html = html.replace(/<li>/g, '<li style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#4a4a6a;font-family:' + F + ';">');
+    html = html.replace(/<blockquote>/g, '<blockquote style="margin:0 0 12px;padding:12px 16px;border-left:4px solid #a78bfa;background:#f5f3ff;font-family:' + F + ';">');
+    return html;
+  }
+
+  function emailBadge(bid) {
+    var map = { 'popular': { t: '🔥 가장 인기', bg: '#fef3c7', c: '#92400e' }, 'shortest': { t: '⚡ 가장 짧은', bg: '#dbeafe', c: '#1e40af' }, 'top-rated': { t: '🏆 평점 최고', bg: '#d1fae5', c: '#065f46' }, 'new': { t: '🆕 신규', bg: '#ede9fe', c: '#5b21b6' }, 'essential': { t: '💼 실무 필수', bg: '#fce7f3', c: '#9d174d' } };
+    var b = map[bid];
+    if (!b) { var customs = JSON.parse(localStorage.getItem('letter_custom_badges') || '[]'); for (var i = 0; i < customs.length; i++) { if (customs[i].id === bid) { b = { t: customs[i].ko, bg: '#ede9fe', c: '#5b21b6' }; break; } } }
     if (!b) return '';
-    return '<span style="display:inline-block;padding:3px 10px;background:' + b.bg +
-      ';color:' + b.color + ';border-radius:8px;font-size:11px;font-weight:700;margin-bottom:6px;">' +
-      b.text + '</span>';
+    return '<span style="display:inline-block;padding:3px 10px;background:' + b.bg + ';color:' + b.c + ';border-radius:8px;font-size:11px;font-weight:700;margin-bottom:6px;">' + b.t + '</span>';
   }
 
-  // ── 코멘트 추출 ──
-  function getCommentText(c) {
-    if (!c) return '';
-    if (typeof c === 'string') return c;
-    return c.ko || '';
-  }
+  function emailGetComment(c) { if (!c) return ''; if (typeof c === 'string') return c; return c.ko || ''; }
 
-  // ══════════════════════════════════════════
-  // ★★★ 메인: 이메일 HTML 빌더 (풀버전) ★★★
-  // ══════════════════════════════════════════
   function buildEmailHtml(letter, sub, coursesMap) {
+    var F = EMAIL_FONT;
     var campusUrl = sub ? 'https://' + sub + '.udemy.com' : 'https://www.udemy.com';
     var greeting = sub ? sub.toUpperCase() + ' 학습자님을 위한 이달의 레터' : '학습자님을 위한 이달의 레터';
     var titleKo = (letter.title && letter.title.ko) ? letter.title.ko : '';
     var subtitleKo = (letter.subtitle && letter.subtitle.ko) ? letter.subtitle.ko : '';
-
     var h = '';
-
-    // ── DOCTYPE + HEAD ──
-    h += '<!DOCTYPE html>\n';
-    h += '<html lang="ko" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">\n';
-    h += '<head>\n';
-    h += '<meta charset="utf-8">\n';
-    h += '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
-    h += '<meta http-equiv="X-UA-Compatible" content="IE=edge">\n';
+    h += '<!DOCTYPE html>\n<html lang="ko" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">\n<head>\n';
+    h += '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta http-equiv="X-UA-Compatible" content="IE=edge">\n';
     h += '<title>Udemy Letter — ' + escHtml(letter.month) + '</title>\n';
     h += '<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->\n';
     h += '<style type="text/css">\n';
-    h += 'body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}\n';
-    h += 'table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}\n';
-    h += 'img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none;}\n';
-    h += 'body{margin:0;padding:0;width:100%!important;}\n';
-    h += '@media only screen and (max-width:620px){\n';
-    h += '  .mobile-full{width:100%!important;}\n';
-    h += '  .mobile-pad{padding:16px!important;}\n';
-    h += '  .mobile-hide{display:none!important;}\n';
-    h += '  .mobile-stack{display:block!important;width:100%!important;}\n';
-    h += '  .mobile-title{font-size:22px!important;line-height:28px!important;}\n';
-    h += '}\n';
-    h += '</style>\n';
-    h += '</head>\n';
-
-    // ── BODY ──
-    h += '<body style="margin:0;padding:0;background-color:#f5f3ff;font-family:\'Apple SD Gothic Neo\',\'Malgun Gothic\',Helvetica,Arial,sans-serif;">\n';
-
-    // 프리헤더
-    h += '<div style="display:none;font-size:1px;color:#f5f3ff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">';
-    h += escHtml(titleKo) + ' — ' + escHtml(subtitleKo);
-    h += '</div>\n';
-
-    // 전체 래퍼
-    h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f5f3ff;">\n';
-    h += '<tr><td align="center" style="padding:20px 10px;">\n';
-
-    // Outlook 래퍼
+    h += '@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap");\n';
+    h += 'body,table,td,a,p,span,h1,h2,h3,h4,li{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;font-family:' + F + ';}\n';
+    h += 'table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none;}body{margin:0;padding:0;width:100%!important;}\n';
+    h += '@media only screen and (max-width:620px){.m-full{width:100%!important;}.m-pad{padding:16px!important;}.m-hide{display:none!important;}.m-stack{display:block!important;width:100%!important;}.m-title{font-size:22px!important;line-height:28px!important;}}\n';
+    h += '</style>\n<!--[if mso]><style>body,table,td,p,a,li,span,h1,h2,h3{font-family:"Malgun Gothic",Helvetica,Arial,sans-serif!important;}</style><![endif]-->\n</head>\n';
+    h += '<body style="margin:0;padding:0;background-color:#f5f3ff;font-family:' + F + ';">\n';
+    h += '<div style="display:none;font-size:1px;color:#f5f3ff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">' + escHtml(titleKo) + ' — ' + escHtml(subtitleKo) + '</div>\n';
+    h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f5f3ff;"><tr><td align="center" style="padding:20px 10px;">\n';
     h += '<!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" align="center"><tr><td><![endif]-->\n';
+    h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="m-full" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;">\n';
 
-    // 메인 컨테이너
-    h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="mobile-full" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;">\n';
+    // 헤더
+    h += '<tr><td style="padding:14px 24px;border-bottom:1px solid #f0eeff;font-family:' + F + ';"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>';
+    h += '<td style="font-family:' + F + ';"><img src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg" alt="Udemy" height="22" style="vertical-align:middle;"> <span style="color:#7c6cf0;font-size:14px;font-weight:700;vertical-align:middle;margin-left:6px;font-family:' + F + ';">Letter</span></td>';
+    h += '<td align="right" style="font-size:12px;color:#9090aa;font-family:' + F + ';">' + escHtml(letter.month) + '호</td>';
+    h += '</tr></table></td></tr>\n';
 
-    // ═══ 헤더 ═══
-    h += '<tr><td style="padding:14px 24px;border-bottom:1px solid #f0eeff;">\n';
-    h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>\n';
-    h += '<td><img src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg" alt="Udemy" height="22" style="vertical-align:middle;"> <span style="color:#7c6cf0;font-size:14px;font-weight:700;vertical-align:middle;margin-left:6px;">Letter</span></td>\n';
-    h += '<td align="right" style="font-size:12px;color:#9090aa;">' + escHtml(letter.month) + '호</td>\n';
-    h += '</tr></table>\n';
-    h += '</td></tr>\n';
-
-    // ═══ 표지 ═══
-    var coverImg = absUrl(letter.coverImage || 'src/img/Brand_Launch.jpg');
+    // 표지
+    var coverImg = emailAbsUrl(letter.coverImage || 'src/img/Brand_Launch.jpg');
     h += '<tr><td style="background:#7c6cf0;background:linear-gradient(135deg,#7c6cf0 0%,#a78bfa 40%,#ec4899 100%);padding:0;text-align:center;">\n';
-    // 표지 이미지
-    if (coverImg) {
-      h += '<img src="' + escHtml(coverImg) + '" alt="" width="600" style="display:block;width:100%;max-width:600px;height:auto;" class="mobile-full">\n';
-    }
-    // 표지 텍스트
-    h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="padding:30px 32px 36px;text-align:center;" class="mobile-pad">\n';
-    h += '<p style="margin:0 0 8px;font-size:12px;color:rgba(255,255,255,0.65);letter-spacing:3px;text-transform:uppercase;">' + escHtml(letter.month) + '호</p>\n';
-    h += '<h1 style="margin:0 0 10px;font-size:28px;font-weight:900;color:#ffffff;line-height:1.3;" class="mobile-title">' + escHtml(titleKo) + '</h1>\n';
-    h += '<p style="margin:0 0 14px;font-size:15px;color:rgba(255,255,255,0.85);font-weight:300;">' + escHtml(subtitleKo) + '</p>\n';
-    h += '<p style="margin:0;font-size:13px;color:rgba(255,255,255,0.55);">' + escHtml(greeting) + '</p>\n';
-    h += '</td></tr></table>\n';
-    h += '</td></tr>\n';
+    if (coverImg) h += '<img src="' + escHtml(coverImg) + '" alt="" width="600" style="display:block;width:100%;max-width:600px;height:auto;" class="m-full">\n';
+    h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="padding:30px 32px 36px;text-align:center;font-family:' + F + ';" class="m-pad">';
+    h += '<p style="margin:0 0 8px;font-size:12px;color:rgba(255,255,255,0.65);letter-spacing:3px;font-family:' + F + ';">' + escHtml(letter.month) + '호</p>';
+    h += '<h1 style="margin:0 0 10px;font-size:28px;font-weight:900;color:#ffffff;line-height:1.3;font-family:' + F + ';" class="m-title">' + escHtml(titleKo) + '</h1>';
+    h += '<p style="margin:0 0 14px;font-size:15px;color:rgba(255,255,255,0.85);font-weight:300;font-family:' + F + ';">' + escHtml(subtitleKo) + '</p>';
+    h += '<p style="margin:0;font-size:13px;color:rgba(255,255,255,0.55);font-family:' + F + ';">' + escHtml(greeting) + '</p>';
+    h += '</td></tr></table></td></tr>\n';
 
-    // ═══ INDEX 섹션 ═══
-    var sections = [];
-    if (letter.insight) sections.push({ num: '01', icon: '📊', title: '트렌드 인사이트' });
-    if (letter.newContent) sections.push({ num: '02', icon: '✨', title: '신규 콘텐츠' });
-    if (letter.curation) sections.push({ num: '03', icon: '🎯', title: '이달의 큐레이션' });
-
-    if (sections.length > 0) {
-      h += '<tr><td style="padding:28px 32px;" class="mobile-pad">\n';
-      h += '<p style="margin:0 0 14px;font-size:11px;font-weight:700;color:#7c6cf0;letter-spacing:2px;">INDEX</p>\n';
-      h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>\n';
-      for (var si = 0; si < sections.length; si++) {
-        var sec = sections[si];
-        var w = Math.floor(100 / sections.length);
-        h += '<td width="' + w + '%" valign="top" style="padding:12px;background:#f5f3ff;border-radius:12px;text-align:center;" class="mobile-stack">\n';
-        h += '<p style="margin:0 0 2px;font-size:10px;font-weight:700;color:#7c6cf0;letter-spacing:1px;">' + sec.num + '</p>\n';
-        h += '<p style="margin:0 0 4px;font-size:22px;">' + sec.icon + '</p>\n';
-        h += '<p style="margin:0;font-size:13px;font-weight:700;color:#1a1a2e;">' + escHtml(sec.title) + '</p>\n';
-        h += '</td>\n';
-        if (si < sections.length - 1) h += '<td width="8"></td>\n';
+    // INDEX
+    var secs = [];
+    if (letter.insight) secs.push({ n: '01', i: '📊', t: '트렌드 인사이트' });
+    if (letter.newContent) secs.push({ n: '02', i: '✨', t: '신규 콘텐츠' });
+    if (letter.curation) secs.push({ n: '03', i: '🎯', t: '이달의 큐레이션' });
+    if (secs.length > 0) {
+      h += '<tr><td style="padding:28px 32px;font-family:' + F + ';" class="m-pad"><p style="margin:0 0 14px;font-size:11px;font-weight:700;color:#7c6cf0;letter-spacing:2px;font-family:' + F + ';">INDEX</p>';
+      h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>';
+      for (var si = 0; si < secs.length; si++) {
+        var w = Math.floor(100 / secs.length);
+        h += '<td width="' + w + '%" valign="top" style="padding:14px 10px;background:#f5f3ff;border-radius:12px;text-align:center;font-family:' + F + ';" class="m-stack">';
+        h += '<p style="margin:0 0 2px;font-size:10px;font-weight:700;color:#7c6cf0;font-family:' + F + ';">' + secs[si].n + '</p>';
+        h += '<p style="margin:0 0 4px;font-size:22px;line-height:1;">' + secs[si].i + '</p>';
+        h += '<p style="margin:0;font-size:13px;font-weight:700;color:#1a1a2e;font-family:' + F + ';">' + escHtml(secs[si].t) + '</p></td>';
+        if (si < secs.length - 1) h += '<td width="8" style="font-size:0;">&nbsp;</td>';
       }
-      h += '</tr></table>\n';
-      h += '</td></tr>\n';
+      h += '</tr></table></td></tr>\n';
     }
 
-    // ═══ 트렌드 인사이트 ═══
+    // 섹션 헬퍼
+    function secHead(tag, icon, title) {
+      return '<tr><td style="padding:28px 32px 12px;font-family:' + F + ';" class="m-pad"><p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#7c6cf0;letter-spacing:2px;font-family:' + F + ';">' + escHtml(tag) + '</p><h2 style="margin:0;font-size:22px;font-weight:800;color:#1a1a2e;font-family:' + F + ';">' + icon + ' ' + escHtml(title) + '</h2></td></tr>\n';
+    }
+    function secImg(url) {
+      if (!url) return '';
+      return '<tr><td style="padding:0 32px 16px;" class="m-pad"><img src="' + escHtml(emailAbsUrl(url)) + '" alt="" width="536" style="display:block;width:100%;max-width:536px;border-radius:12px;" class="m-full"></td></tr>\n';
+    }
+    function divider() { return '<tr><td style="padding:0 32px;" class="m-pad"><div style="border-top:1px solid #f0eeff;margin:8px 0;"></div></td></tr>\n'; }
+
+    function courseCards(sData) {
+      var ids = sData.courseIds || []; var comments = sData.courseComments || {}; var badges = sData.courseBadges || {}; var out = '';
+      for (var ci = 0; ci < ids.length; ci++) {
+        var c = coursesMap[String(ids[ci])]; if (!c) continue;
+        var curl = emailCourseUrl(c.url || c.slug, sub); var cimg = emailAbsUrl(c.image); var badge = badges[ids[ci]]; var cmt = emailGetComment(comments[ids[ci]]);
+        out += '<tr><td style="padding:0 32px 10px;font-family:' + F + ';" class="m-pad"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;overflow:hidden;"><tr>';
+        if (cimg) out += '<td width="130" valign="top" class="m-hide"><a href="' + escHtml(curl) + '" target="_blank"><img src="' + escHtml(cimg) + '" alt="" width="130" height="73" style="display:block;width:130px;height:73px;object-fit:cover;"></a></td>';
+        out += '<td valign="top" style="padding:14px 16px;font-family:' + F + ';">';
+        if (badge) out += emailBadge(badge) + '<br>';
+        out += '<a href="' + escHtml(curl) + '" target="_blank" style="font-size:14px;font-weight:700;color:#1a1a2e;text-decoration:none;line-height:1.4;font-family:' + F + ';">' + escHtml((c.title || '').substring(0, 65)) + '</a>';
+        var meta = [];
+        if (c.rating) meta.push('⭐ ' + Number(c.rating).toFixed(1));
+        if (c.contentLength) meta.push('⏱️ ' + formatDuration(c.contentLength));
+        if (c.instructor) meta.push('👤 ' + escHtml((c.instructor || '').substring(0, 25)));
+        if (c.difficulty) meta.push('📊 ' + mapDifficulty(c.difficulty));
+        if (meta.length > 0) out += '<p style="margin:5px 0 0;font-size:11px;color:#9090aa;line-height:1.5;font-family:' + F + ';">' + meta.join(' · ') + '</p>';
+        if (cmt) out += '<p style="margin:8px 0 0;font-size:12px;color:#4a4a6a;background:#f5f3ff;padding:8px 10px;border-radius:8px;border-left:3px solid #a78bfa;line-height:1.6;font-family:' + F + ';">💡 ' + escHtml(cmt.substring(0, 120)) + '</p>';
+        out += '<a href="' + escHtml(curl) + '" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:#7c6cf0;text-decoration:none;font-weight:600;font-family:' + F + ';">지금 수강하기 →</a>';
+        out += '</td></tr></table></td></tr>\n';
+      }
+      return out;
+    }
+
+    function curList(cData) {
+      var ids = cData.courseIds || []; var comments = cData.courseComments || {}; var badges = cData.courseBadges || {}; var out = '';
+      for (var ci = 0; ci < ids.length; ci++) {
+        var c = coursesMap[String(ids[ci])]; if (!c) continue;
+        var curl = emailCourseUrl(c.url || c.slug, sub); var badge = badges[ids[ci]]; var cmt = emailGetComment(comments[ids[ci]]);
+        out += '<tr><td style="padding:0 32px 6px;font-family:' + F + ';" class="m-pad"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-bottom:1px solid #f0eeff;"><tr>';
+        out += '<td width="40" valign="top" style="padding:14px 0;font-family:' + F + ';"><span style="font-size:18px;font-weight:900;color:#7c6cf0;font-family:' + F + ';">' + String(ci + 1).padStart(2, '0') + '</span></td>';
+        out += '<td valign="top" style="padding:14px 0 14px 8px;font-family:' + F + ';">';
+        if (badge) out += emailBadge(badge) + '<br>';
+        out += '<a href="' + escHtml(curl) + '" target="_blank" style="font-size:14px;font-weight:700;color:#1a1a2e;text-decoration:none;line-height:1.4;font-family:' + F + ';">' + escHtml((c.title || '').substring(0, 70)) + '</a>';
+        var meta = [];
+        if (c.rating) meta.push('⭐ ' + Number(c.rating).toFixed(1));
+        if (c.contentLength) meta.push('⏱️ ' + formatDuration(c.contentLength));
+        if (c.difficulty) meta.push('📊 ' + mapDifficulty(c.difficulty));
+        if (c.instructor) meta.push('👤 ' + escHtml((c.instructor || '').substring(0, 25)));
+        if (meta.length > 0) out += '<p style="margin:5px 0 0;font-size:11px;color:#9090aa;line-height:1.5;font-family:' + F + ';">' + meta.join(' · ') + '</p>';
+        if (cmt) out += '<p style="margin:8px 0 0;font-size:12px;color:#4a4a6a;background:#f5f3ff;padding:8px 10px;border-radius:8px;border-left:3px solid #a78bfa;line-height:1.6;font-family:' + F + ';">💡 ' + escHtml(cmt.substring(0, 150)) + '</p>';
+        out += '<a href="' + escHtml(curl) + '" target="_blank" style="display:inline-block;margin-top:8px;padding:6px 16px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:18px;font-size:12px;font-weight:600;font-family:' + F + ';">지금 바로 시작하기 →</a>';
+        out += '</td></tr></table></td></tr>\n';
+        if (ci === 2 && ids.length > 4) {
+          out += '<tr><td style="padding:12px 32px;font-family:' + F + ';" class="m-pad"><div style="background:#f5f3ff;border:1px solid #f0eeff;border-radius:12px;padding:16px;text-align:center;">';
+          out += '<p style="margin:0 0 10px;font-size:13px;color:#4a4a6a;font-family:' + F + ';">💡 지금 바로 학습장에서 무료로 수강하세요!</p>';
+          out += '<a href="' + escHtml(campusUrl) + '" target="_blank" style="display:inline-block;padding:10px 24px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:20px;font-size:13px;font-weight:700;font-family:' + F + ';">🚀 학습장 바로가기 →</a></div></td></tr>\n';
+        }
+      }
+      return out;
+    }
+
+    // 인사이트
     if (letter.insight) {
-      h += emailSectionHeader('CONTENT 1', '📊', '트렌드 인사이트');
-
-      // 섹션 이미지
-      if (letter.insight.image) {
-        h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
-        h += '<img src="' + escHtml(absUrl(letter.insight.image)) + '" alt="" width="536" style="display:block;width:100%;max-width:536px;border-radius:12px;" class="mobile-full">\n';
-        h += '</td></tr>\n';
-      }
-
-      // 에디터 콘텐츠
-      if (letter.insight.pages && letter.insight.pages.length > 0) {
+      h += secHead('CONTENT 1', '📊', '트렌드 인사이트');
+      h += secImg(letter.insight.image);
+      if (letter.insight.pages) {
         for (var pi = 0; pi < letter.insight.pages.length; pi++) {
-          var pageHtml = cleanQuillHtml(letter.insight.pages[pi].html_ko || '');
-          if (pageHtml.replace(/<[^>]*>/g, '').trim()) {
-            h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
-            h += '<div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:24px;border-top:4px solid #7c6cf0;">\n';
-            h += pageHtml + '\n';
-            h += '</div>\n';
-            h += '</td></tr>\n';
-          }
+          var ph = emailCleanHtml(letter.insight.pages[pi].html_ko || '');
+          if (ph.replace(/<[^>]*>/g, '').trim()) h += '<tr><td style="padding:0 32px 16px;font-family:' + F + ';" class="m-pad"><div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:24px;border-top:4px solid #7c6cf0;">' + ph + '</div></td></tr>\n';
         }
       }
-
-      // 강의 카드
-      if (letter.insight.courseIds && letter.insight.courseIds.length > 0) {
-        h += emailCourseCards(letter.insight, coursesMap, sub);
-      }
+      if (letter.insight.courseIds && letter.insight.courseIds.length > 0) h += courseCards(letter.insight);
     }
 
-    // ═══ 신규 콘텐츠 ═══
+    // 신규
     if (letter.newContent) {
-      h += emailDivider();
-      h += emailSectionHeader('CONTENT 2', '✨', '신규 콘텐츠');
-
-      if (letter.newContent.image) {
-        h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
-        h += '<img src="' + escHtml(absUrl(letter.newContent.image)) + '" alt="" width="536" style="display:block;width:100%;max-width:536px;border-radius:12px;" class="mobile-full">\n';
-        h += '</td></tr>\n';
-      }
-
+      h += divider() + secHead('CONTENT 2', '✨', '신규 콘텐츠');
+      h += secImg(letter.newContent.image);
       if (letter.newContent.editorHtml && letter.newContent.editorHtml.ko) {
-        var newHtml = cleanQuillHtml(letter.newContent.editorHtml.ko);
-        if (newHtml.replace(/<[^>]*>/g, '').trim()) {
-          h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
-          h += '<div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:24px;">\n';
-          h += newHtml + '\n';
-          h += '</div>\n';
-          h += '</td></tr>\n';
-        }
+        var nh = emailCleanHtml(letter.newContent.editorHtml.ko);
+        if (nh.replace(/<[^>]*>/g, '').trim()) h += '<tr><td style="padding:0 32px 16px;font-family:' + F + ';" class="m-pad"><div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:24px;">' + nh + '</div></td></tr>\n';
       }
-
-      if (letter.newContent.courseIds && letter.newContent.courseIds.length > 0) {
-        h += emailCourseCards(letter.newContent, coursesMap, sub);
-      }
-
-      if (letter.newContent.summary && letter.newContent.summary.ko) {
-        h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
-        h += '<div style="background:#f5f3ff;border-radius:12px;padding:16px;text-align:center;">\n';
-        h += '<p style="margin:0;font-size:14px;color:#4a4a6a;line-height:1.7;">' + escHtml(letter.newContent.summary.ko) + '</p>\n';
-        h += '</div>\n';
-        h += '</td></tr>\n';
-      }
+      if (letter.newContent.courseIds && letter.newContent.courseIds.length > 0) h += courseCards(letter.newContent);
+      if (letter.newContent.summary && letter.newContent.summary.ko) h += '<tr><td style="padding:0 32px 16px;font-family:' + F + ';" class="m-pad"><div style="background:#f5f3ff;border-radius:12px;padding:16px;text-align:center;"><p style="margin:0;font-size:14px;color:#4a4a6a;line-height:1.7;font-family:' + F + ';">' + escHtml(letter.newContent.summary.ko) + '</p></div></td></tr>\n';
     }
 
-    // ═══ 큐레이션 ═══
+    // 큐레이션
     if (letter.curation) {
-      h += emailDivider();
-      h += emailSectionHeader('CONTENT 3', '🎯', '이달의 큐레이션');
-
-      if (letter.curation.image) {
-        h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
-        h += '<img src="' + escHtml(absUrl(letter.curation.image)) + '" alt="" width="536" style="display:block;width:100%;max-width:536px;border-radius:12px;" class="mobile-full">\n';
-        h += '</td></tr>\n';
-      }
-
-      // 소개 + 태그
+      h += divider() + secHead('CONTENT 3', '🎯', '이달의 큐레이션');
+      h += secImg(letter.curation.image);
       if ((letter.curation.intro && letter.curation.intro.ko) || (letter.curation.tags && letter.curation.tags.length > 0)) {
-        h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
-        h += '<div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:20px;border-left:4px solid #7c6cf0;">\n';
-        if (letter.curation.intro && letter.curation.intro.ko) {
-          h += '<p style="margin:0 0 12px;font-size:14px;color:#4a4a6a;line-height:1.7;">' + escHtml(letter.curation.intro.ko) + '</p>\n';
-        }
+        h += '<tr><td style="padding:0 32px 16px;font-family:' + F + ';" class="m-pad"><div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:20px;border-left:4px solid #7c6cf0;">';
+        if (letter.curation.intro && letter.curation.intro.ko) h += '<p style="margin:0 0 12px;font-size:14px;color:#4a4a6a;line-height:1.7;font-family:' + F + ';">' + escHtml(letter.curation.intro.ko) + '</p>';
         if (letter.curation.tags && letter.curation.tags.length > 0) {
-          h += '<div style="margin-top:8px;">\n';
+          h += '<div style="margin-top:8px;">';
           for (var ti = 0; ti < letter.curation.tags.length; ti++) {
-            var tagText = typeof letter.curation.tags[ti] === 'string' ? letter.curation.tags[ti] : (letter.curation.tags[ti].ko || '');
-            h += '<span style="display:inline-block;padding:5px 14px;background:#7c6cf0;color:#ffffff;border-radius:20px;font-size:12px;font-weight:600;margin:0 6px 6px 0;">' + escHtml(tagText) + '</span>\n';
+            var tagT = typeof letter.curation.tags[ti] === 'string' ? letter.curation.tags[ti] : (letter.curation.tags[ti].ko || '');
+            h += '<span style="display:inline-block;padding:5px 14px;background:#7c6cf0;color:#ffffff;border-radius:20px;font-size:12px;font-weight:600;margin:0 6px 6px 0;font-family:' + F + ';">' + escHtml(tagT) + '</span>';
           }
-          h += '</div>\n';
+          h += '</div>';
         }
-        h += '</div>\n';
-        h += '</td></tr>\n';
+        h += '</div></td></tr>\n';
       }
-
-      // 큐레이션 리스트
-      if (letter.curation.courseIds && letter.curation.courseIds.length > 0) {
-        h += emailCurationList(letter.curation, coursesMap, sub);
-      }
-
-      // 안내 문구
-      h += '<tr><td style="padding:0 32px 8px;text-align:center;" class="mobile-pad">\n';
-      h += '<p style="margin:0;font-size:12px;color:#9090aa;background:#f5f3ff;padding:10px;border-radius:8px;">💡 강의명을 클릭하면 해당 강의 페이지로 연결됩니다.</p>\n';
-      h += '</td></tr>\n';
+      if (letter.curation.courseIds && letter.curation.courseIds.length > 0) h += curList(letter.curation);
+      h += '<tr><td style="padding:0 32px 8px;text-align:center;font-family:' + F + ';" class="m-pad"><p style="margin:0;font-size:12px;color:#9090aa;background:#f5f3ff;padding:10px;border-radius:8px;font-family:' + F + ';">💡 강의명을 클릭하면 해당 강의 페이지로 연결됩니다.</p></td></tr>\n';
     }
 
-    // ═══ 홍보 ═══
-    if (letter.promo && letter.promo.pages && letter.promo.pages.length > 0) {
-      var hasPromo = false;
-      for (var pri = 0; pri < letter.promo.pages.length; pri++) {
-        if (letter.promo.pages[pri].html_ko && letter.promo.pages[pri].html_ko.replace(/<[^>]*>/g, '').trim()) hasPromo = true;
-      }
-      if (hasPromo) {
-        h += emailDivider();
-        h += emailSectionHeader('PROMOTION', '📢', '홍보');
-        for (var pri2 = 0; pri2 < letter.promo.pages.length; pri2++) {
-          var promoHtml = cleanQuillHtml(letter.promo.pages[pri2].html_ko || '');
-          if (promoHtml.replace(/<[^>]*>/g, '').trim()) {
-            h += '<tr><td style="padding:0 32px 16px;" class="mobile-pad">\n';
-            h += '<div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:24px;">\n';
-            h += promoHtml + '\n';
-            h += '</div>\n';
-            h += '</td></tr>\n';
-          }
+    // 홍보
+    if (letter.promo && letter.promo.pages) {
+      var hasP = false;
+      for (var pi2 = 0; pi2 < letter.promo.pages.length; pi2++) { if (letter.promo.pages[pi2].html_ko && letter.promo.pages[pi2].html_ko.replace(/<[^>]*>/g, '').trim()) hasP = true; }
+      if (hasP) {
+        h += divider() + secHead('PROMOTION', '📢', '홍보');
+        for (var pi3 = 0; pi3 < letter.promo.pages.length; pi3++) {
+          var proH = emailCleanHtml(letter.promo.pages[pi3].html_ko || '');
+          if (proH.replace(/<[^>]*>/g, '').trim()) h += '<tr><td style="padding:0 32px 16px;font-family:' + F + ';" class="m-pad"><div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:24px;">' + proH + '</div></td></tr>\n';
         }
       }
     }
 
-    // ═══ CTA 배너 ═══
-    h += '<tr><td style="padding:24px 32px;" class="mobile-pad">\n';
-    h += '<div style="background:#f5f3ff;border:1px solid #f0eeff;border-radius:16px;padding:28px;text-align:center;">\n';
-    h += '<p style="margin:0 0 16px;font-size:15px;color:#4a4a6a;">이번 달 추천 강의가 마음에 드셨나요?</p>\n';
-    h += '<a href="' + escHtml(campusUrl) + '" target="_blank" style="display:inline-block;padding:14px 32px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:28px;font-size:15px;font-weight:700;">🚀 학습장 바로가기 →</a>\n';
-    h += '</div>\n';
+    // CTA
+    h += '<tr><td style="padding:24px 32px;font-family:' + F + ';" class="m-pad"><div style="background:#f5f3ff;border:1px solid #f0eeff;border-radius:16px;padding:28px;text-align:center;">';
+    h += '<p style="margin:0 0 16px;font-size:15px;color:#4a4a6a;font-family:' + F + ';">이번 달 추천 강의가 마음에 드셨나요?</p>';
+    h += '<a href="' + escHtml(campusUrl) + '" target="_blank" style="display:inline-block;padding:14px 32px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:28px;font-size:15px;font-weight:700;font-family:' + F + ';">🚀 학습장 바로가기 →</a></div></td></tr>\n';
+
+    // 마무리
+    var closingMsg = (letter.closing && letter.closing.message && letter.closing.message.ko) ? letter.closing.message.ko : '';
+    h += '<tr><td style="padding:40px 32px;background:#f5f3ff;border-top:2px solid #7c6cf0;text-align:center;font-family:' + F + ';" class="m-pad">';
+    if (letter.closing && letter.closing.image) h += '<img src="' + escHtml(emailAbsUrl(letter.closing.image)) + '" alt="" width="200" style="display:block;max-width:200px;margin:0 auto 20px;border-radius:12px;">';
+    h += '<p style="margin:0 0 8px;font-size:28px;line-height:1;">📮</p>';
+    h += '<p style="margin:0 0 4px;font-size:18px;font-weight:800;color:#7c6cf0;font-family:' + F + ';">Udemy Letter</p>';
+    if (closingMsg) h += '<div style="margin:16px auto;max-width:480px;font-size:13px;color:#9090aa;line-height:1.8;font-family:' + F + ';">' + emailCleanHtml(closingMsg) + '</div>';
+    else h += '<p style="margin:16px 0 0;font-size:13px;color:#9090aa;line-height:1.8;font-family:' + F + ';">매월 변화하는 업무 환경과 학습 트렌드에 맞춰,<br>바로 실무에 적용할 수 있는 콘텐츠와 인사이트를 엄선해 소개드립니다.</p>';
     h += '</td></tr>\n';
 
-    // ═══ 마무리 ═══
-    var closingHtml = (letter.closing && letter.closing.message && letter.closing.message.ko) ? letter.closing.message.ko : '';
-    h += '<tr><td style="padding:40px 32px;background:#f5f3ff;border-top:2px solid #7c6cf0;text-align:center;" class="mobile-pad">\n';
-    if (letter.closing && letter.closing.image) {
-      h += '<img src="' + escHtml(absUrl(letter.closing.image)) + '" alt="" width="200" style="display:block;max-width:200px;margin:0 auto 20px;border-radius:12px;">\n';
-    }
-    h += '<p style="margin:0 0 8px;font-size:28px;">📮</p>\n';
-    h += '<p style="margin:0 0 4px;font-size:18px;font-weight:800;color:#7c6cf0;">Udemy Letter</p>\n';
-    if (closingHtml) {
-      var closingClean = cleanQuillHtml(closingHtml);
-      h += '<div style="margin:16px 0;font-size:13px;color:#9090aa;line-height:1.8;">' + closingClean + '</div>\n';
-    }
-    h += '</td></tr>\n';
+    // 푸터
+    h += '<tr><td style="padding:20px 32px;text-align:center;background:#ffffff;border-top:1px solid #f0eeff;font-family:' + F + ';" class="m-pad">';
+    h += '<p style="margin:0 0 8px;font-size:12px;color:#9090aa;font-family:' + F + ';">Udemy Letter | 웅진씽크빅 © 2026</p>';
+    h += '<p style="margin:0;"><a href="#unsubscribe" style="font-size:11px;color:#9090aa;text-decoration:underline;font-family:' + F + ';">수신거부</a></p></td></tr>\n';
 
-    // ═══ 푸터 ═══
-    h += '<tr><td style="padding:20px 32px;text-align:center;background:#ffffff;border-top:1px solid #f0eeff;" class="mobile-pad">\n';
-    h += '<p style="margin:0 0 8px;font-size:12px;color:#9090aa;">Udemy Letter | 웅진씽크빅 © 2026</p>\n';
-    h += '<p style="margin:0;"><a href="#" style="font-size:11px;color:#9090aa;text-decoration:underline;">수신거부</a></p>\n';
-    h += '</td></tr>\n';
-
-    // 메인 컨테이너 닫기
-    h += '</table>\n';
-
-    // Outlook 래퍼 닫기
-    h += '<!--[if mso]></td></tr></table><![endif]-->\n';
-
-    h += '</td></tr></table>\n';
-    h += '</body>\n</html>';
-
+    // 닫기
+    h += '</table>\n<!--[if mso]></td></tr></table><![endif]-->\n</td></tr></table>\n</body>\n</html>';
     return h;
   }
 
-  // ── 섹션 헤더 ──
-  function emailSectionHeader(tag, icon, title) {
-    var h = '<tr><td style="padding:28px 32px 12px;" class="mobile-pad">\n';
-    h += '<p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#7c6cf0;letter-spacing:2px;text-transform:uppercase;">' + escHtml(tag) + '</p>\n';
-    h += '<h2 style="margin:0;font-size:22px;font-weight:800;color:#1a1a2e;">' + icon + ' ' + escHtml(title) + '</h2>\n';
-    h += '</td></tr>\n';
-    return h;
-  }
-
-  // ── 구분선 ──
-  function emailDivider() {
-    return '<tr><td style="padding:0 32px;" class="mobile-pad"><div style="border-top:1px solid #f0eeff;margin:8px 0;"></div></td></tr>\n';
-  }
-
-  // ── 강의 카드 (카드/하이라이트 레이아웃) ──
-  function emailCourseCards(sData, coursesMap, sub) {
-    var ids = sData.courseIds || [];
-    var comments = sData.courseComments || {};
-    var badges = sData.courseBadges || {};
-    var h = '';
-
-    for (var i = 0; i < ids.length; i++) {
-      var c = coursesMap[String(ids[i])];
-      if (!c) continue;
-      var curl = makeCourseUrl(c.url || c.slug, sub);
-      var cimg = absUrl(c.image);
-      var badge = badges[ids[i]];
-      var comment = getCommentText(comments[ids[i]]);
-
-      h += '<tr><td style="padding:0 32px 10px;" class="mobile-pad">\n';
-      h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;overflow:hidden;">\n';
-      h += '<tr>\n';
-
-      // 썸네일
-      if (cimg) {
-        h += '<td width="130" valign="top" class="mobile-hide">\n';
-        h += '<a href="' + escHtml(curl) + '" target="_blank"><img src="' + escHtml(cimg) + '" alt="" width="130" height="73" style="display:block;width:130px;height:73px;object-fit:cover;"></a>\n';
-        h += '</td>\n';
-      }
-
-      // 정보
-      h += '<td valign="top" style="padding:14px 16px;">\n';
-      if (badge) h += emailBadgeHtml(badge) + '<br>\n';
-      h += '<a href="' + escHtml(curl) + '" target="_blank" style="font-size:14px;font-weight:700;color:#1a1a2e;text-decoration:none;line-height:1.4;">' + escHtml((c.title || '').substring(0, 65)) + '</a>\n';
-
-      // 메타
-      var metaParts = [];
-      if (c.rating) metaParts.push('⭐ ' + Number(c.rating).toFixed(1));
-      if (c.contentLength) metaParts.push('⏱️ ' + formatDuration(c.contentLength));
-      if (c.instructor) metaParts.push('👤 ' + escHtml((c.instructor || '').substring(0, 25)));
-      if (c.difficulty) metaParts.push('📊 ' + mapDifficulty(c.difficulty));
-      if (metaParts.length > 0) {
-        h += '<p style="margin:5px 0 0;font-size:11px;color:#9090aa;line-height:1.5;">' + metaParts.join(' &nbsp;·&nbsp; ') + '</p>\n';
-      }
-
-      // 코멘트
-      if (comment) {
-        h += '<p style="margin:8px 0 0;font-size:12px;color:#4a4a6a;background:#f5f3ff;padding:8px 10px;border-radius:8px;border-left:3px solid #a78bfa;line-height:1.6;">💡 ' + escHtml(comment.substring(0, 120)) + '</p>\n';
-      }
-
-      // CTA
-      h += '<a href="' + escHtml(curl) + '" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:#7c6cf0;text-decoration:none;font-weight:600;">지금 수강하기 →</a>\n';
-
-      h += '</td>\n';
-      h += '</tr></table>\n';
-      h += '</td></tr>\n';
-    }
-
-    return h;
-  }
-
-  // ── 큐레이션 리스트 ──
-  function emailCurationList(cData, coursesMap, sub) {
-    var ids = cData.courseIds || [];
-    var comments = cData.courseComments || {};
-    var badges = cData.courseBadges || {};
-    var h = '';
-
-    for (var i = 0; i < ids.length; i++) {
-      var c = coursesMap[String(ids[i])];
-      if (!c) continue;
-      var curl = makeCourseUrl(c.url || c.slug, sub);
-      var badge = badges[ids[i]];
-      var comment = getCommentText(comments[ids[i]]);
-
-      h += '<tr><td style="padding:0 32px 6px;" class="mobile-pad">\n';
-      h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-bottom:1px solid #f0eeff;">\n';
-      h += '<tr>\n';
-
-      // 순위
-      h += '<td width="40" valign="top" style="padding:14px 0;">\n';
-      h += '<span style="font-size:18px;font-weight:900;color:#7c6cf0;">' + String(i + 1).padStart(2, '0') + '</span>\n';
-      h += '</td>\n';
-
-      // 정보
-      h += '<td valign="top" style="padding:14px 0 14px 8px;">\n';
-      if (badge) h += emailBadgeHtml(badge) + '<br>\n';
-      h += '<a href="' + escHtml(curl) + '" target="_blank" style="font-size:14px;font-weight:700;color:#1a1a2e;text-decoration:none;line-height:1.4;">' + escHtml((c.title || '').substring(0, 70)) + '</a>\n';
-
-      var metaParts = [];
-      if (c.rating) metaParts.push('⭐ ' + Number(c.rating).toFixed(1));
-      if (c.contentLength) metaParts.push('⏱️ ' + formatDuration(c.contentLength));
-      if (c.difficulty) metaParts.push('📊 ' + mapDifficulty(c.difficulty));
-      if (c.instructor) metaParts.push('👤 ' + escHtml((c.instructor || '').substring(0, 25)));
-      if (c.category) metaParts.push('📂 ' + escHtml((c.category || '').split(',')[0].trim().substring(0, 20)));
-      if (metaParts.length > 0) {
-        h += '<p style="margin:5px 0 0;font-size:11px;color:#9090aa;line-height:1.5;">' + metaParts.join(' &nbsp;·&nbsp; ') + '</p>\n';
-      }
-
-      if (comment) {
-        h += '<p style="margin:8px 0 0;font-size:12px;color:#4a4a6a;background:#f5f3ff;padding:8px 10px;border-radius:8px;border-left:3px solid #a78bfa;line-height:1.6;">💡 ' + escHtml(comment.substring(0, 150)) + '</p>\n';
-      }
-
-      h += '<a href="' + escHtml(curl) + '" target="_blank" style="display:inline-block;margin-top:8px;padding:6px 16px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:18px;font-size:12px;font-weight:600;">지금 바로 시작하기 →</a>\n';
-
-      h += '</td>\n';
-      h += '</tr></table>\n';
-      h += '</td></tr>\n';
-
-      // 중간 CTA (3번째 강의 뒤)
-      if (i === 2 && ids.length > 4) {
-        h += '<tr><td style="padding:12px 32px;" class="mobile-pad">\n';
-        h += '<div style="background:#f5f3ff;border:1px solid #f0eeff;border-radius:12px;padding:16px;text-align:center;">\n';
-        h += '<p style="margin:0 0 10px;font-size:13px;color:#4a4a6a;">💡 지금 바로 학습장에서 무료로 수강하세요!</p>\n';
-        h += '<a href="' + escHtml(campusUrl) + '" target="_blank" style="display:inline-block;padding:10px 24px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:20px;font-size:13px;font-weight:700;">🚀 학습장 바로가기 →</a>\n';
-        h += '</div>\n';
-        h += '</td></tr>\n';
-      }
-    }
-
-    return h;
-  }
-
-  // ── 레터 목록에 메일복사 버튼 추가 ──
-  // loadLetterList 함수 안의 letter-card-actions 부분에서
-  // loadLetterList 안에서 letter-card-actions 부분
-html += '<div class="letter-card-actions">';
-html += '<button class="letter-card-action" data-month="' + item.month + '" data-action="edit">✏️ 편집</button>';
-html += '<button class="letter-card-action btn-copy-email" data-month="' + item.month + '">📧 메일복사</button>';
-html += '</div>';
-
-  
 })();
