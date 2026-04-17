@@ -146,23 +146,42 @@
       .catch(function(e) { showError('\ub85c\ub4dc \uc2e4\ud328: ' + e.message); });
   }
 
-  function loadCourseData(ids) {
-  if (!ids || ids.length === 0) return Promise.resolve();
+    function loadCourseData(ids) {
+    if (!ids || ids.length === 0) return Promise.resolve();
+    var idsParam = ids.join(',');
 
-  var idsParam = ids.join(',');
+    function tryFetch(attempt) {
+      return fetch('/api/courses-proxy?ids=' + encodeURIComponent(idsParam))
+        .then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function(courses) {
+          if (!Array.isArray(courses)) return;
+          for (var i = 0; i < courses.length; i++) {
+            courseDataMap[String(courses[i].id)] = courses[i];
+          }
+          var missing = [];
+          for (var i = 0; i < ids.length; i++) {
+            if (!courseDataMap[String(ids[i])]) missing.push(ids[i]);
+          }
+          if (missing.length > 0) {
+            console.warn('[Letter] 강의 미발견: ' + missing.join(', '));
+          }
+        })
+        .catch(function(e) {
+          console.warn('[Letter] 강의 로드 실패 (시도 ' + attempt + '): ' + e.message);
+          if (attempt < 3) {
+            return new Promise(function(resolve) {
+              setTimeout(function() { resolve(tryFetch(attempt + 1)); }, 2000);
+            });
+          }
+        });
+    }
 
-  // ★ 재시도 로직 추가 (최대 2회)
-  function tryFetch(attempt) {
-    return fetch('/api/courses-proxy?ids=' + encodeURIComponent(idsParam))
-      .then(function(r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      })
-      .then(function(courses) {
-        if (!Array.isArray(courses)) return;
-        for (var i = 0; i < courses.length; i++) {
-          courseDataMap[String(courses[i].id)] = courses[i];
-        }
+    return tryFetch(1);
+  }
+
 
         // 못 찾은 ID 체크
         var missing = [];
