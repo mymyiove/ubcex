@@ -955,8 +955,10 @@
 
     // 표지
     var coverImg = emailAbsUrl(letter.coverImage || 'src/img/Brand_Launch.jpg');
-    h += '<tr><td style="background:#7c6cf0;background:linear-gradient(135deg,#7c6cf0 0%,#a78bfa 40%,#ec4899 100%);padding:0;text-align:center;">\n';
-    if (coverImg) h += '<img src="' + escHtml(coverImg) + '" alt="" width="600" style="display:block;width:100%;max-width:600px;height:auto;" class="m-full">\n';
+    h += '<tr><td style="background:#7c6cf0;background:linear-gradient(135deg,#7c6cf0 0%,#a78bfa 40%,#ec4899 100%);padding:0;text-align:center;font-size:0;line-height:0;">\n';
+    if (coverImg) h += '<img src="' + escHtml(coverImg) + '" alt="" width="600" style="display:block;width:600px;max-width:100%;height:auto;" class="m-full">\n';
+
+
     h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="padding:30px 32px 36px;text-align:center;font-family:' + F + ';" class="m-pad">';
     h += '<p style="margin:0 0 8px;font-size:12px;color:rgba(255,255,255,0.65);letter-spacing:3px;font-family:' + F + ';">' + escHtml(letter.month) + '호</p>';
     h += '<h1 style="margin:0 0 10px;font-size:28px;font-weight:900;color:#ffffff;line-height:1.3;font-family:' + F + ';" class="m-title">' + escHtml(titleKo) + '</h1>';
@@ -989,8 +991,9 @@
     }
     function secImg(url) {
       if (!url) return '';
-      return '<tr><td style="padding:0 32px 16px;" class="m-pad"><img src="' + escHtml(emailAbsUrl(url)) + '" alt="" width="536" style="display:block;width:100%;max-width:536px;border-radius:12px;" class="m-full"></td></tr>\n';
+      return '<tr><td style="padding:0 32px 16px;" class="m-pad"><img src="' + escHtml(emailAbsUrl(url)) + '" alt="" width="536" style="display:block;width:536px;max-width:100%;height:auto;border-radius:12px;" class="m-full"></td></tr>\n';
     }
+
     function divider() { return '<tr><td style="padding:0 32px;" class="m-pad"><div style="border-top:1px solid #f0eeff;margin:8px 0;"></div></td></tr>\n'; }
 
     function courseCards(sData) {
