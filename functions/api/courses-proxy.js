@@ -15,7 +15,6 @@ export async function onRequestGet(context) {
   };
 
   try {
-    // ── 상태 조회 ──
     if (action === 'status') {
       const res = await fetch(WORKER_URL + '/status', {
         headers: { 'Authorization': 'Bearer ' + WORKER_SECRET }
@@ -24,7 +23,6 @@ export async function onRequestGet(context) {
       return new Response(JSON.stringify(data), { headers: corsHeaders });
     }
 
-    // ── ID로 강의 검색 (배치 방식) ──
     if (ids) {
       const idList = ids.split(',').map(s => s.trim()).filter(Boolean);
       if (idList.length === 0) {
@@ -71,7 +69,6 @@ export async function onRequestGet(context) {
       return new Response(JSON.stringify(found), { headers: corsHeaders });
     }
 
-    // ── 청크 데이터 조회 ──
     const res = await fetch(WORKER_URL + '/get-courses?chunk=' + chunk, {
       headers: { 'Authorization': 'Bearer ' + WORKER_SECRET }
     });
