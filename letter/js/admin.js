@@ -800,18 +800,63 @@
     apiCall('/letter-get?month=' + month).then(function(res) {
       if (!res.success) { hideLoading(); toast('레터 데이터를 불러오지 못했습니다.', 'error'); return; }
       var letter = res.data;
+
+      // 필요한 강의 ID 수집
       var allIds = [];
       if (letter.insight && letter.insight.courseIds) allIds = allIds.concat(letter.insight.courseIds);
       if (letter.newContent && letter.newContent.courseIds) allIds = allIds.concat(letter.newContent.courseIds);
       if (letter.curation && letter.curation.courseIds) allIds = allIds.concat(letter.curation.courseIds);
-      if (allIds.length > 0) {
-        loadCoursesFromWorker().then(function(allCourses) {
-          var cMap = {};
-          for (var i = 0; i < allCourses.length; i++) cMap[String(allCourses[i].id)] = allCourses[i];
+
+      if (allIds.length === 0) {
+        // 강의 없으면 바로 생성
+        doEmailCopy(letter, sub, {}, month);
+        return;
+      }
+
+      // 방법 1: courseCache에서 먼저 찾기 (Admin에서 이미 불러온 경우)
+      var cMap = {};
+      var missingIds = [];
+      for (var i = 0; i < allIds.length; i++) {
+        var id = String(allIds[i]);
+        if (courseCache[id]) {
+          cMap[id] = courseCache[id];
+        } else if (courseCache[allIds[i]]) {
+          cMap[id] = courseCache[allIds[i]];
+        } else {
+          missingIds.push(id);
+        }
+      }
+
+      // 캐시에서 전부 찾았으면 바로 생성
+      if (missingIds.length === 0) {
+        doEmailCopy(letter, sub, cMap, month);
+        return;
+      }
+
+      // 방법 2: courses-proxy?ids= 로 필요한 것만 가져오기 (가볍고 빠름!)
+      var idsParam = missingIds.join(',');
+      fetch('/api/courses-proxy?ids=' + encodeURIComponent(idsParam))
+        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(courses) {
+          if (Array.isArray(courses)) {
+            for (var i = 0; i < courses.length; i++) {
+              var cid = String(courses[i].id);
+              cMap[cid] = courses[i];
+              courseCache[cid] = courses[i]; // 캐시에도 저장
+            }
+          }
           doEmailCopy(letter, sub, cMap, month);
-        }).catch(function() { doEmailCopy(letter, sub, {}, month); });
-      } else doEmailCopy(letter, sub, {}, month);
-    }).catch(function(e) { hideLoading(); toast('실패: ' + e.message, 'error'); });
+        })
+        .catch(function(e) {
+          // 실패해도 캐시에서 찾은 것만으로 생성
+          console.warn('강의 데이터 일부 로드 실패:', e.message);
+          doEmailCopy(letter, sub, cMap, month);
+        });
+
+    }).catch(function(e) {
+      hideLoading();
+      toast('실패: ' + e.message, 'error');
+    });
   }
 
   function doEmailCopy(letter, sub, cMap, month) {
@@ -824,8 +869,18 @@
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-    toast('📧 이메일 HTML 복사 완료! (' + Math.round(html.length / 1024) + 'KB)', 'success');
-    addLog('이메일 HTML 복사', month + '호 / sub=' + sub);
+
+    // 강의 포함 여부 확인
+    var totalIds = 0;
+    var foundIds = Object.keys(cMap).length;
+    if (letter.insight && letter.insight.courseIds) totalIds += letter.insight.courseIds.length;
+    if (letter.newContent && letter.newContent.courseIds) totalIds += letter.newContent.courseIds.length;
+    if (letter.curation && letter.curation.courseIds) totalIds += letter.curation.courseIds.length;
+
+    var msg = '📧 이메일 HTML 복사 완료! (' + Math.round(html.length / 1024) + 'KB)';
+    if (totalIds > 0) msg += ' | 강의 ' + foundIds + '/' + totalIds + '개 포함';
+    toast(msg, 'success');
+    addLog('이메일 HTML 복사', month + '호 / sub=' + sub + ' / 강의 ' + foundIds + '/' + totalIds);
   }
 
   function emailAbsUrl(url) {
