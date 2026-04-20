@@ -1176,5 +1176,5 @@
     emailLang = emailLang.trim().toLowerCase();
     if (emailLang !== 'en') emailLang = 'ko';
     generateEmail(currentMonth, sub.trim(), emailLang);
-      }
-})();
+
+  })();
