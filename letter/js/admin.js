@@ -760,13 +760,6 @@
     });
   });
 
-  // === Email Copy (Editor) ===
-  $('#btn-copy-email').addEventListener('click', function() {
-    if (!currentMonth) { toast('먼저 레터를 저장해주세요', 'error'); return; }
-    var sub = prompt('[' + currentMonth + '호] 메일 발송용 HTML 복사\n\n타겟 기업의 Subdomain을 입력하세요.', 'woongjin');
-    if (sub === null) return;
-    generateEmail(currentMonth, sub.trim());
-  });
 
   // === Helpers ===
   function switchPanel(name) {
