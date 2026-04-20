@@ -586,9 +586,15 @@
           var action = this.getAttribute('data-action');
           if (action === 'edit') loadLetter(m);
           if (action === 'email') {
-            var sub = prompt('[' + m + '호] 메일 발송용 HTML 복사\n\n타겟 기업의 Subdomain을 입력하세요.\n(예: woongjin)', 'woongjin');
-            if (sub !== null) generateEmail(m, sub.trim());
+            var sub = prompt('[' + m + '호] 메일 발송용 HTML 복사\n\nSubdomain을 입력하세요.', 'woongjin');
+            if (sub === null) return;
+            var eLang = prompt('언어 선택 (ko/en)', 'ko');
+            if (eLang === null) return;
+            eLang = eLang.trim().toLowerCase();
+            if (eLang !== 'en') eLang = 'ko';
+            generateEmail(m, sub.trim(), eLang);
           }
+
         });
       }
 
@@ -791,76 +797,62 @@
   }
 
   // ==========================================
-  // === Email HTML Generation v3 (풀버전) ===
+  // === Email HTML Generation v4 (다국어) ===
   // ==========================================
 
-  function generateEmail(month, sub) {
+  function generateEmail(month, sub, emailLang) {
     showLoading();
     toast('📧 이메일 HTML 생성 중...');
     apiCall('/letter-get?month=' + month).then(function(res) {
       if (!res.success) { hideLoading(); toast('레터 데이터를 불러오지 못했습니다.', 'error'); return; }
       var letter = res.data;
-
-      // 필요한 강의 ID 수집
       var allIds = [];
       if (letter.insight && letter.insight.courseIds) allIds = allIds.concat(letter.insight.courseIds);
       if (letter.newContent && letter.newContent.courseIds) allIds = allIds.concat(letter.newContent.courseIds);
       if (letter.curation && letter.curation.courseIds) allIds = allIds.concat(letter.curation.courseIds);
 
       if (allIds.length === 0) {
-        // 강의 없으면 바로 생성
-        doEmailCopy(letter, sub, {}, month);
+        doEmailCopy(letter, sub, {}, month, emailLang);
         return;
       }
 
-      // 방법 1: courseCache에서 먼저 찾기 (Admin에서 이미 불러온 경우)
       var cMap = {};
       var missingIds = [];
       for (var i = 0; i < allIds.length; i++) {
         var id = String(allIds[i]);
-        if (courseCache[id]) {
-          cMap[id] = courseCache[id];
-        } else if (courseCache[allIds[i]]) {
-          cMap[id] = courseCache[allIds[i]];
-        } else {
-          missingIds.push(id);
-        }
+        if (courseCache[id]) cMap[id] = courseCache[id];
+        else if (courseCache[allIds[i]]) cMap[id] = courseCache[allIds[i]];
+        else missingIds.push(id);
       }
 
-      // 캐시에서 전부 찾았으면 바로 생성
       if (missingIds.length === 0) {
-        doEmailCopy(letter, sub, cMap, month);
+        doEmailCopy(letter, sub, cMap, month, emailLang);
         return;
       }
 
-      // 방법 2: courses-proxy?ids= 로 필요한 것만 가져오기 (가볍고 빠름!)
-      var idsParam = missingIds.join(',');
-      fetch('/api/courses-proxy?ids=' + encodeURIComponent(idsParam))
+      fetch('/api/courses-proxy?ids=' + encodeURIComponent(missingIds.join(',')))
         .then(function(r) { return r.ok ? r.json() : []; })
         .then(function(courses) {
           if (Array.isArray(courses)) {
             for (var i = 0; i < courses.length; i++) {
               var cid = String(courses[i].id);
               cMap[cid] = courses[i];
-              courseCache[cid] = courses[i]; // 캐시에도 저장
+              courseCache[cid] = courses[i];
             }
           }
-          doEmailCopy(letter, sub, cMap, month);
+          doEmailCopy(letter, sub, cMap, month, emailLang);
         })
-        .catch(function(e) {
-          // 실패해도 캐시에서 찾은 것만으로 생성
-          console.warn('강의 데이터 일부 로드 실패:', e.message);
-          doEmailCopy(letter, sub, cMap, month);
+        .catch(function() {
+          doEmailCopy(letter, sub, cMap, month, emailLang);
         });
-
     }).catch(function(e) {
       hideLoading();
       toast('실패: ' + e.message, 'error');
     });
   }
 
-  function doEmailCopy(letter, sub, cMap, month) {
-    var html = buildEmailHtml(letter, sub, cMap);
+  function doEmailCopy(letter, sub, cMap, month, emailLang) {
+    var html = buildEmailHtml(letter, sub, cMap, emailLang);
     hideLoading();
     var ta = document.createElement('textarea');
     ta.value = html;
@@ -870,17 +862,17 @@
     document.execCommand('copy');
     document.body.removeChild(ta);
 
-    // 강의 포함 여부 확인
     var totalIds = 0;
     var foundIds = Object.keys(cMap).length;
     if (letter.insight && letter.insight.courseIds) totalIds += letter.insight.courseIds.length;
     if (letter.newContent && letter.newContent.courseIds) totalIds += letter.newContent.courseIds.length;
     if (letter.curation && letter.curation.courseIds) totalIds += letter.curation.courseIds.length;
 
-    var msg = '📧 이메일 HTML 복사 완료! (' + Math.round(html.length / 1024) + 'KB)';
-    if (totalIds > 0) msg += ' | 강의 ' + foundIds + '/' + totalIds + '개 포함';
+    var langLabel = emailLang === 'en' ? '영문' : '한국어';
+    var msg = '📧 ' + langLabel + ' 이메일 HTML 복사 완료! (' + Math.round(html.length / 1024) + 'KB)';
+    if (totalIds > 0) msg += ' | 강의 ' + foundIds + '/' + totalIds + '개';
     toast(msg, 'success');
-    addLog('이메일 HTML 복사', month + '호 / sub=' + sub + ' / 강의 ' + foundIds + '/' + totalIds);
+    addLog('이메일 HTML 복사', month + '호 / ' + langLabel + ' / sub=' + sub + ' / 강의 ' + foundIds + '/' + totalIds);
   }
 
   function emailAbsUrl(url) {
@@ -923,15 +915,48 @@
   }
 
   function emailGetComment(c) { if (!c) return ''; if (typeof c === 'string') return c; return c.ko || ''; }
+  function emailGetCommentEn(c) { if (!c) return ''; if (typeof c === 'object' && c.en) return c.en; return ''; }
 
-  function buildEmailHtml(letter, sub, coursesMap) {
+  // ★ 다국어 텍스트 헬퍼
+  function emailText(isEn, ko, en) { return isEn ? (en || ko) : ko; }
+
+  function emailDifficulty(d, isEn) {
+    if (isEn) return d || 'All Levels';
+    var m = { 'Beginner': '초급', 'Intermediate': '중급', 'Expert': '고급', 'All Levels': '모든 수준', 'ALL_LEVELS': '모든 수준', 'BEGINNER': '초급', 'INTERMEDIATE': '중급', 'EXPERT': '고급' };
+    return m[d] || d || '';
+  }
+
+    function buildEmailHtml(letter, sub, coursesMap, emailLang) {
     var F = EMAIL_FONT;
+    var isEn = emailLang === 'en';
     var campusUrl = sub ? 'https://' + sub + '.udemy.com' : 'https://www.udemy.com';
-    var greeting = sub ? sub.toUpperCase() + ' 학습자님을 위한 이달의 레터' : '학습자님을 위한 이달의 레터';
+
+    // 다국어 텍스트
     var titleKo = (letter.title && letter.title.ko) ? letter.title.ko : '';
+    var titleEn = (letter.title && letter.title.en) ? letter.title.en : titleKo;
+    var title = isEn ? titleEn : titleKo;
+
     var subtitleKo = (letter.subtitle && letter.subtitle.ko) ? letter.subtitle.ko : '';
+    var subtitleEn = (letter.subtitle && letter.subtitle.en) ? letter.subtitle.en : subtitleKo;
+    var subtitle = isEn ? subtitleEn : subtitleKo;
+
+    var issueLabel = isEn ? (letter.month + ' Issue') : (letter.month + '호');
+    var greeting = isEn
+      ? (sub ? 'Monthly letter for ' + sub.toUpperCase() + ' learners' : 'Monthly letter for learners')
+      : (sub ? sub.toUpperCase() + ' 학습자님을 위한 이달의 레터' : '학습자님을 위한 이달의 레터');
+
+    var btnCampus = emailText(isEn, '🚀 학습장 바로가기 →', '🚀 Go to Learning Hub →');
+    var btnStart = emailText(isEn, '지금 수강하기 →', 'Start Now →');
+    var btnStartFull = emailText(isEn, '지금 바로 시작하기 →', 'Start Now →');
+    var txtUnsubscribe = emailText(isEn, '수신거부', 'Unsubscribe');
+    var txtClickNote = emailText(isEn, '💡 강의명을 클릭하면 해당 강의 페이지로 연결됩니다.', '💡 Click a course title to visit the course page.');
+    var txtLiked = emailText(isEn, '이번 달 추천 강의가 마음에 드셨나요?', 'Did you enjoy this month\'s recommended courses?');
+    var txtFreeLearn = emailText(isEn, '💡 지금 바로 학습장에서 무료로 수강하세요!', '💡 Start learning for free on your Learning Hub!');
+
     var h = '';
-    h += '<!DOCTYPE html>\n<html lang="ko" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">\n<head>\n';
+
+    // HEAD
+    h += '<!DOCTYPE html>\n<html lang="' + (isEn ? 'en' : 'ko') + '" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">\n<head>\n';
     h += '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta http-equiv="X-UA-Compatible" content="IE=edge">\n';
     h += '<title>Udemy Letter — ' + escHtml(letter.month) + '</title>\n';
     h += '<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->\n';
@@ -941,8 +966,10 @@
     h += 'table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none;}body{margin:0;padding:0;width:100%!important;}\n';
     h += '@media only screen and (max-width:620px){.m-full{width:100%!important;}.m-pad{padding:16px!important;}.m-hide{display:none!important;}.m-stack{display:block!important;width:100%!important;}.m-title{font-size:22px!important;line-height:28px!important;}}\n';
     h += '</style>\n<!--[if mso]><style>body,table,td,p,a,li,span,h1,h2,h3{font-family:"Malgun Gothic",Helvetica,Arial,sans-serif!important;}</style><![endif]-->\n</head>\n';
+
+    // BODY
     h += '<body style="margin:0;padding:0;background-color:#f5f3ff;font-family:' + F + ';">\n';
-    h += '<div style="display:none;font-size:1px;color:#f5f3ff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">' + escHtml(titleKo) + ' — ' + escHtml(subtitleKo) + '</div>\n';
+    h += '<div style="display:none;font-size:1px;color:#f5f3ff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">' + escHtml(title) + ' — ' + escHtml(subtitle) + '</div>\n';
     h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f5f3ff;"><tr><td align="center" style="padding:20px 10px;">\n';
     h += '<!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" align="center"><tr><td><![endif]-->\n';
     h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="m-full" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;">\n';
@@ -950,42 +977,40 @@
     // 헤더
     h += '<tr><td style="padding:14px 24px;border-bottom:1px solid #f0eeff;font-family:' + F + ';"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>';
     h += '<td style="font-family:' + F + ';"><img src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg" alt="Udemy" height="22" style="vertical-align:middle;"> <span style="color:#7c6cf0;font-size:14px;font-weight:700;vertical-align:middle;margin-left:6px;font-family:' + F + ';">Letter</span></td>';
-    h += '<td align="right" style="font-size:12px;color:#9090aa;font-family:' + F + ';">' + escHtml(letter.month) + '호</td>';
+    h += '<td align="right" style="font-size:12px;color:#9090aa;font-family:' + F + ';">' + escHtml(issueLabel) + '</td>';
     h += '</tr></table></td></tr>\n';
 
     // 표지
     var coverImg = emailAbsUrl(letter.coverImage || 'src/img/Brand_Launch.jpg');
     h += '<tr><td style="background:#7c6cf0;background:linear-gradient(135deg,#7c6cf0 0%,#a78bfa 40%,#ec4899 100%);padding:0;text-align:center;font-size:0;line-height:0;">\n';
     if (coverImg) h += '<img src="' + escHtml(coverImg) + '" alt="" width="600" style="display:block;width:600px;max-width:100%;height:auto;" class="m-full">\n';
-
-
     h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="padding:30px 32px 36px;text-align:center;font-family:' + F + ';" class="m-pad">';
-    h += '<p style="margin:0 0 8px;font-size:12px;color:rgba(255,255,255,0.65);letter-spacing:3px;font-family:' + F + ';">' + escHtml(letter.month) + '호</p>';
-    h += '<h1 style="margin:0 0 10px;font-size:28px;font-weight:900;color:#ffffff;line-height:1.3;font-family:' + F + ';" class="m-title">' + escHtml(titleKo) + '</h1>';
-    h += '<p style="margin:0 0 14px;font-size:15px;color:rgba(255,255,255,0.85);font-weight:300;font-family:' + F + ';">' + escHtml(subtitleKo) + '</p>';
+    h += '<p style="margin:0 0 8px;font-size:12px;color:rgba(255,255,255,0.65);letter-spacing:3px;font-family:' + F + ';">' + escHtml(issueLabel) + '</p>';
+    h += '<h1 style="margin:0 0 10px;font-size:28px;font-weight:900;color:#ffffff;line-height:1.3;font-family:' + F + ';" class="m-title">' + escHtml(title) + '</h1>';
+    h += '<p style="margin:0 0 14px;font-size:15px;color:rgba(255,255,255,0.85);font-weight:300;font-family:' + F + ';">' + escHtml(subtitle) + '</p>';
     h += '<p style="margin:0;font-size:13px;color:rgba(255,255,255,0.55);font-family:' + F + ';">' + escHtml(greeting) + '</p>';
     h += '</td></tr></table></td></tr>\n';
 
     // INDEX
-    var secs = [];
-    if (letter.insight) secs.push({ n: '01', i: '📊', t: '트렌드 인사이트' });
-    if (letter.newContent) secs.push({ n: '02', i: '✨', t: '신규 콘텐츠' });
-    if (letter.curation) secs.push({ n: '03', i: '🎯', t: '이달의 큐레이션' });
-    if (secs.length > 0) {
+    var secDefs = [];
+    if (letter.insight) secDefs.push({ n: '01', i: '📊', t: emailText(isEn, '트렌드 인사이트', 'Trend Insights') });
+    if (letter.newContent) secDefs.push({ n: '02', i: '✨', t: emailText(isEn, '신규 콘텐츠', 'New Content') });
+    if (letter.curation) secDefs.push({ n: '03', i: '🎯', t: emailText(isEn, '이달의 큐레이션', 'Monthly Curation') });
+    if (secDefs.length > 0) {
       h += '<tr><td style="padding:28px 32px;font-family:' + F + ';" class="m-pad"><p style="margin:0 0 14px;font-size:11px;font-weight:700;color:#7c6cf0;letter-spacing:2px;font-family:' + F + ';">INDEX</p>';
       h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>';
-      for (var si = 0; si < secs.length; si++) {
-        var w = Math.floor(100 / secs.length);
+      for (var si = 0; si < secDefs.length; si++) {
+        var w = Math.floor(100 / secDefs.length);
         h += '<td width="' + w + '%" valign="top" style="padding:14px 10px;background:#f5f3ff;border-radius:12px;text-align:center;font-family:' + F + ';" class="m-stack">';
-        h += '<p style="margin:0 0 2px;font-size:10px;font-weight:700;color:#7c6cf0;font-family:' + F + ';">' + secs[si].n + '</p>';
-        h += '<p style="margin:0 0 4px;font-size:22px;line-height:1;">' + secs[si].i + '</p>';
-        h += '<p style="margin:0;font-size:13px;font-weight:700;color:#1a1a2e;font-family:' + F + ';">' + escHtml(secs[si].t) + '</p></td>';
-        if (si < secs.length - 1) h += '<td width="8" style="font-size:0;">&nbsp;</td>';
+        h += '<p style="margin:0 0 2px;font-size:10px;font-weight:700;color:#7c6cf0;font-family:' + F + ';">' + secDefs[si].n + '</p>';
+        h += '<p style="margin:0 0 4px;font-size:22px;line-height:1;">' + secDefs[si].i + '</p>';
+        h += '<p style="margin:0;font-size:13px;font-weight:700;color:#1a1a2e;font-family:' + F + ';">' + escHtml(secDefs[si].t) + '</p></td>';
+        if (si < secDefs.length - 1) h += '<td width="8" style="font-size:0;">&nbsp;</td>';
       }
       h += '</tr></table></td></tr>\n';
     }
 
-    // 섹션 헬퍼
+    // 헬퍼
     function secHead(tag, icon, title) {
       return '<tr><td style="padding:28px 32px 12px;font-family:' + F + ';" class="m-pad"><p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#7c6cf0;letter-spacing:2px;font-family:' + F + ';">' + escHtml(tag) + '</p><h2 style="margin:0;font-size:22px;font-weight:800;color:#1a1a2e;font-family:' + F + ';">' + icon + ' ' + escHtml(title) + '</h2></td></tr>\n';
     }
@@ -993,14 +1018,14 @@
       if (!url) return '';
       return '<tr><td style="padding:0 32px 16px;" class="m-pad"><img src="' + escHtml(emailAbsUrl(url)) + '" alt="" width="536" style="display:block;width:536px;max-width:100%;height:auto;border-radius:12px;" class="m-full"></td></tr>\n';
     }
-
     function divider() { return '<tr><td style="padding:0 32px;" class="m-pad"><div style="border-top:1px solid #f0eeff;margin:8px 0;"></div></td></tr>\n'; }
 
     function courseCards(sData) {
       var ids = sData.courseIds || []; var comments = sData.courseComments || {}; var badges = sData.courseBadges || {}; var out = '';
       for (var ci = 0; ci < ids.length; ci++) {
         var c = coursesMap[String(ids[ci])]; if (!c) continue;
-        var curl = emailCourseUrl(c.url || c.slug, sub); var cimg = emailAbsUrl(c.image); var badge = badges[ids[ci]]; var cmt = emailGetComment(comments[ids[ci]]);
+        var curl = emailCourseUrl(c.url || c.slug, sub); var cimg = emailAbsUrl(c.image); var badge = badges[ids[ci]];
+        var cmt = isEn ? (emailGetCommentEn(comments[ids[ci]]) || emailGetComment(comments[ids[ci]])) : emailGetComment(comments[ids[ci]]);
         out += '<tr><td style="padding:0 32px 10px;font-family:' + F + ';" class="m-pad"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;overflow:hidden;"><tr>';
         if (cimg) out += '<td width="130" valign="top" class="m-hide"><a href="' + escHtml(curl) + '" target="_blank"><img src="' + escHtml(cimg) + '" alt="" width="130" height="73" style="display:block;width:130px;height:73px;object-fit:cover;"></a></td>';
         out += '<td valign="top" style="padding:14px 16px;font-family:' + F + ';">';
@@ -1010,10 +1035,10 @@
         if (c.rating) meta.push('⭐ ' + Number(c.rating).toFixed(1));
         if (c.contentLength) meta.push('⏱️ ' + formatDuration(c.contentLength));
         if (c.instructor) meta.push('👤 ' + escHtml((c.instructor || '').substring(0, 25)));
-        if (c.difficulty) meta.push('📊 ' + mapDifficulty(c.difficulty));
+        if (c.difficulty) meta.push('📊 ' + emailDifficulty(c.difficulty, isEn));
         if (meta.length > 0) out += '<p style="margin:5px 0 0;font-size:11px;color:#9090aa;line-height:1.5;font-family:' + F + ';">' + meta.join(' · ') + '</p>';
         if (cmt) out += '<p style="margin:8px 0 0;font-size:12px;color:#4a4a6a;background:#f5f3ff;padding:8px 10px;border-radius:8px;border-left:3px solid #a78bfa;line-height:1.6;font-family:' + F + ';">💡 ' + escHtml(cmt.substring(0, 120)) + '</p>';
-        out += '<a href="' + escHtml(curl) + '" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:#7c6cf0;text-decoration:none;font-weight:600;font-family:' + F + ';">지금 수강하기 →</a>';
+        out += '<a href="' + escHtml(curl) + '" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:#7c6cf0;text-decoration:none;font-weight:600;font-family:' + F + ';">' + btnStart + '</a>';
         out += '</td></tr></table></td></tr>\n';
       }
       return out;
@@ -1023,7 +1048,8 @@
       var ids = cData.courseIds || []; var comments = cData.courseComments || {}; var badges = cData.courseBadges || {}; var out = '';
       for (var ci = 0; ci < ids.length; ci++) {
         var c = coursesMap[String(ids[ci])]; if (!c) continue;
-        var curl = emailCourseUrl(c.url || c.slug, sub); var badge = badges[ids[ci]]; var cmt = emailGetComment(comments[ids[ci]]);
+        var curl = emailCourseUrl(c.url || c.slug, sub); var badge = badges[ids[ci]];
+        var cmt = isEn ? (emailGetCommentEn(comments[ids[ci]]) || emailGetComment(comments[ids[ci]])) : emailGetComment(comments[ids[ci]]);
         out += '<tr><td style="padding:0 32px 6px;font-family:' + F + ';" class="m-pad"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-bottom:1px solid #f0eeff;"><tr>';
         out += '<td width="40" valign="top" style="padding:14px 0;font-family:' + F + ';"><span style="font-size:18px;font-weight:900;color:#7c6cf0;font-family:' + F + ';">' + String(ci + 1).padStart(2, '0') + '</span></td>';
         out += '<td valign="top" style="padding:14px 0 14px 8px;font-family:' + F + ';">';
@@ -1032,16 +1058,16 @@
         var meta = [];
         if (c.rating) meta.push('⭐ ' + Number(c.rating).toFixed(1));
         if (c.contentLength) meta.push('⏱️ ' + formatDuration(c.contentLength));
-        if (c.difficulty) meta.push('📊 ' + mapDifficulty(c.difficulty));
+        if (c.difficulty) meta.push('📊 ' + emailDifficulty(c.difficulty, isEn));
         if (c.instructor) meta.push('👤 ' + escHtml((c.instructor || '').substring(0, 25)));
         if (meta.length > 0) out += '<p style="margin:5px 0 0;font-size:11px;color:#9090aa;line-height:1.5;font-family:' + F + ';">' + meta.join(' · ') + '</p>';
         if (cmt) out += '<p style="margin:8px 0 0;font-size:12px;color:#4a4a6a;background:#f5f3ff;padding:8px 10px;border-radius:8px;border-left:3px solid #a78bfa;line-height:1.6;font-family:' + F + ';">💡 ' + escHtml(cmt.substring(0, 150)) + '</p>';
-        out += '<a href="' + escHtml(curl) + '" target="_blank" style="display:inline-block;margin-top:8px;padding:6px 16px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:18px;font-size:12px;font-weight:600;font-family:' + F + ';">지금 바로 시작하기 →</a>';
+        out += '<a href="' + escHtml(curl) + '" target="_blank" style="display:inline-block;margin-top:8px;padding:6px 16px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:18px;font-size:12px;font-weight:600;font-family:' + F + ';">' + btnStartFull + '</a>';
         out += '</td></tr></table></td></tr>\n';
         if (ci === 2 && ids.length > 4) {
           out += '<tr><td style="padding:12px 32px;font-family:' + F + ';" class="m-pad"><div style="background:#f5f3ff;border:1px solid #f0eeff;border-radius:12px;padding:16px;text-align:center;">';
-          out += '<p style="margin:0 0 10px;font-size:13px;color:#4a4a6a;font-family:' + F + ';">💡 지금 바로 학습장에서 무료로 수강하세요!</p>';
-          out += '<a href="' + escHtml(campusUrl) + '" target="_blank" style="display:inline-block;padding:10px 24px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:20px;font-size:13px;font-weight:700;font-family:' + F + ';">🚀 학습장 바로가기 →</a></div></td></tr>\n';
+          out += '<p style="margin:0 0 10px;font-size:13px;color:#4a4a6a;font-family:' + F + ';">' + txtFreeLearn + '</p>';
+          out += '<a href="' + escHtml(campusUrl) + '" target="_blank" style="display:inline-block;padding:10px 24px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:20px;font-size:13px;font-weight:700;font-family:' + F + ';">' + btnCampus + '</a></div></td></tr>\n';
         }
       }
       return out;
@@ -1049,11 +1075,12 @@
 
     // 인사이트
     if (letter.insight) {
-      h += secHead('CONTENT 1', '📊', '트렌드 인사이트');
+      h += secHead('CONTENT 1', '📊', emailText(isEn, '트렌드 인사이트', 'Trend Insights'));
       h += secImg(letter.insight.image);
       if (letter.insight.pages) {
         for (var pi = 0; pi < letter.insight.pages.length; pi++) {
-          var ph = emailCleanHtml(letter.insight.pages[pi].html_ko || '');
+          var pageKey = isEn ? 'html_en' : 'html_ko';
+          var ph = emailCleanHtml(letter.insight.pages[pi][pageKey] || letter.insight.pages[pi].html_ko || '');
           if (ph.replace(/<[^>]*>/g, '').trim()) h += '<tr><td style="padding:0 32px 16px;font-family:' + F + ';" class="m-pad"><div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:24px;border-top:4px solid #7c6cf0;">' + ph + '</div></td></tr>\n';
         }
       }
@@ -1062,35 +1089,43 @@
 
     // 신규
     if (letter.newContent) {
-      h += divider() + secHead('CONTENT 2', '✨', '신규 콘텐츠');
+      h += divider() + secHead('CONTENT 2', '✨', emailText(isEn, '신규 콘텐츠', 'New Content'));
       h += secImg(letter.newContent.image);
-      if (letter.newContent.editorHtml && letter.newContent.editorHtml.ko) {
-        var nh = emailCleanHtml(letter.newContent.editorHtml.ko);
+      if (letter.newContent.editorHtml) {
+        var edKey = isEn ? 'en' : 'ko';
+        var nh = emailCleanHtml(letter.newContent.editorHtml[edKey] || letter.newContent.editorHtml.ko || '');
         if (nh.replace(/<[^>]*>/g, '').trim()) h += '<tr><td style="padding:0 32px 16px;font-family:' + F + ';" class="m-pad"><div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:24px;">' + nh + '</div></td></tr>\n';
       }
       if (letter.newContent.courseIds && letter.newContent.courseIds.length > 0) h += courseCards(letter.newContent);
-      if (letter.newContent.summary && letter.newContent.summary.ko) h += '<tr><td style="padding:0 32px 16px;font-family:' + F + ';" class="m-pad"><div style="background:#f5f3ff;border-radius:12px;padding:16px;text-align:center;"><p style="margin:0;font-size:14px;color:#4a4a6a;line-height:1.7;font-family:' + F + ';">' + escHtml(letter.newContent.summary.ko) + '</p></div></td></tr>\n';
+      if (letter.newContent.summary) {
+        var sumText = isEn ? (letter.newContent.summary.en || letter.newContent.summary.ko || '') : (letter.newContent.summary.ko || '');
+        if (sumText) h += '<tr><td style="padding:0 32px 16px;font-family:' + F + ';" class="m-pad"><div style="background:#f5f3ff;border-radius:12px;padding:16px;text-align:center;"><p style="margin:0;font-size:14px;color:#4a4a6a;line-height:1.7;font-family:' + F + ';">' + escHtml(sumText) + '</p></div></td></tr>\n';
+      }
     }
 
     // 큐레이션
     if (letter.curation) {
-      h += divider() + secHead('CONTENT 3', '🎯', '이달의 큐레이션');
+      h += divider() + secHead('CONTENT 3', '🎯', emailText(isEn, '이달의 큐레이션', 'Monthly Curation'));
       h += secImg(letter.curation.image);
-      if ((letter.curation.intro && letter.curation.intro.ko) || (letter.curation.tags && letter.curation.tags.length > 0)) {
+      if ((letter.curation.intro) || (letter.curation.tags && letter.curation.tags.length > 0)) {
         h += '<tr><td style="padding:0 32px 16px;font-family:' + F + ';" class="m-pad"><div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:20px;border-left:4px solid #7c6cf0;">';
-        if (letter.curation.intro && letter.curation.intro.ko) h += '<p style="margin:0 0 12px;font-size:14px;color:#4a4a6a;line-height:1.7;font-family:' + F + ';">' + escHtml(letter.curation.intro.ko) + '</p>';
+        if (letter.curation.intro) {
+          var introText = isEn ? (letter.curation.intro.en || letter.curation.intro.ko || '') : (letter.curation.intro.ko || '');
+          if (introText) h += '<p style="margin:0 0 12px;font-size:14px;color:#4a4a6a;line-height:1.7;font-family:' + F + ';">' + escHtml(introText) + '</p>';
+        }
         if (letter.curation.tags && letter.curation.tags.length > 0) {
           h += '<div style="margin-top:8px;">';
           for (var ti = 0; ti < letter.curation.tags.length; ti++) {
-            var tagT = typeof letter.curation.tags[ti] === 'string' ? letter.curation.tags[ti] : (letter.curation.tags[ti].ko || '');
-            h += '<span style="display:inline-block;padding:5px 14px;background:#7c6cf0;color:#ffffff;border-radius:20px;font-size:12px;font-weight:600;margin:0 6px 6px 0;font-family:' + F + ';">' + escHtml(tagT) + '</span>';
+            var tag = letter.curation.tags[ti];
+            var tagText = isEn ? (tag.en || tag.ko || (typeof tag === 'string' ? tag : '')) : (tag.ko || (typeof tag === 'string' ? tag : ''));
+            h += '<span style="display:inline-block;padding:5px 14px;background:#7c6cf0;color:#ffffff;border-radius:20px;font-size:12px;font-weight:600;margin:0 6px 6px 0;font-family:' + F + ';">' + escHtml(tagText) + '</span>';
           }
           h += '</div>';
         }
         h += '</div></td></tr>\n';
       }
       if (letter.curation.courseIds && letter.curation.courseIds.length > 0) h += curList(letter.curation);
-      h += '<tr><td style="padding:0 32px 8px;text-align:center;font-family:' + F + ';" class="m-pad"><p style="margin:0;font-size:12px;color:#9090aa;background:#f5f3ff;padding:10px;border-radius:8px;font-family:' + F + ';">💡 강의명을 클릭하면 해당 강의 페이지로 연결됩니다.</p></td></tr>\n';
+      h += '<tr><td style="padding:0 32px 8px;text-align:center;font-family:' + F + ';" class="m-pad"><p style="margin:0;font-size:12px;color:#9090aa;background:#f5f3ff;padding:10px;border-radius:8px;font-family:' + F + ';">' + txtClickNote + '</p></td></tr>\n';
     }
 
     // 홍보
@@ -1098,9 +1133,10 @@
       var hasP = false;
       for (var pi2 = 0; pi2 < letter.promo.pages.length; pi2++) { if (letter.promo.pages[pi2].html_ko && letter.promo.pages[pi2].html_ko.replace(/<[^>]*>/g, '').trim()) hasP = true; }
       if (hasP) {
-        h += divider() + secHead('PROMOTION', '📢', '홍보');
+        h += divider() + secHead('PROMOTION', '📢', emailText(isEn, '홍보', 'Promotion'));
         for (var pi3 = 0; pi3 < letter.promo.pages.length; pi3++) {
-          var proH = emailCleanHtml(letter.promo.pages[pi3].html_ko || '');
+          var proKey = isEn ? 'html_en' : 'html_ko';
+          var proH = emailCleanHtml(letter.promo.pages[pi3][proKey] || letter.promo.pages[pi3].html_ko || '');
           if (proH.replace(/<[^>]*>/g, '').trim()) h += '<tr><td style="padding:0 32px 16px;font-family:' + F + ';" class="m-pad"><div style="background:#ffffff;border:1px solid #f0eeff;border-radius:12px;padding:24px;">' + proH + '</div></td></tr>\n';
         }
       }
@@ -1108,27 +1144,44 @@
 
     // CTA
     h += '<tr><td style="padding:24px 32px;font-family:' + F + ';" class="m-pad"><div style="background:#f5f3ff;border:1px solid #f0eeff;border-radius:16px;padding:28px;text-align:center;">';
-    h += '<p style="margin:0 0 16px;font-size:15px;color:#4a4a6a;font-family:' + F + ';">이번 달 추천 강의가 마음에 드셨나요?</p>';
-    h += '<a href="' + escHtml(campusUrl) + '" target="_blank" style="display:inline-block;padding:14px 32px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:28px;font-size:15px;font-weight:700;font-family:' + F + ';">🚀 학습장 바로가기 →</a></div></td></tr>\n';
+    h += '<p style="margin:0 0 16px;font-size:15px;color:#4a4a6a;font-family:' + F + ';">' + txtLiked + '</p>';
+    h += '<a href="' + escHtml(campusUrl) + '" target="_blank" style="display:inline-block;padding:14px 32px;background:#7c6cf0;color:#ffffff;text-decoration:none;border-radius:28px;font-size:15px;font-weight:700;font-family:' + F + ';">' + btnCampus + '</a></div></td></tr>\n';
 
     // 마무리
-    var closingMsg = (letter.closing && letter.closing.message && letter.closing.message.ko) ? letter.closing.message.ko : '';
+    var closingMsg = '';
+    if (letter.closing && letter.closing.message) {
+      closingMsg = isEn ? (letter.closing.message.en || letter.closing.message.ko || '') : (letter.closing.message.ko || '');
+    }
+    var closingDefault = isEn
+      ? 'Every month, we curate the most relevant content and insights<br>to help you apply new skills directly to your work.<br><br>We look forward to making your learning journey even more enjoyable<br>with Udemy Letter. 🚀'
+      : '매월 변화하는 업무 환경과 학습 트렌드에 맞춰,<br>바로 실무에 적용할 수 있는 콘텐츠와 인사이트를 엄선해 소개드립니다.<br><br>앞으로도 여러분의 성장을 더 즐겁게 만드는<br>Udemy Letter로 함께하겠습니다. 🚀';
+
     h += '<tr><td style="padding:40px 32px;background:#f5f3ff;border-top:2px solid #7c6cf0;text-align:center;font-family:' + F + ';" class="m-pad">';
     if (letter.closing && letter.closing.image) h += '<img src="' + escHtml(emailAbsUrl(letter.closing.image)) + '" alt="" width="200" style="display:block;max-width:200px;margin:0 auto 20px;border-radius:12px;">';
     h += '<p style="margin:0 0 8px;font-size:28px;line-height:1;">📮</p>';
     h += '<p style="margin:0 0 4px;font-size:18px;font-weight:800;color:#7c6cf0;font-family:' + F + ';">Udemy Letter</p>';
     if (closingMsg) h += '<div style="margin:16px auto;max-width:480px;font-size:13px;color:#9090aa;line-height:1.8;font-family:' + F + ';">' + emailCleanHtml(closingMsg) + '</div>';
-    else h += '<p style="margin:16px 0 0;font-size:13px;color:#9090aa;line-height:1.8;font-family:' + F + ';">매월 변화하는 업무 환경과 학습 트렌드에 맞춰,<br>바로 실무에 적용할 수 있는 콘텐츠와 인사이트를 엄선해 소개드립니다.</p>';
+    else h += '<p style="margin:16px 0 0;font-size:13px;color:#9090aa;line-height:1.8;font-family:' + F + ';">' + closingDefault + '</p>';
     h += '</td></tr>\n';
 
     // 푸터
     h += '<tr><td style="padding:20px 32px;text-align:center;background:#ffffff;border-top:1px solid #f0eeff;font-family:' + F + ';" class="m-pad">';
-    h += '<p style="margin:0 0 8px;font-size:12px;color:#9090aa;font-family:' + F + ';">Udemy Letter | 웅진씽크빅 © 2026</p>';
-    h += '<p style="margin:0;"><a href="#unsubscribe" style="font-size:11px;color:#9090aa;text-decoration:underline;font-family:' + F + ';">수신거부</a></p></td></tr>\n';
+    h += '<p style="margin:0 0 8px;font-size:12px;color:#9090aa;font-family:' + F + ';">Udemy Letter | ' + (isEn ? 'Woongjin ThinkBig' : '웅진씽크빅') + ' © 2026</p>';
+    h += '<p style="margin:0;"><a href="#unsubscribe" style="font-size:11px;color:#9090aa;text-decoration:underline;font-family:' + F + ';">' + txtUnsubscribe + '</a></p></td></tr>\n';
 
-    // 닫기
     h += '</table>\n<!--[if mso]></td></tr></table><![endif]-->\n</td></tr></table>\n</body>\n</html>';
     return h;
   }
 
-})();
+  // === Email Copy 버튼 이벤트 (에디터) ===
+  $('#btn-copy-email').addEventListener('click', function() {
+    if (!currentMonth) { toast('먼저 레터를 저장해주세요', 'error'); return; }
+    var sub = prompt('[' + currentMonth + '호] 메일 발송용 HTML 복사\n\n타겟 기업의 Subdomain을 입력하세요.', 'woongjin');
+    if (sub === null) return;
+    var emailLang = prompt('언어를 선택하세요.\n\nko = 한국어\nen = English', 'ko');
+    if (emailLang === null) return;
+    emailLang = emailLang.trim().toLowerCase();
+    if (emailLang !== 'en') emailLang = 'ko';
+    generateEmail(currentMonth, sub.trim(), emailLang);
+  });
+
