@@ -1020,10 +1020,10 @@
     h += '<td align="right" style="font-size:12px;color:#9090aa;font-family:' + F + ';">' + escHtml(issueLabel) + '</td>';
     h += '</tr></table></td></tr>\n';
 
-    // 표지 (개선된 영역)
+    // 표지 (개선된 영역: align="center" 및 margin:0 auto 추가)
     var coverImg = emailAbsUrl(letter.coverImage || 'src/img/Brand_Launch.jpg');
-    h += '<tr><td style="background-color:#7c6cf0; background:linear-gradient(135deg,#7c6cf0 0%,#a78bfa 40%,#ec4899 100%); padding:0; text-align:center;">\n';
-    if (coverImg) h += '<img src="' + escHtml(coverImg) + '" alt="" width="600" style="display:block; width:100%; max-width:600px; height:auto; border:0;" class="m-full">\n';
+    h += '<tr><td align="center" style="background-color:#7c6cf0; background:linear-gradient(135deg,#7c6cf0 0%,#a78bfa 40%,#ec4899 100%); padding:0; text-align:center;">\n';
+    if (coverImg) h += '<img src="' + escHtml(coverImg) + '" alt="" width="600" style="display:block; margin:0 auto; width:100%; max-width:600px; height:auto; border:0;" class="m-full">\n';
     h += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="padding:30px 32px 36px; text-align:center; font-family:' + F + ';" class="m-pad">';
     h += '<p style="margin:0 0 8px; font-size:12px; color:rgba(255,255,255,0.65); letter-spacing:3px; line-height:1.4; font-family:' + F + ';">' + escHtml(issueLabel) + '</p>';
     h += '<h1 style="margin:0 0 10px; font-size:28px; font-weight:900; color:#ffffff; line-height:1.3; font-family:' + F + ';" class="m-title">' + escHtml(title) + '</h1>';
@@ -1056,7 +1056,7 @@
     }
     function secImg(url) {
       if (!url) return '';
-      return '<tr><td style="padding:0 32px 16px;" class="m-pad"><img src="' + escHtml(emailAbsUrl(url)) + '" alt="" width="536" style="display:block;width:100%;max-width:536px;height:auto;border-radius:12px;" class="m-full"></td></tr>\n';
+      return '<tr><td align="center" style="padding:0 32px 16px; text-align:center;" class="m-pad"><img src="' + escHtml(emailAbsUrl(url)) + '" alt="" width="536" style="display:block; margin:0 auto; width:100%; max-width:536px; height:auto; border-radius:12px;" class="m-full"></td></tr>\n';
     }
     function divider() { return '<tr><td style="padding:0 32px;" class="m-pad"><div style="border-top:1px solid #f0eeff;margin:8px 0;"></div></td></tr>\n'; }
 
